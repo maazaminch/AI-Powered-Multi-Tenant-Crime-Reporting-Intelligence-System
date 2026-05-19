@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/Card'
-import { useAuth } from '../../../hooks/useAuth'
+import { useAuth } from '../../../hooks/auth/useAuth'
 import { useNavigate } from 'react-router-dom'
 
 const LoginForm = () => {

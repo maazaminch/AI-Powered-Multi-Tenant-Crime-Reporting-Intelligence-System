@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { QueryProvider } from './lib/queryClient.jsx'
 import { AppRouter } from './lib/router.jsx'
 import { Toaster } from 'sonner'
-import { useAuth } from './hooks/useAuth.js'
+import { useAuth } from './hooks/auth/useAuth.js'
 
 const AuthInitializer = () => {
   const { initializeAuth } = useAuth()

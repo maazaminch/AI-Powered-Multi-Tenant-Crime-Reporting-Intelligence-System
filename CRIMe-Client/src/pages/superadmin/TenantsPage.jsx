@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
-import { useTenantManagement } from '../../hooks/useTenantManagement'
+import { useTenantManagement } from '../../hooks/superadmin/useTenantManagement'
 import TenantForm from '../../components/features/tenant/TenantForm'
 import { formatError } from '../../lib/utils'
 

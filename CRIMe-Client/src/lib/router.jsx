@@ -5,6 +5,7 @@ import ProtectedRoute from '../components/common/ProtectedRoute'
 import HomePage from '../pages/public/HomePage'
 import LoginPage from '../pages/public/LoginPage'
 import RegisterPage from '../pages/public/RegisterPage'
+import InviteRegisterPage from '../pages/public/InviteRegisterPage'
 import GuestReportPage from '../pages/public/GuestReportPage'
 import SuperAdminDashboard from '../pages/superadmin/DashboardPage'
 import TenantsPage from '../pages/superadmin/TenantsPage'
@@ -64,7 +65,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'register/invite',
-        element: <RegisterPage />
+        element: <InviteRegisterPage />
       },
       {
         path: 'report',

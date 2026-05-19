@@ -2,7 +2,7 @@ import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
-import { usePendingAdminRequests } from '../../hooks/usePendingAdminRequests'
+import { usePendingAdminRequests } from '../../hooks/superadmin/usePendingAdminRequests'
 import { formatError } from '../../lib/utils'
 
 const PendingRequestsPage = () => {

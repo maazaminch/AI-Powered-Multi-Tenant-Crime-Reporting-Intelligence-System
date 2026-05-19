@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import superAdminService from '../services/superAdminService'
-import usersService from '../services/usersService'
-import authService from '../services/authService'
-import { formatError } from '../lib/utils'
+import superAdminService from '../../services/superAdminService'
+import usersService from '../../services/usersService'
+import authService from '../../services/authService'
+import { formatError } from '../../lib/utils'
 
 export const useAdminsManagement = (
     selectedAdminId,

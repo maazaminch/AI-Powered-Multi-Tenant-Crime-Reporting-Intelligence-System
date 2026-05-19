@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
-import { useAdminsManagement } from '../../hooks/useAdminsManagement'
+import { useAdminsManagement } from '../../hooks/superadmin/useAdminsManagement'
 import InviteAdminForm from '../../components/features/tenant/InviteAdminForm'
 import { formatError } from '../../lib/utils'
 
