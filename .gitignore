@@ -1,0 +1,26 @@
+# Dependencies
+CRIMe-Client/node_modules
+CRIMe-Server/node_modules
+
+# Environment variables
+CRIMe-Client/.env
+CRIMe-Server/.env
+
+# Build folders
+CRIMe-Client/dist
+CRIMe-Client/build
+CRIMe-Server/dist
+CRIMe-Server/build
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage
+
+# VS Code settings
+.vscode
