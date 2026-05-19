@@ -48,7 +48,7 @@ class authController {
             );
         }
 
-        if (!currentUser.tenantId) {
+        if (!currentUser.tenantId && !currentUser.isSuperAdmin) {
             throw new apiError(
                 400,
                 "Admin tenant missing"
@@ -65,7 +65,7 @@ class authController {
 
     const existingUser = await User.findOne({ email });
 
-    if (existingUser) {
+    if (existingUser && existingUser.status !== "REJECTED") {
         throw new apiError(
             400,
             "User already exists"

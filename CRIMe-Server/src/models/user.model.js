@@ -7,15 +7,7 @@ const UserSchema = new mongoose.Schema({
   tenantId: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Tenant",
-  required: function () {
-    // Only POLICE must ALWAYS have tenant
-    if (this.role === "POLICE") return true;
-
-    // ADMIN must have tenant ONLY after approval
-    if (this.role === "ADMIN" && this.status === 'APPROVED') return true;
-
-    return false;
-  },
+  required: false,
   index: true
 },
 

@@ -3,6 +3,7 @@ import apiError from "../../utils/apiError.js";
 import apiResponse from "../../utils/apiResponse.js";
 import NotificationService from "../../services/notification.service.js";
 import User from "../../models/user.model.js";
+import Invite from "../../models/invite.model.js";
 
 class UserController {
     
@@ -37,7 +38,9 @@ class UserController {
 
     user.status = newStatus;
 
-        // Audit fields
+    let deletedUser = null;
+    let userToReturn = user;
+
     if (newStatus === "APPROVED") {
         user.approvedBy = req.user._id;
         user.approvedAt = new Date();
@@ -51,8 +54,29 @@ class UserController {
     if (newStatus === "REJECTED") {
         user.rejectedBy = req.user._id;
         user.rejectedAt = new Date();
+
+        if (previousStatus === "PENDING") {
+            const invite = await Invite.findOne({
+                email: user.email,
+                role: user.role,
+                isUsed: false,
+                expiresAt: { $gt: new Date() }
+            });
+
+            if (invite) {
+                invite.isUsed = true;
+                invite.usedAt = new Date();
+                await invite.save();
+            }
+
+            deletedUser = await User.findByIdAndDelete(userId);
+            userToReturn = user;
+        }
     }
-    await user.save();
+
+    if (!deletedUser) {
+        await user.save();
+    }
 
     if(user.role === "POLICE" && newStatus === "APPROVED") {
         await NotificationService.send({
