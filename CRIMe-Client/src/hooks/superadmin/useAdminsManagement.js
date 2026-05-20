@@ -17,6 +17,11 @@ export const useAdminsManagement = (
     queryFn: () => superAdminService.getAllAdmins({ page, status }),
   })
 
+  const { data: tenantsData } = useQuery({
+    queryKey: ['superadmin-tenants'],
+    queryFn: () => superAdminService.getTenants(1),
+  })
+
   const { data: adminDetails, isLoading: isDetailsLoading } = useQuery({
     queryKey: ['admin-details', selectedAdminId],
     queryFn: () => superAdminService.getAdminDetails(selectedAdminId),
@@ -46,6 +51,28 @@ export const useAdminsManagement = (
     },
   })
 
+  const assignMutation = useMutation({
+    mutationFn: ({adminId, tenantId}) => superAdminService.assignAdminToTenant(adminId, tenantId),
+    onSuccess: ()=> {
+      queryClient.invalidateQueries(['superadmin-admins'])
+      toast.success('Admin assigned to tenant successfully')
+    },
+    onError: (err) => {
+      toast.error(formatError(err))
+    }
+  })
+
+    const transferMutation = useMutation({
+    mutationFn: ({adminId, tenantId}) => superAdminService.transferAdmin(adminId, tenantId),
+    onSuccess: ()=> {
+      queryClient.invalidateQueries(['superadmin-admins'])
+      toast.success('Admin transferred to new tenant successfully')
+    },
+    onError: (err) => {
+      toast.error(formatError(err))
+    }
+  })
+
   const inviteMutation = useMutation({
     mutationFn: (inviteData) => authService.createInviteLink(inviteData),
     onSuccess: () => {
@@ -58,9 +85,11 @@ export const useAdminsManagement = (
   })
 
   const admins = data?.admins ?? []
+  const tenants = tenantsData?.tenants?.filter((tenant) => tenant.isActive) ?? []
 
   return {
     admins,
+    tenants,
     pagination: data?.pagination,
     isLoading,
     error,
@@ -69,6 +98,8 @@ export const useAdminsManagement = (
     statusMutation,
     deleteMutation,
     inviteMutation,
+    assignMutation,
+    transferMutation
   }
 }
 

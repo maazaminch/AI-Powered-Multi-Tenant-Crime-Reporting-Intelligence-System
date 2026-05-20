@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useAdminsManagement } from '../../hooks/superadmin/useAdminsManagement'
 import InviteAdminForm from '../../components/features/tenant/InviteAdminForm'
+import AssignOrTransferAdminForm from '../../components/features/tenant/assignOrTransferAdminForm'
 import { formatError } from '../../lib/utils'
 
 const AdminsPage = () => {
@@ -14,8 +15,14 @@ const AdminsPage = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'ADMIN' })
 
+  const [selectedTenantAdmin, setSelectedTenantAdmin] = useState(null)
+  const [isTenantModalOpen, setIsTenantModalOpen] = useState(false)
+  const [tenantForm, setTenantForm] = useState({ tenantId: '' })
+
+
     const {
       admins,
+      tenants,
       pagination,
       isLoading,
       error,
@@ -23,6 +30,8 @@ const AdminsPage = () => {
       isDetailsLoading,
       statusMutation,
       deleteMutation,
+      assignMutation,
+      transferMutation,
       inviteMutation,
     } = useAdminsManagement(selectedAdminId, page, activeTab)
 
@@ -34,6 +43,7 @@ const AdminsPage = () => {
     deleteMutation.mutate(userId)
   }
 
+  //Invite Admin Handlers
   const handleInviteInputChange = (e) => {
     setInviteForm((prev) => ({
       ...prev,
@@ -49,6 +59,48 @@ const AdminsPage = () => {
         setInviteForm({ email: '', role: 'ADMIN' })
       },
     })
+  }
+
+  //Transfer or assign admin handlers
+  const handleAssignOrTransferSubmit = (e) => {
+    e.preventDefault()
+
+    if (selectedTenantAdmin.tenantId) {
+      // Transfer
+      transferMutation.mutate({ adminId: selectedTenantAdmin._id, tenantId: tenantForm.tenantId }, {
+        onSuccess: () => {
+          setIsTenantModalOpen(false)
+          setSelectedTenantAdmin(null)
+        },
+      })
+    } else {
+      // Assign
+      assignMutation.mutate({ adminId: selectedTenantAdmin._id, tenantId: tenantForm.tenantId }, {
+        onSuccess: () => {
+          setIsTenantModalOpen(false)
+          setSelectedTenantAdmin(null)
+        },
+      })
+    }
+  }
+
+  const handleCancelTenantModal = () => {
+    setIsTenantModalOpen(false)
+    setTenantForm({ tenantId: '' })
+    setSelectedTenantAdmin(null)
+  }
+
+  const handleOpenTenantModal = (admin) => {
+    setSelectedTenantAdmin(admin)
+
+    setTenantForm({ tenantId: admin.tenantId?._id || '' })
+    setIsTenantModalOpen(true)
+  }
+  const handleTenantInputChange = (e) => {
+    setTenantForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
   }
 
   return (
@@ -126,7 +178,10 @@ const AdminsPage = () => {
                             Tenant: {admin.tenantId?.name ?? 'Unassigned'}
                           </p>
                         </div>
-                        <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-0 sm:ml-4">
+                        <div className="mt-4 flex flex-wrap items-center gap-5 sm:mt-0 sm:ml-4">
+                          <Button size="sm" onClick={() => handleOpenTenantModal(admin)}>
+                            {admin.tenantId ? 'Transfer Tenant' : 'Assign Tenant'}
+                          </Button>
                           <Button size="sm" onClick={() => setSelectedAdminId(admin._id)}>
                             View Details
                           </Button>
@@ -248,6 +303,7 @@ const AdminsPage = () => {
             </div>
           )}
         </CardContent>
+
         {isInviteModalOpen && (
           <InviteAdminForm
             formData={inviteForm}
@@ -255,6 +311,17 @@ const AdminsPage = () => {
             onSubmit={handleInviteSubmit}
             onCancel={() => setIsInviteModalOpen(false)}
             isSubmitting={inviteMutation.isPending}
+          />
+        )}
+        {isTenantModalOpen && (
+          <AssignOrTransferAdminForm
+            adminName={selectedTenantAdmin?.fullName}
+            tenants={tenants}
+            formData={tenantForm}
+            onChange={handleTenantInputChange}
+            onSubmit={handleAssignOrTransferSubmit}
+            onCancel={handleCancelTenantModal}
+            isSubmitting={assignMutation.isPending || transferMutation.isPending}
           />
         )}
       </Card>

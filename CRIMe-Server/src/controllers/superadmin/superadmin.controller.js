@@ -3,9 +3,7 @@ import apiError from "../../utils/apiError.js";
 import apiResponse from "../../utils/apiResponse.js";
 import User from "../../models/user.model.js";
 import Tenant from "../../models/tenant.model.js";
-import TenantTransferService from "../../services/tenantTransfer.service.js";
 import NotificationService from "../../services/notification.service.js";
-import { get } from "mongoose";
 
 class SuperAdminController {
 
@@ -65,7 +63,8 @@ class SuperAdminController {
         const skip = (page - 1) * limit;
 
         const filter = {
-            role: "ADMIN"
+            role: "ADMIN",
+            isSuperAdmin: false
         };
         if (status) {
             filter.status = status;
@@ -106,26 +105,94 @@ class SuperAdminController {
         const { tenantId } = req.body;
         const currentUser = req.user;
 
-        const result = await TenantTransferService.assignAdminToTenant(adminId, tenantId, currentUser);
+        if(!currentUser.isSuperAdmin) {
+            throw new apiError(403, "Only SuperAdmin can assign admin to tenant");
+        }
 
+        const admin = await User.findById(adminId);
+        if (!admin) throw new apiError(404, "Admin not found");
+
+        if (admin.role !== "ADMIN") {
+            throw new apiError(400, "Only ADMIN role allowed");
+        }
+        
+        if (admin.tenantId) {
+            throw new apiError(400, "Admin already has tenant. Use transfer");
+        }
+
+        const tenant = await Tenant.findById(tenantId);
+        if (!tenant) throw new apiError(404, "Tenant not found");
+
+        if (!tenant.isActive) {
+            throw new apiError(400, "Tenant not active");
+        }
+
+        admin.tenantId = tenantId;
+        await admin.save();
+
+        await NotificationService.send({
+            tenantId,
+            userId: adminId,
+            type: "ADMIN_ASSIGNED",
+            title: "Tenant Assignment",
+            message: `You have been assigned to ${tenant.name} tenant`,
+            channels: ["inapp"]
+        });
 
         res.status(200).json(
-            new apiResponse(200, result, "Admin assigned to tenant successfully")
+            new apiResponse(200, 
+                { adminId: admin._id, tenantId },
+                "Admin assigned to tenant successfully")
         );
     });
 
     static transferAdminController = wrapAsync(async (req, res) => {
         
         const adminId = req.params.adminId;
-        const { toTenantId } = req.body;
+        const { newTenantId } = req.body;
         const currentUser = req.user;
 
-        const result = await TenantTransferService.transferAdminToTenant(adminId, toTenantId, currentUser);
+        if(!currentUser.isSuperAdmin) {
+            throw new apiError(403, "Only SuperAdmin can transfer admin to tenant");
+        }
+
+        const admin = await User.findById(adminId);
+        if (!admin) throw new apiError(404, "Admin not found");
+        
+        if (admin.role !== "ADMIN") {
+            throw new apiError(400, "Only ADMIN role allowed");
+        }
+
+        if(admin.tenantId.toString() === newTenantId) {
+            throw new apiError(400, "Admin already in this tenant");
+        }
+
+        const newTenant = await Tenant.findById(newTenantId);
+        if (!newTenant) throw new apiError(404, "New tenant not found");
+
+        if (!newTenant.isActive) {
+            throw new apiError(400, "New tenant not active");
+        }
+
+        admin.tenantId = newTenantId;
+        await admin.save();
+
+        await NotificationService.send({
+            tenantId: newTenantId,
+            userId: adminId,
+            type: "ADMIN_TRANSFERRED",
+            title: "Tenant Transfer",
+            message: `You have been transferred to ${newTenant.name} tenant`,
+            channels: ["inapp"]
+        });
 
         res.status(200).json(
-            new apiResponse(200, result, "Admin transferred successfully")
+            new apiResponse(200, 
+                { adminId: admin._id, newTenantId },
+                "Admin transferred to new tenant successfully")
         );
     });
+
 
     static getAdminPerformanceController = wrapAsync(async (req, res) => {
         const currentUser = req.user;

@@ -38,19 +38,19 @@ export const superAdminService = {
     return response.data
   },
 
-  assignAdminToTenant: async (adminId, tenantId) => {
-    const response = await api.post(`/api/superadmin/assign-admin/${adminId}`, { tenantId })
-    return response
-  },
-
   getPendingAdmins: async () => {
     const response = await api.get('/api/superadmin/pending-admins')
     return response.data
   },
 
+  assignAdminToTenant: async (adminId, tenantId) => {
+    const response = await api.post(`/api/superadmin/assign-admin/${adminId}`, { tenantId })
+    return response.data
+  },
+
   transferAdmin: async (adminId, newTenantId) => {
-    const response = await api.post(`/api/superadmin/transfer-admin/${adminId}`, { tenantId: newTenantId })
-    return response
+    const response = await api.post(`/api/superadmin/transfer-admin/${adminId}`, { newTenantId })
+    return response.data
   },
 
   // Analytics and Stats
