@@ -108,7 +108,11 @@ export const router = createBrowserRouter([
       {
         path: 'settings',
         element: <SettingsPage />
-      }
+      },
+      // {
+      //   path: 'logout',
+      //   element: <LoginPage />
+      // }
     ]
   },
   {

@@ -54,6 +54,11 @@ export const superAdminService = {
   },
 
   // Analytics and Stats
+  dashboardStats: async () => {
+    const response = await api.get('/api/superadmin/dashboard-stats')
+    return response.data
+  },
+
   getAdminPerformance: async () => {
     const response = await api.get('/api/superadmin/admin-performance')
     return response

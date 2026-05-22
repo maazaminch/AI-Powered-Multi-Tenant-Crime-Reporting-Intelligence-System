@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -20,8 +21,12 @@ const TenantsPage = () => {
     setSelectedTenantId,
   } = useTenantManagement()
 
+  //its only for dashboard page because without using location i cannot go to the tenant form directly
+  const location = useLocation()
+
   const [formData, setFormData] = useState({ name: '', region: '', type: '' })
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(
+    location.state?.openCreateModal || false)
   const [tenantToDelete, setTenantToDelete] = useState(null)
 
   const tenantList = tenants?.tenants ?? []
@@ -68,7 +73,16 @@ const TenantsPage = () => {
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">All Tenants</h3>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+
+            <Button
+              onClick={() =>
+                navigate("/superadmin/tenants", {
+                  state: {
+                    openCreateModal: true,
+                  },
+                })
+              }
+            >
               Create New Tenant
             </Button>
           </div>

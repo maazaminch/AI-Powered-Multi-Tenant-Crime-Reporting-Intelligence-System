@@ -98,6 +98,15 @@ superAdminRouter.post(
 );
 
 superAdminRouter.get(
+    "/dashboard-stats",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    superAdminController.dashboardStatsController
+);
+
+
+superAdminRouter.get(
     "/admin-performance",
     verifyJWT,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),

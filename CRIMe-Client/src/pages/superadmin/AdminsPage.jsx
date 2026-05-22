@@ -179,7 +179,10 @@ const AdminsPage = () => {
                           </p>
                         </div>
                         <div className="mt-4 flex flex-wrap items-center gap-5 sm:mt-0 sm:ml-4">
-                          <Button size="sm" onClick={() => handleOpenTenantModal(admin)}>
+                          <Button 
+                            size="lg"
+                            variant='outline' 
+                            onClick={() => handleOpenTenantModal(admin)}>
                             {admin.tenantId ? 'Transfer Tenant' : 'Assign Tenant'}
                           </Button>
                           <Button size="sm" onClick={() => setSelectedAdminId(admin._id)}>

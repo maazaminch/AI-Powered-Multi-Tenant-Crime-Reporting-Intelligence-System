@@ -3,6 +3,7 @@ import apiError from "../../utils/apiError.js";
 import apiResponse from "../../utils/apiResponse.js";
 import User from "../../models/user.model.js";
 import Tenant from "../../models/tenant.model.js";
+import Case from "../../models/case.model.js";
 import NotificationService from "../../services/notification.service.js";
 
 class SuperAdminController {
@@ -269,6 +270,36 @@ class SuperAdminController {
 
         res.status(200).json(
             new apiResponse(200, performance, "Admin performance fetched successfully")
+        );
+    });
+
+    static dashboardStatsController = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        if (!currentUser.isSuperAdmin) {
+            throw new apiError(403, "Only SuperAdmin can access dashboard statistics");
+        }
+
+        const [
+            totalTenants,
+            approvedAdmins,
+            pendingAdmins,
+            totalCases ] = await Promise.all([
+                Tenant.countDocuments({}),
+                User.countDocuments({ role: "ADMIN", status: "APPROVED" , isSuperAdmin: false }),
+                User.countDocuments({ role: "ADMIN", status: "PENDING" }),
+                Case.countDocuments({})
+            ]);
+
+        res.status(200).json(
+            new apiResponse(200, 
+                {
+                totalTenants,
+                approvedAdmins,
+                pendingAdmins,
+                totalCases
+                },
+                 "Dashboard statistics fetched successfully")
         );
     });
 

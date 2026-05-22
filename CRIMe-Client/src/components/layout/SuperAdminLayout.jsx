@@ -1,10 +1,37 @@
 import React, { useState } from 'react'
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 
+import useAuthStore from '../../store/authStore'
+
+import { Button } from "../ui/Button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "../ui/Dropdown-menu"
+
 const SuperAdminLayout = () => {
+
+  const { logout } = useAuthStore()
+  const navigate = useNavigate()
+
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
 
   const navItems = [
     { path: '/superadmin/dashboard', label: 'Dashboard' },
@@ -13,7 +40,8 @@ const SuperAdminLayout = () => {
     { path: '/superadmin/pending-requests', label: 'Pending Requests' },
     { path: '/superadmin/analytics', label: 'Analytics' },
     { path: '/superadmin/audit-logs', label: 'Audit Logs' },
-    { path: '/superadmin/settings', label: 'Settings' }
+    { path: '/superadmin/settings', label: 'Settings' },
+    { path: '/superadmin/logout', label: 'Logout' }
   ]
 
   const isActive = (path) => location.pathname === path
@@ -72,12 +100,53 @@ const SuperAdminLayout = () => {
             <h1 className="text-2xl font-bold text-white">Super Admin Panel</h1>
             
             <nav className="flex space-x-6">
-              <Link 
-                to="/auth/logout" 
-                className="text-white hover:text-gray-300 font-medium transition-colors"
-              >
-                Logout
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">My Account</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40" align="start">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuItem>
+                      Profile
+                      <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      Billing
+                      <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      Settings
+                      <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem>Admins</DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>Invite Admins</DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                          <DropdownMenuItem>Email</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem>Change Password</DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onSelect={handleLogout}>
+                      Log out
+                      <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
             </nav>
           </div>
         </div>

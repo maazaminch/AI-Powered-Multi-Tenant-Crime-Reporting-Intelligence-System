@@ -204,7 +204,7 @@ const HomePage = () => {
             <CardHeader>
               <CardTitle>Get started</CardTitle>
               <CardDescription>
-                Choose how you want to interact with CRIMe
+                Choose how you want to interact with CRS
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
