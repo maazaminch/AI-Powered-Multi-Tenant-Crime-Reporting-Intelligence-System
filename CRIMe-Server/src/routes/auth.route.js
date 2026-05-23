@@ -33,7 +33,7 @@ authRouter.put(
     '/update-user-details',
     verifyJWT,
     tenantGuard,
-    roleGuard(Roles.CITIZEN, Roles.POLICE, Roles.ADMIN),
+    roleGuard({ roles: [Roles.CITIZEN, Roles.POLICE, Roles.ADMIN] }),
     authController.updateUserDetailsController
 )
 

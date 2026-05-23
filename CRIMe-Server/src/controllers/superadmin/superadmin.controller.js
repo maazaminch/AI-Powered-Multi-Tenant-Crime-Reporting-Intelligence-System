@@ -92,7 +92,7 @@ class SuperAdminController {
                         totalPages,
                         totalAdmins,
                         limit,
-                        hasNextPage: page < Math.ceil(totalAdmins / limit),
+                        hasNextPage: page < totalPages,
                         hasPrevPage: page > 1,
                     }
                 },

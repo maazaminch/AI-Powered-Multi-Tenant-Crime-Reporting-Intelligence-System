@@ -1,11 +1,7 @@
 import api from './api.js'
 
 export const usersService = {
-  // Create invite link
-  createInviteLink: async (inviteData) => {
-    const response = await api.post('/api/auth/create-invite-link', inviteData)
-    return response
-  },
+ 
 
   // Update user status (APPROVED, BLOCKED, REJECTED)
   updateUserStatus: async (userId, newStatus) => {
