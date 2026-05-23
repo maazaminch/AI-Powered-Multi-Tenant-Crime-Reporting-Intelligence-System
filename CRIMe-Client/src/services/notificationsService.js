@@ -2,22 +2,29 @@ import api from './api.js'
 
 export const notificationsService = {
   // Get user notifications
-  getUserNotifications: async () => {
-    const response = await api.get('/api/notifications')
-    return response
+  getUserNotifications: async (page) => {
+    const response = await api.get(`/api/notifications/fetch-notifications?page=${page}`)
+    return response.data
+  },
+
+  getUserNotificationsForHeader: async () => {
+    const response = await api.get('/api/notifications/fetch-header-notifications')
+    return response.data
   },
 
   // Mark notification as read
   markAsRead: async (notificationId) => {
-    const response = await api.patch(`/api/notifications/${notificationId}/read`)
-    return response
+    const response = await api.patch(`/api/notifications/mark-as-read/${notificationId}`)
+    return response.data
   },
 
-  // Mark all as read
-  markAllAsRead: async () => {
-    const response = await api.patch('/api/notifications/read-all')
-    return response
+  // Get unread notification count
+  getUnreadCount: async () => {
+    const response = await api.get('/api/notifications/unread-count')
+    return response.data
   }
+
+  
 }
 
 export default notificationsService

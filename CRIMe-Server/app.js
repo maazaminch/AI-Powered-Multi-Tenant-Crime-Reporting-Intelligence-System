@@ -13,6 +13,7 @@ import userRoutes from "./src/routes/user.route.js";
 import caseRoutes from "./src/routes/case.route.js";
 import adminRoutes from "./src/routes/admin.route.js";
 import uploadRoutes from "./src/routes/upload.route.js";
+import notificationRoutes from "./src/routes/notification.route.js";
 
 
 
@@ -48,6 +49,7 @@ app.use("/api/superAdmin", superAdminRoutes);
 app.use("/api/cases", caseRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 //GLOBAL ERROR HANDLER (must be **after** all routes)
 app.use(errorHandler);

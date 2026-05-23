@@ -56,18 +56,6 @@ class NotificationService {
     return notification;
   }
 
-  static async markAsRead(notificationId) {
-    return Notification.findByIdAndUpdate(
-      notificationId,
-      { isRead: true, readAt: new Date() },
-      { new: true }
-    );
-  }
-
-  static async fetchUserNotifications(userId) {
-    return Notification.find({ userId }).sort({ createdAt: -1 });
-  }
-
 }
 
 export default NotificationService;

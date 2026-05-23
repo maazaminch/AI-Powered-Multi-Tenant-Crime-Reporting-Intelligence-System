@@ -40,8 +40,7 @@ const SuperAdminLayout = () => {
     { path: '/superadmin/pending-requests', label: 'Pending Requests' },
     { path: '/superadmin/analytics', label: 'Analytics' },
     { path: '/superadmin/audit-logs', label: 'Audit Logs' },
-    { path: '/superadmin/settings', label: 'Settings' },
-    { path: '/superadmin/logout', label: 'Logout' }
+    { path: '/superadmin/notifications', label: 'Notifications' }
   ]
 
   const isActive = (path) => location.pathname === path

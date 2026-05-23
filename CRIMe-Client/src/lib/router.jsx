@@ -13,7 +13,7 @@ import AdminsPage from '../pages/superadmin/AdminsPage'
 import PendingRequestsPage from '../pages/superadmin/PendingRequestsPage'
 import AnalyticsPage from '../pages/superadmin/AnalyticsPage'
 import AuditLogsPage from '../pages/superadmin/AuditLogsPage'
-import SettingsPage from '../pages/superadmin/SettingsPage'
+import NotificationsPage from '../pages/superadmin/NotificationsPage'
 
 // Placeholder pages for now
 const CitizenDashboard = () => (
@@ -106,13 +106,9 @@ export const router = createBrowserRouter([
         element: <AuditLogsPage />
       },
       {
-        path: 'settings',
-        element: <SettingsPage />
-      },
-      // {
-      //   path: 'logout',
-      //   element: <LoginPage />
-      // }
+        path: 'notifications',
+        element: <NotificationsPage />
+      }
     ]
   },
   {

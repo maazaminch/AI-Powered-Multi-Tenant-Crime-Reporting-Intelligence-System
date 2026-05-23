@@ -14,7 +14,7 @@ export const superAdminService = {
     return api.put(`/api/superadmin/activate-or-deactivate-tenant/${tenantId}`)
   },
 
-  getTenants: async (page = 1) => {
+  getTenants: async (page) => {
     const response = await api.get(
       `/api/superadmin/get-tenants?page=${page}&limit=10`
     )
