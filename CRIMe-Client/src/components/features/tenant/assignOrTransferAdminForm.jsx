@@ -13,8 +13,8 @@ const AssignOrTransferAdminForm = ({
   isTransfer, 
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold">
           {isTransfer ? 'Transfer' : 'Assign'}
         </h3>

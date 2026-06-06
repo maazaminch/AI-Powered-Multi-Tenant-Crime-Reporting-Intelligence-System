@@ -94,6 +94,7 @@ const LoginForm = () => {
             )}
 
             <Button 
+              variant="success"
               type="submit" 
               className="w-full py-2" 
               disabled={isLoading}

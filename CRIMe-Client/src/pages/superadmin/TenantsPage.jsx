@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useTenantManagement } from '../../hooks/superadmin/useTenantManagement'
 import TenantForm from '../../components/features/tenant/TenantForm'
 import { formatError } from '../../lib/utils'
+import { set } from 'react-hook-form';
 
 const TenantsPage = () => {
   const {
@@ -23,6 +24,7 @@ const TenantsPage = () => {
 
   //its only for dashboard page because without using location i cannot go to the tenant form directly
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [formData, setFormData] = useState({ name: '', region: '', type: '' })
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(
@@ -75,14 +77,8 @@ const TenantsPage = () => {
             <h3 className="text-lg font-semibold">All Tenants</h3>
 
             <Button
-              onClick={() =>
-                navigate("/superadmin/tenants", {
-                  state: {
-                    openCreateModal: true,
-                  },
-                })
-              }
-            >
+              variant="success"
+              onClick={() => setIsCreateModalOpen(true)}>
               Create New Tenant
             </Button>
           </div>
@@ -268,7 +264,7 @@ const TenantsPage = () => {
                       View Details
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
                       disabled={
                         toggleTenant.isPending &&

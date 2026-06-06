@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from "react-router-dom"
-import { useDashboardStats } from '../../hooks/superadmin/useDashboard'
+import { useDashboardStats } from '../../hooks/admin/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 
@@ -31,7 +31,7 @@ function StatCard({
   )
 }
 
-const SuperAdminDashboard = () => {
+const AdminDashboard = () => {
 
   const { stats, isLoading, error } = useDashboardStats()
   const navigate = useNavigate()
@@ -44,7 +44,7 @@ const SuperAdminDashboard = () => {
         <CardTitle>System Overview</CardTitle>
 
         <CardDescription>
-          Overview of all tenants and system performance
+          Overview of all Police Stations and system performance
         </CardDescription>
       </CardHeader>
 
@@ -52,27 +52,27 @@ const SuperAdminDashboard = () => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           
           <StatCard
-            title="Total Tenants"
-            value={stats?.totalTenants ?? '...'}
+            title="Total Police Stations"
+            value={stats?.totalStations ?? '...'}
             color="text-blue-600"
             bg="bg-blue-50"
-            path="/superadmin/tenants"
+            path="/admin/police-stations"
           />
 
           <StatCard
-            title="Active Admins"
-            value={stats?.approvedAdmins ?? '...'}
+            title="Active Police"
+            value={stats?.approvedPolice ?? '...'}
             color="text-green-600"
             bg="bg-green-50"
-            path="/superadmin/admins"
+            path="/admin/police"
           />
 
           <StatCard
             title="Pending Requests"
-            value={stats?.pendingAdmins ?? '...'}
+            value={stats?.pendingPolice ?? '...'}
             color="text-yellow-600"
             bg="bg-yellow-50"
-            path="/superadmin/pending-requests"
+            path="/admin/pending-requests"
           />
 
           <StatCard
@@ -80,7 +80,7 @@ const SuperAdminDashboard = () => {
             value={stats?.totalCases ?? '...'}
             color="text-purple-600"
             bg="bg-purple-50"
-            path="/super-admin/cases"
+            path="/admin/cases"
           />
 
         </div>
@@ -101,17 +101,17 @@ const SuperAdminDashboard = () => {
               variant="success"
               className="w-full"
               onClick={() =>
-                navigate("/superadmin/tenants", {
+                navigate("/admin/police-stations", {
                   state: { openCreateModal: true },
                 })
               }
             >
-              Create New Tenant
+              Create New Police Station
             </Button>
             <Button variant="outline" className="w-full"
-              onClick={() => navigate('/superadmin/pending-requests')}
+              onClick={() => navigate('/admin/pending-requests')}
             >
-              View Pending Admins
+              View Pending Police
             </Button>
             <Button variant="outline" className="w-full">
               System Analytics
@@ -140,4 +140,4 @@ const SuperAdminDashboard = () => {
   )
 }
 
-export default SuperAdminDashboard
+export default AdminDashboard

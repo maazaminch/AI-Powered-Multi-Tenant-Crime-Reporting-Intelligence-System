@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button } from '../../../components/ui/Button'
+import { Button } from '../../ui/Button'
 import { Input } from '../../../components/ui/Input'
 
 const InviteAdminForm = ({ tenantName, formData, onChange, onSubmit, onCancel, isSubmitting }) => {
@@ -9,8 +9,8 @@ const InviteAdminForm = ({ tenantName, formData, onChange, onSubmit, onCancel, i
     : 'Send an invite link to a new admin.'
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
+      <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold">{title}</h3>
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">

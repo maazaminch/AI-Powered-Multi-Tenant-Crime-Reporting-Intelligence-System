@@ -106,6 +106,14 @@ superAdminRouter.get(
 );
 
 
+// System Analytics Routes
+superAdminRouter.get(
+    "/system-analytics",
+    verifyJWT,
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    superAdminController.getSystemAnalyticsController
+);
+
 superAdminRouter.get(
     "/admin-performance",
     verifyJWT,
@@ -113,13 +121,6 @@ superAdminRouter.get(
     superAdminController.getAdminPerformanceController
 );
 
-// System Analytics Routes
-superAdminRouter.get(
-    "/system-stats",
-    verifyJWT,
-    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
-    superAdminController.getSystemWideCrimeStatsController
-);
 
 superAdminRouter.get(
     "/tenant-analytics",

@@ -115,6 +115,9 @@ CaseSchema.index({ tenantId: 1, status: 1 });
 CaseSchema.index({ tenantId: 1, crimeType: 1 });
 CaseSchema.index({ tenantId: 1, severity: 1 });
 
+// System Analytics indexes
+CaseSchema.index({ createdAt: 1 });
+
 
 
 const nanoid = customAlphabet(

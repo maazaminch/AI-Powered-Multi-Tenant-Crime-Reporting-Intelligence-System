@@ -41,126 +41,7 @@ class AdminController {
         );
     });
 
-    //handeled in user management
-    // static approvePolice = wrapAsync(async (req, res) => {
-    //     const { userId } = req.params;
-    //     const { stationId } = req.body;
-    //     const currentUser = req.user;
 
-    //     const police = await User.findById(userId);
-    //     if (!police) {
-    //         throw new apiError(404, "Police officer not found");
-    //     }
-
-    //     if (police.role !== "POLICE") {
-    //         throw new apiError(400, "User is not a police officer");
-    //     }
-
-    //     // Role hierarchy enforcement
-    //     if (currentUser.role !== "ADMIN" && !currentUser.isSuperAdmin) {
-    //         throw new apiError(403, "Only admin can approve police");
-    //     }
-
-    //     // Tenant isolation
-    //     if (!currentUser.isSuperAdmin && police.tenantId?.toString() !== currentUser.tenantId.toString()) {
-    //         throw new apiError(403, "Access denied");
-    //     }
-
-    //     if (police.status === "APPROVED") {
-    //         throw new apiError(400, "Police officer already approved");
-    //     }
-
-    //     // Validate station exists
-    //     const station = await PoliceStation.findById(stationId);
-    //     if (!station) {
-    //         throw new apiError(404, "Police station not found");
-    //     }
-
-    //     // Tenant isolation for station
-    //     if (!currentUser.isSuperAdmin && station.tenantId.toString() !== currentUser.tenantId.toString()) {
-    //         throw new apiError(403, "Access denied");
-    //     }
-
-    //     // Update police status and assign to station
-    //     const updatedPolice = await User.findByIdAndUpdate(
-    //         userId,
-    //         {
-    //             status: "APPROVED",
-    //             policeStationId: stationId
-    //         },
-    //         { new: true }
-    //     ).select("-password");
-
-    //     // Send notification
-    //     await NotificationService.send({
-    //         tenantId: station.tenantId,
-    //         userId: userId,
-    //         type: "POLICE_APPROVAL",
-    //         title: "Police Account Approved",
-    //         message: `Your police account has been approved and assigned to ${station.stationName}`,
-    //         channels: ["inapp", "email"]
-    //     });
-
-    //     res.status(200).json(
-    //         new apiResponse(200, updatedPolice, "Police officer approved successfully")
-    //     );
-    // });
-
-    // static rejectPolice = wrapAsync(async (req, res) => {
-    //     const { userId } = req.params;
-    //     const { reason } = req.body;
-    //     const currentUser = req.user;
-
-    //     const police = await User.findById(userId);
-    //     if (!police) {
-    //         throw new apiError(404, "Police officer not found");
-    //     }
-
-    //     if (police.role !== "POLICE") {
-    //         throw new apiError(400, "User is not a police officer");
-    //     }
-
-    //     // Role hierarchy enforcement
-    //     if (currentUser.role !== "ADMIN" && !currentUser.isSuperAdmin) {
-    //         throw new apiError(403, "Only admin can reject police");
-    //     }
-
-    //     // Tenant isolation
-    //     if (!currentUser.isSuperAdmin && police.tenantId?.toString() !== currentUser.tenantId.toString()) {
-    //         throw new apiError(403, "Access denied");
-    //     }
-
-    //     if (police.status === "BLOCKED") {
-    //         throw new apiError(400, "Police officer already blocked");
-    //     }
-
-    //     // Update police status
-    //     const updatedPolice = await User.findByIdAndUpdate(
-    //         userId,
-    //         { status: "BLOCKED" },
-    //         { new: true }
-    //     ).select("-password");
-
-    //     // Send notification
-    //     await NotificationService.send({
-    //         tenantId: police.tenantId,
-    //         userId: userId,
-    //         type: "POLICE_REJECTED",
-    //         title: "Police Account Rejected",
-    //         message: `Your police account has been rejected. Reason: ${reason || "Not specified"}`,
-    //         channels: ["inapp"]
-    //     });
-
-    //     res.status(200).json(
-    //         new apiResponse(200, updatedPolice, "Police officer rejected successfully")
-    //     );
-    // });
-
-
-
-    // Station Head Management
-    
-    
     static assignStationHead = wrapAsync(async (req, res) => {
         const { stationId, policeId } = req.body;
         const currentUser = req.user;
@@ -249,6 +130,38 @@ class AdminController {
 
 
     // Analytics Dashboard
+    static dashboardStats = wrapAsync(async (req, res) => {
+            const currentUser = req.user;
+
+                if (currentUser.role !== "ADMIN") {
+                throw new apiError(403, "Only Admin can access dashboard statistics");
+                }
+
+            const filter = { tenantId: currentUser.tenantId };
+    
+            const [
+                totalPoliceStations,
+                approvedPolice,
+                pendingPolice,
+                totalCases ] = await Promise.all([
+                    PoliceStation.countDocuments(filter),
+                    User.countDocuments({ ...filter, role: "POLICE", status: "APPROVED" }),
+                    User.countDocuments({ ...filter, role: "POLICE", status: "PENDING" }),
+                    Case.countDocuments(filter)
+                ]);
+    
+            res.status(200).json(
+                new apiResponse(200, 
+                    {
+                    totalPoliceStations,
+                    approvedPolice,
+                    pendingPolice,
+                    totalCases
+                    },
+                     "Dashboard statistics fetched successfully")
+            );
+    });
+
     static getAdminAnalytics = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 

@@ -19,17 +19,33 @@ const AuditLogSchema = new mongoose.Schema({
     index: true
   },
 
-  actorRole: {
+actor: {
+  type: {
     type: String,
-    enum: ["SUPER_ADMIN",
-    "ADMIN",
-    "STATION_HEAD",
-    "POLICE",
-    "CITIZEN",
-    "GUEST"],
+    enum: ["USER", "GUEST"],
     required: true,
     index: true
   },
+
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    index: true,
+    default: null
+  },
+
+  role: {
+    type: String,
+    enum: ["ADMIN", "POLICE", "CITIZEN", null],
+    default: null,
+    index: true
+  },
+
+  flags: {
+    isSuperadmin: Boolean,
+    isStationHead: Boolean
+  }
+},
 
   // What happened
   action: {
@@ -51,10 +67,16 @@ const AuditLogSchema = new mongoose.Schema({
     index: true
   },
 
+  description: { type: String }, // human readable description of the event
+  targetName: { type: String }, // optional name for easier identification in logs (e.g. username, caseId)
+
   // Immutable forensic metadata
   ipAddress: { type: String }, // shows where the update came from
   userAgent: { type: String }, // shows which device browser perform the action
 
+  statusCode: { type: Number }, // HTTP status code resulting from the action (if applicable)
+  success: { type: Boolean }, // whether the action was successful or not
+  
   // Optional structured payload (old/new values)
   metadata: { type: Object },
   

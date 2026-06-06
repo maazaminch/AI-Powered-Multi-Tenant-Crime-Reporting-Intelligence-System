@@ -1,0 +1,10 @@
+
+// jsconfig.json for shadcn components path alias
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
+}

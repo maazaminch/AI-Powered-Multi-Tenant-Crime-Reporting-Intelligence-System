@@ -59,20 +59,22 @@ export const superAdminService = {
     return response.data
   },
 
-  getAdminPerformance: async () => {
-    const response = await api.get('/api/superadmin/admin-performance')
-    return response
+  getSystemAnalytics: async () => {
+    const response = await api.get('/api/superadmin/system-analytics')
+    return response.data
   },
 
-  getSystemStats: async () => {
-    const response = await api.get('/api/superadmin/system-stats')
-    return response
-  },
+//   getAdminPerformance: async () => {
+//     const response = await api.get('/api/superadmin/admin-performance')
+//     return response.data
+//   },
 
-  getTenantAnalytics: async () => {
-    const response = await api.get('/api/superadmin/tenant-analytics')
-    return response
-  }
+
+
+//   getTenantAnalytics: async () => {
+//     const response = await api.get('/api/superadmin/tenant-analytics')
+//     return response
+//   }
 }
 
 export default superAdminService

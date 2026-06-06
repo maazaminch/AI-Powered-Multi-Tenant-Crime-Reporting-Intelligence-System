@@ -4,6 +4,7 @@ import apiResponse from "../../utils/apiResponse.js";
 import NotificationService from "../../services/notification.service.js";
 import User from "../../models/user.model.js";
 import Invite from "../../models/invite.model.js";
+import mongoose from "mongoose";
 
 class UserController {
     
@@ -249,92 +250,113 @@ class UserController {
         })
     
 
-    static deleteUserController = wrapAsync(async(req, res) => {
+
+
+    static deleteUserController = wrapAsync(async (req, res) => {
         const currentUser = req.user;
         const targetUserId = req.params.id;
         const tenantId = req.user.tenantId;
-    
-        let targetUser;
-        //tenant isolation
-        if(currentUser.isSuperAdmin){
-            targetUser = await User.findById(targetUserId);
-        }else {
-            targetUser = await User.findOne({
-                _id: targetUserId,
-                tenantId
-            })
-        }
-        if(!targetUser) throw new apiError(400, 'User not found')
-    
-            
-        if(targetUser._id.equals(currentUser._id)){
-            throw new apiError(400, 'Cannot delete yourself')
-        }
-        
-        //Authorize Roles
-    
-        if(currentUser.role === 'CITIZEN' || currentUser.role === 'POLICE'){
-            throw new apiError(403, 'Not allowed to delete user')
-        }
-    
-        if(currentUser.role === 'ADMIN' && !currentUser.isSuperAdmin){
-            if(targetUser.isSuperAdmin || targetUser.role === 'ADMIN'){
-                throw new apiError(403, 'Not allowed to delete super admin or admin')
-            }
-        }
-        if(currentUser.isSuperAdmin){
-            if(targetUser.isSuperAdmin){
-                throw new apiError(403, 'Not allowed to delete super admin')
-            }
-        }
-    
-    
-        const deletedUser = await targetUser.deleteOne();
-        if(!deletedUser) throw new apiError(400, 'User not deleted')
-    
-        deletedUser.deletedAt = new Date();
-            
-        
 
-        if(currentUser.isSuperAdmin || currentUser.role === 'ADMIN'){
+        const session = await mongoose.startSession();
+
+        try {
+            let targetUser;
+
+            await session.withTransaction(async () => {
+            if (currentUser.isSuperAdmin) {
+                targetUser = await User.findById(targetUserId).session(session);
+            } else {
+                targetUser = await User.findOne({
+                _id: targetUserId,
+                tenantId,
+                }).session(session);
+            }
+
+            if (!targetUser) {
+                throw new apiError(400, "User not found");
+            }
+
+        
+            if (targetUser._id.equals(currentUser._id)) {
+                throw new apiError(400, "Cannot delete yourself");
+            }
+
+            if (currentUser.role === "CITIZEN" || currentUser.role === "POLICE") {
+                throw new apiError(403, "Not allowed to delete user");
+            }
+
+            if (currentUser.role === "ADMIN" && !currentUser.isSuperAdmin) {
+                if (targetUser.isSuperAdmin || targetUser.role === "ADMIN") {
+                throw new apiError(
+                    403,
+                    "Not allowed to delete super admin or admin"
+                );
+                }
+            }
+
+            if (currentUser.isSuperAdmin && targetUser.isSuperAdmin) {
+                throw new apiError(403, "Not allowed to delete super admin");
+            }
+
+            
+            await Invite.deleteMany({
+                tenantId: targetUser.tenantId,
+                email: targetUser.email, // adjust if you use userId instead
+            }).session(session);
+
+            
+            await User.deleteOne({ _id: targetUser._id }).session(session);
+
+            });
+
+            if (currentUser.isSuperAdmin || currentUser.role === "ADMIN") {
             const superAdmin = await User.findOne({ isSuperAdmin: true });
-            if(superAdmin){
+
+            if (superAdmin) {
                 await NotificationService.send({
-                    tenantId: targetUser.tenantId,
-                    userId: superAdmin._id,
+                tenantId,
+                userId: superAdmin._id,
+                type: "USER_DELETED",
+                title: "User Deleted",
+                message: `${targetUser.fullName} was deleted by ${currentUser.fullName}`,
+                channels: ["inapp"],
+                });
+            }
+            }
+
+            // 8. Notifications (Admins in same tenant)
+            if (currentUser.role === "ADMIN" && !currentUser.isSuperAdmin) {
+            const admins = await User.find({
+                tenantId,
+                role: "ADMIN",
+                status: "APPROVED",
+            });
+
+            for (const admin of admins) {
+                if (!admin._id.equals(currentUser._id)) {
+                await NotificationService.send({
+                    tenantId,
+                    userId: admin._id,
                     type: "USER_DELETED",
                     title: "User Deleted",
                     message: `${targetUser.fullName} was deleted by ${currentUser.fullName}`,
-                    channels: ["inapp"]
+                    channels: ["inapp"],
                 });
+                }
             }
-        }        
-        
-        if(currentUser.role === 'ADMIN' && !currentUser.isSuperAdmin){
-        const admins = await User.find({
-        tenantId: targetUser.tenantId,
-        role: "ADMIN",
-        status: "APPROVED",
-      });
-    
-      for (const admin of admins) {
-        if (!admin._id.equals(currentUser._id)) {
-          await NotificationService.send({
-            tenantId: targetUser.tenantId,
-            userId: admin._id,
-            type: "USER_DELETED",
-            title: "User Deleted",
-            message: `${targetUser.fullName} was deleted by ${currentUser.fullName}`,
-            channels: ["inapp"]
-          });
+            }
+
+            await session.endSession();
+
+            return res.status(200).json(
+            new apiResponse(200, null, "User deleted successfully")
+            );
+        } catch (error) {
+            await session.abortTransaction();
+            await session.endSession();
+            throw error;
         }
-      }}
-    
-        return res.status(200).json(new apiResponse(200, deletedUser, 'User deleted successfully'))
-    
-        
-        
-        })
+        });
 
 
 }

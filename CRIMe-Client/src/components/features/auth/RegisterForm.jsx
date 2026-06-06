@@ -11,6 +11,7 @@ const RegisterForm = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('token')
+  const isInviteRegistration = Boolean(inviteToken)
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -181,9 +182,14 @@ const RegisterForm = () => {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
+            <label htmlFor="email" className="text-sm font-medium">
+              Email
+            </label>
+            {isInviteRegistration ? (
+              <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 px-3 py-4 text-sm text-gray-600">
+                Your invited email will be used automatically. You do not need to enter it here.
+              </div>
+            ) : (
               <Input
                 id="email"
                 name="email"
@@ -193,7 +199,8 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 required
               />
-            </div>
+            )}
+          </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -333,6 +340,7 @@ const RegisterForm = () => {
           )}
 
           <Button 
+            variant="success"
             type="submit" 
             className="w-full" 
             disabled={isLoading || isUploading}

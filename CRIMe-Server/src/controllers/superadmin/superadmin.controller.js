@@ -303,77 +303,155 @@ class SuperAdminController {
         );
     });
 
-    static getSystemWideCrimeStatsController = wrapAsync(async (req, res) => {
+    static getSystemAnalyticsController = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 
         if (!currentUser.isSuperAdmin) {
-            throw new apiError(403, "Only SuperAdmin can access system-wide statistics");
-        }
-
-        const { startDate, endDate, tenantId, crimeTypes, severity } = req.query;
-
-        const dateFilter = {};
-        if (startDate || endDate) {
-            dateFilter.createdAt = {};
-            if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
-            if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
-        }
-
-        const filter = {
-            ...dateFilter
-        };
-
-        if (tenantId) {
-            filter.tenantId = tenantId;
-        }
-
-        if (crimeTypes) {
-            filter.crimeType = { $in: crimeTypes.split(',') };
-        }
-
-        if (severity) {
-            filter.severity = { $in: severity.split(',') };
+            throw new apiError(403, "Only SuperAdmin can access system analytics");
         }
 
         const [
+            totalTenants,
+            activeTenants,
+            DeActiveTenants,
+
+            totalUsers,
+            totalAdmins,
+            totalPolice,
+            totalCitizens,
+
             totalCases,
             pendingCases,
+            assignedCases,
             underInvestigationCases,
             resolvedCases,
             closedCases,
-            totalTenants,
-            totalAdmins,
-            totalPolice,
-            totalCitizens
+
+            casesPerTenant,
+            topActiveTenants,
+            newUsersThisMonth,
+            newCasesThisMonth
+            
         ] = await Promise.all([
-            Case.countDocuments(filter),
-            Case.countDocuments({ ...filter, status: "PENDING" }),
-            Case.countDocuments({ ...filter, status: "UNDER_INVESTIGATION" }),
-            Case.countDocuments({ ...filter, status: "RESOLVED" }),
-            Case.countDocuments({ ...filter, status: "CLOSED" }),
+            Tenant.countDocuments({}),
             Tenant.countDocuments({ isActive: true }),
-            User.countDocuments({ role: "ADMIN", status: "APPROVED" }),
-            User.countDocuments({ role: "POLICE", status: "APPROVED" }),
-            User.countDocuments({ role: "CITIZEN" })
+            Tenant.countDocuments({ isActive: false }),
+
+            User.countDocuments({isSuperAdmin: false}),
+            User.countDocuments({ role: "ADMIN", isSuperAdmin: false }),
+            User.countDocuments({ role: "POLICE" }),
+            User.countDocuments({ role: "CITIZEN" }),
+
+            Case.countDocuments({}),
+            Case.countDocuments({ status: "PENDING" }),
+            Case.countDocuments({ status: "ASSIGNED" }),
+            Case.countDocuments({ status: "UNDER_INVESTIGATION" }),
+            Case.countDocuments({ status: "RESOLVED" }),
+            Case.countDocuments({ status: "CLOSED" }),
+
+            Case.aggregate([
+                {
+                    $group: {
+                    _id: "$tenantId",
+                    caseCount: { $sum: 1 }
+                    }
+                },
+                {
+                    $lookup: {
+                    from: "tenants",
+                    let: { tenantId: "$_id" },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ["$_id", "$$tenantId"] } } },
+                        { $project: { name: 1 } }
+                    ],
+                    as: "tenant"
+                    }
+                },
+                { $unwind: "$tenant" },
+                {
+                    $project: {
+                    tenantId: "$_id",
+                    tenantName: "$tenant.name",
+                    caseCount: 1
+                    }
+                }
+                ]),
+
+            Tenant.aggregate([
+                {
+                    $lookup: {
+                    from: "cases",
+                    let: { tenantId: "$_id" },
+                    pipeline: [
+                        {
+                        $match: {
+                            $expr: { $eq: ["$tenantId", "$$tenantId"] }
+                        }
+                        },
+                        {
+                        $count: "caseCount"
+                        }
+                    ],
+                    as: "caseData"
+                    }
+                },
+                {
+                    $addFields: {
+                    caseCount: {
+                        $ifNull: [
+                        { $arrayElemAt: ["$caseData.caseCount", 0] },
+                        0
+                        ]
+                    }
+                    }
+                },
+                { $sort: { caseCount: -1 } },
+                { $limit: 5 },
+                {
+                    $project: {
+                    tenantId: "$_id",
+                    tenantName: "$name",
+                    caseCount: 1
+                    }
+                }
+                ]),
+
+            User.countDocuments({ createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 30)) } }),
+            Case.countDocuments({ createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 30)) } })
         ]);
 
-        const systemStats = {
-            totalCases,
-            caseBreakdown: {
+        const systemAnalytics = {
+            tenants: {
+                total: totalTenants,
+                active: activeTenants,
+                deActive: DeActiveTenants
+            },
+            users: {
+                total: totalUsers,
+                admins: totalAdmins,
+                police: totalPolice,
+                citizens: totalCitizens
+            },
+            cases: {
+                total: totalCases,
                 pending: pendingCases,
+                assigned: assignedCases,
                 underInvestigation: underInvestigationCases,
                 resolved: resolvedCases,
                 closed: closedCases
             },
-            totalTenants,
-            totalAdmins,
-            totalPolice,
-            totalCitizens,
-            avgCasesPerTenant: totalTenants > 0 ? (totalCases / totalTenants).toFixed(2) : 0
+            performance: {
+            casesPerTenant,
+            topActiveTenants
+            },
+            trends: {
+            newUsersThisMonth,
+            newCasesThisMonth
+            }
         };
 
         res.status(200).json(
-            new apiResponse(200, systemStats, "System-wide statistics fetched successfully")
+            new apiResponse(200, systemAnalytics, "System-wide statistics fetched successfully")
         );
     });
 

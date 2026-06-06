@@ -110,6 +110,7 @@ adminRoutes.get(
 );
 
 // Analytics Dashboard Routes
+
 adminRoutes.get(
     "/analytics",
     verifyJWT,
@@ -117,5 +118,14 @@ adminRoutes.get(
     roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
     AdminController.getAdminAnalytics
 );
+
+adminRoutes.get(
+    "/dashboard-stats",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    AdminController.dashboardStats
+);
+
 
 export default adminRoutes;

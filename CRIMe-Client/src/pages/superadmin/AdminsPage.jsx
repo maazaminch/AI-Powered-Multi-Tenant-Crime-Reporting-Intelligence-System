@@ -133,7 +133,7 @@ const AdminsPage = () => {
           </div>
 
           <div className="mt-4 flex justify-end">
-            <Button onClick={() => setIsInviteModalOpen(true)}>
+            <Button variant='default' onClick={() => setIsInviteModalOpen(true)}>
               Invite Admin
             </Button>
           </div>
@@ -181,16 +181,17 @@ const AdminsPage = () => {
                         <div className="mt-4 flex flex-wrap items-center gap-5 sm:mt-0 sm:ml-4">
                           <Button 
                             size="lg"
-                            variant='outline' 
+                            variant='success' 
                             onClick={() => handleOpenTenantModal(admin)}>
                             {admin.tenantId ? 'Transfer Tenant' : 'Assign Tenant'}
                           </Button>
-                          <Button size="sm" onClick={() => setSelectedAdminId(admin._id)}>
+                          <Button variant='outline' 
+                          size="sm" onClick={() => setSelectedAdminId(admin._id)}>
                             View Details
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="default"
                             disabled={statusMutation.isPending}
                             onClick={() => onUpdateStatus(admin._id, 
                               admin.status === 'APPROVED' ? 'BLOCKED' : 'APPROVED'
