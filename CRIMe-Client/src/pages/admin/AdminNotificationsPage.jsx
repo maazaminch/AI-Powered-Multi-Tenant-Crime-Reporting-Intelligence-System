@@ -5,7 +5,7 @@ import {Badge} from '../../components/ui/Badge'
 import { useNotifications } from '../../hooks/notifications/useNotifications'
 import { formatError } from '../../lib/utils'
 
-const NotificationsPage = () => {
+const AdminNotificationsPage = () => {
 
     const [page, setPage] = useState(1)
 
@@ -113,4 +113,4 @@ const NotificationsPage = () => {
   )
 }
 
-export default NotificationsPage
+export default AdminNotificationsPage

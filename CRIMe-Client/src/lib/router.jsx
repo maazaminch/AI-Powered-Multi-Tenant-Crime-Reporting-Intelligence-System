@@ -27,6 +27,9 @@ import NotificationsPage from '../pages/superadmin/NotificationsPage'
 
 // Importing Admin pages
 import AdminDashboard from '../pages/admin/DashboardPage'
+import PoliceStationsPage from '../pages/admin/PoliceStationsPage'
+import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage'
+import PendingPolicePage from '../pages/admin/PendingPolicePage'
 
 // // Importing Police pages
 // import PoliceCases from '../pages/police/AssignedCasesPage'
@@ -150,30 +153,30 @@ export const router = createBrowserRouter([
         path: 'dashboard',
         element: <AdminDashboard />
       },
-      //  {
-      //   path: 'police-stations',
-      //   element: <PoliceStationsPage />
-      // },
+       {
+        path: 'police-stations',
+        element: <PoliceStationsPage />
+      },
       // {
-      //   path: 'station-heads',
-      //   element: <StationHeadsPage />
+      //   path: 'police-management',
+      //   element: <PoliceManagementPage />
       // },
+      {
+        path: 'pending-police',
+        element: <PendingPolicePage />
+      },
       // {
-      //   path: 'pending-requests',
-      //   element: <PendingRequestsPage />
-      // },
-      // {
-      //   path: 'system-analytics',
-      //   element: <SystemAnalyticsPage />
+      //   path: 'tenant-analytics',
+      //   element: <TenantAnalyticsPage />
       // },
       // {
       //   path: 'audit-logs',
       //   element: <AuditLogsPage />
       // },
-      // {
-      //   path: 'notifications',
-      //   element: <NotificationsPage />
-      // }
+      {
+        path: 'notifications',
+        element: <AdminNotificationsPage />
+      }
     ]
   },
   {

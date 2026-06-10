@@ -47,7 +47,7 @@ const SuperAdminLayout = () => {
     { path: '/superadmin/notifications', label: 'Notifications' }
   ]
 
-  const isActive = (path) => location.pathname === path
+  const isActive = (path) => location.pathname.startsWith(path)
 
   return (
     <div className="min-h-screen bg-gray-50">

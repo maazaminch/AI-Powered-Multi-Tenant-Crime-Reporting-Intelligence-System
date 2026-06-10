@@ -15,7 +15,7 @@ class AdminController {
     static getPendingPolice = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 
-        if (currentUser.role !== "ADMIN" && !currentUser.isSuperAdmin) {
+        if (currentUser.role !== "ADMIN") {
             throw new apiError(403, "Access denied");
         }
 
@@ -28,16 +28,36 @@ class AdminController {
             filter.tenantId = currentUser.tenantId;
         }
 
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         const pendingPolice = await User.find(filter)
             .select("-password")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         if (!pendingPolice || pendingPolice.length === 0) {
             throw new apiError(404, "No pending police found");
         }
+        
+        const totalPendingPolice = await User.countDocuments(filter);
+        const totalPages = Math.ceil(totalPendingPolice / limit);
 
         res.status(200).json(
-            new apiResponse(200, pendingPolice, "Pending police fetched successfully")
+            new apiResponse(200, 
+                {
+                    pendingPolice,
+                    pagination: {
+                        totalPendingPolice,
+                        currentPage: page,
+                        totalPages,
+                        hasNextPage: page < totalPages,
+                        hasPrevPage: page > 1
+                    }
+                }, 
+                "Pending police fetched successfully")
         );
     });
 
@@ -214,23 +234,38 @@ class AdminController {
         }
         
 
-        const { name, code, address, city, sector, contactNumber, email} = req.body;
+        const { name, location, address, city, sector, contactNumber, email} = req.body;
 
-        if (!name || !sector || !address || !city || !contactNumber) {
+        const coords = location.coordinates;
+
+        if (!coords || coords.length !== 2) {
+        throw new apiError(400, "Location required");
+        }
+
+        if (!name || !address || !city || !contactNumber) {
             throw new apiError(400, "Important fields are required");
         }
 
         const station = await PoliceStation.create({
             tenantId: currentUser.tenantId,
             name,
-            code,
+            location: {
+                type: "Point",
+                coordinates: [coords[0], coords[1]]
+            },
             address,
             city,
             sector,
             contactNumber,
             email,
+            stationHead: null,
+            isActive: true,
             createdBy: currentUser._id
         });
+
+        if (!station) {
+            throw new apiError(500, "Failed to create station");
+        }
 
         res.status(201).json(
             new apiResponse(201, station, "Station created successfully")
@@ -255,6 +290,8 @@ class AdminController {
         }
 
         await station.deleteOne();
+        station.deletedAt = new Date();
+        await station.save();
 
         res.status(200).json(
             new apiResponse(200, {}, "Station deleted successfully")
@@ -293,14 +330,34 @@ class AdminController {
             throw new apiError(403, "Access denied");
         }
 
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const totalStations = await PoliceStation.countDocuments({ tenantId: currentUser.tenantId });
+
         const stations = await PoliceStation.find({
             tenantId: currentUser.tenantId
         })
             .populate('stationHead', 'fullName email badgeNumber')
+            .skip(skip)
+            .limit(limit)
             .sort({ name: 1 });
 
+        const totalPages = Math.ceil(totalStations / limit);         
+
         res.status(200).json(
-            new apiResponse(200, stations, "Stations fetched successfully")
+            new apiResponse(200, { 
+                stations,
+                pagination: {
+                    totalPages,
+                    currentPage: page,
+                    totalStations,
+                    hasNextPage: page < totalPages,
+                    hasPrevPage: page > 1
+                }
+            }, 
+            "Stations fetched successfully")
         );
     });
 

@@ -4,13 +4,13 @@ import superAdminService from '../../services/superAdminService'
 import { formatError } from '../../lib/utils'
 import { useState } from 'react'
 
-export const useTenantManagement = () => {
+export const useTenantManagement = (page) => {
   const queryClient = useQueryClient()
   const [selectedTenantId, setSelectedTenantId] = useState(null)
 
   const { data: tenants, isLoading, error } = useQuery({
-    queryKey: ['tenants'],
-    queryFn: superAdminService.getTenants,
+    queryKey: ['tenants', page ],
+    queryFn: () => superAdminService.getTenants(page),
   })
 
   const createTenantMutation = useMutation({
@@ -55,6 +55,7 @@ export const useTenantManagement = () => {
 
   return {
     tenants,
+    pagination: tenants?.pagination,
     isLoading,
     error,
     createTenant: createTenantMutation,

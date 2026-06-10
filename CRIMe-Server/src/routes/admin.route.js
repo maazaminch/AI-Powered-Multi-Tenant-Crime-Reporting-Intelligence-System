@@ -19,22 +19,22 @@ adminRoutes.post(
 );
 
 adminRoutes.delete(
-    "/delete-station",
+    "/delete-station/:stationId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }), 
     AdminController.deleteStation   
 );
 
-adminRoutes.post(
-    "/actOrDeact-station",
+adminRoutes.put(
+    "/activate-or-deactivate-station/:stationId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }), 
     AdminController.activateOrDeactivateStation   
 );
 
-adminRoutes.post(
+adminRoutes.get(
     "/get-stations",
     verifyJWT,
     tenantGuard,
@@ -42,8 +42,8 @@ adminRoutes.post(
     AdminController.getStations   
 );
 
-adminRoutes.post(
-    "/get-station-detail",
+adminRoutes.get(
+    "/get-station-details/:stationId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }), 

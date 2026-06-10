@@ -113,7 +113,11 @@ const SuperAdminDashboard = () => {
             >
               View Pending Admins
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/superadmin/system-analytics')}
+            >
               System Analytics
             </Button>
           </div>

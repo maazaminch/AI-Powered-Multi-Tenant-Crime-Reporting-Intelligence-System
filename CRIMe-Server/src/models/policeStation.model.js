@@ -43,7 +43,6 @@ const PoliceStationSchema = new mongoose.Schema({
    
   sector: {
     type: String,
-    required: true
   },
   // ─────────────── Contact Info ───────────────
   contactNumber: {
@@ -92,27 +91,6 @@ PoliceStationSchema.pre('validate', async function() {
   }
 });
 
-// ─────────────── INDEXES ───────────────
 
-// Unique station per tenant
-PoliceStationSchema.index({ tenantId: 1, name: 1 }, { unique: true });
 
 export default mongoose.model("PoliceStation", PoliceStationSchema);
-
-
-
-//   area: {
-//     type: String // optional locality
-//   },
-
-  // Optional (for future: maps / geo queries)
-//   location: {
-//     type: {
-//       type: String,
-//       enum: ["Point"],
-//       default: "Point"
-//     },
-//     coordinates: {
-//       type: [Number] // [longitude, latitude]
-//     }
-//   },

@@ -53,7 +53,7 @@ const AdminDashboard = () => {
           
           <StatCard
             title="Total Police Stations"
-            value={stats?.totalStations ?? '...'}
+            value={stats?.totalPoliceStations ?? '...'}
             color="text-blue-600"
             bg="bg-blue-50"
             path="/admin/police-stations"
@@ -108,13 +108,19 @@ const AdminDashboard = () => {
             >
               Create New Police Station
             </Button>
-            <Button variant="outline" className="w-full"
-              onClick={() => navigate('/admin/pending-requests')}
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/admin/pending-police')}
             >
               View Pending Police
             </Button>
-            <Button variant="outline" className="w-full">
-              System Analytics
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/admin/tenant-analytics')}
+            >
+              Tenant Analytics
             </Button>
           </div>
         </CardContent>
