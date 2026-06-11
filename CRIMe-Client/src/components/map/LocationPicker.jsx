@@ -62,9 +62,11 @@ export default function LocationPicker({
     setResults([])
     setQuery(item.display_name)
 
+    // include display_name so parent can save/show the human-readable address
     onChange?.({
       type: 'Point',
-      coordinates: [lng, lat] // backend format
+      coordinates: [lng, lat], // backend format
+      display_name: item.display_name,
     })
   }
 

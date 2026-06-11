@@ -6,7 +6,6 @@ import { Badge } from '../../components/ui/Badge'
 import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
 import PoliceStationForm from '../../components/features/police-stations/PoliceStationForm'
 import { formatError } from '../../lib/utils'
-import { set } from 'react-hook-form';
 
 const PoliceStationsPage = () => {
 
@@ -104,57 +103,86 @@ const PoliceStationsPage = () => {
                     ))}
                   </div>
                 ) : stationDetails ? (
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Name
-                      </p>
-                      <p className="text-sm font-medium">{stationDetails.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Location
-                      </p>
-                      <p className="text-sm font-medium">{stationDetails.location}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Address
-                      </p>
-                      <p className="text-sm font-medium">{stationDetails.address}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Status
-                      </p>
-                      <div className="mt-1">
-                        <Badge
-                          variant={
-                            stationDetails.isActive ? 'success' : 'muted'
-                          }
-                        >
-                          {stationDetails.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
+                  <div className="mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Name</p>
+                          <p className="text-sm font-medium">{stationDetails.name}</p>
+                        </div>
+
+                        {stationDetails.locationLabel && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase text-muted-foreground">Selected Address</p>
+                            <p className="text-sm font-medium">{stationDetails.locationLabel}</p>
+                          </div>
+                        )}
+
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Entered Address</p>
+                          <p className="text-sm font-medium">{stationDetails.address}</p>
+                        </div>
+
+                        {/* {stationDetails.location?.coordinates && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase text-muted-foreground">Coordinates</p>
+                            <p className="text-sm font-medium">{`${stationDetails.location.coordinates[0]}, ${stationDetails.location.coordinates[1]}`}</p>
+                          </div>
+                        )} */}
+
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">City</p>
+                          <p className="text-sm font-medium">{stationDetails.city || 'N/A'}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-semibold uppercase text-muted-foreground">Status</p>
+                          <Badge variant={stationDetails.isActive ? 'success' : 'muted'}>
+                            {stationDetails.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+
+                        {stationDetails.code && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase text-muted-foreground">Station Code</p>
+                            <p className="text-sm font-medium">{stationDetails.code}</p>
+                          </div>
+                        )}
+
+                        {stationDetails.createdAt && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase text-muted-foreground">Created</p>
+                            <p className="text-sm font-medium">{new Date(stationDetails.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    {stationDetails.code && (
+
                       <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">
-                          Station Code
-                        </p>
-                        <p className="text-sm font-medium">{stationDetails.code}</p>
+                        <h3 className="text-lg font-semibold mb-3">Station Head</h3>
+                        {stationDetails.stationHead ? (
+                          <div className="rounded-lg border p-4 bg-muted space-y-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-muted-foreground">Name</p>
+                              <p className="text-sm font-medium">{stationDetails.stationHead.fullName}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-muted-foreground">Email</p>
+                              <p className="text-sm font-medium">{stationDetails.stationHead.email}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-muted-foreground">Phone</p>
+                              <p className="text-sm font-medium">{stationDetails.stationHead.phone || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-muted-foreground">Badge Number</p>
+                              <p className="text-sm font-medium">{stationDetails.stationHead.badgeNumber || 'N/A'}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-lg border p-4 text-sm text-muted-foreground">No station head assigned.</div>
+                        )}
                       </div>
-                    )}
-                    {stationDetails.createdAt && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">
-                          Created
-                        </p>
-                        <p className="text-sm font-medium">
-                          {new Date(stationDetails.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 ) : (
                   <p className="mt-4 text-sm text-muted-foreground">

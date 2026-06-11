@@ -14,6 +14,7 @@ const PoliceStationForm = ({
     name: initialData?.name || '',
     location: initialData?.location || null,
     address: initialData?.address || '',
+    locationLabel: initialData?.locationLabel || '',
     city: initialData?.city || '',
     sector: initialData?.sector || '',
     contactNumber: initialData?.contactNumber || '',
@@ -82,21 +83,22 @@ const PoliceStationForm = ({
           <div>
             <label className="block text-sm font-medium mb-1">Location</label>
             <LocationPicker
-                        value={
-                            formData.location
-                            ? [
-                                formData.location.coordinates[1],
-                                formData.location.coordinates[0]
-                                ]
-                            : null
-                        }
-                        onChange={(location) => {
-                            setFormData((prev) => ({
-                            ...prev,
-                            location
-                            }))
-                        }}
-                        />
+              value={
+                formData.location
+                  ? [formData.location.coordinates[1], formData.location.coordinates[0]]
+                  : null
+              }
+              onChange={(location) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  location,
+                  // always capture the picker suggestion separately
+                  locationLabel: location?.display_name || prev.locationLabel,
+                  // keep user-entered address unless it's empty
+                  address: prev.address || location?.display_name || prev.address,
+                }))
+              }}
+            />
           </div>
           
           {/* Sector */}

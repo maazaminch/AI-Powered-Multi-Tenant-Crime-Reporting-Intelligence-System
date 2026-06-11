@@ -234,7 +234,7 @@ class AdminController {
         }
         
 
-        const { name, location, address, city, sector, contactNumber, email} = req.body;
+        const { name, location, address, city, sector, contactNumber, email, locationLabel } = req.body;
 
         const coords = location.coordinates;
 
@@ -254,6 +254,7 @@ class AdminController {
                 coordinates: [coords[0], coords[1]]
             },
             address,
+            locationLabel: locationLabel || null,
             city,
             sector,
             contactNumber,
@@ -289,9 +290,8 @@ class AdminController {
             throw new apiError(403, "Access denied");
         }
 
-        await station.deleteOne();
-        station.deletedAt = new Date();
-        await station.save();
+        // Permanently remove the station document
+        await PoliceStation.findByIdAndDelete(stationId);
 
         res.status(200).json(
             new apiResponse(200, {}, "Station deleted successfully")
@@ -370,7 +370,7 @@ class AdminController {
         }
 
         const station = await PoliceStation.findById(stationId)
-            .populate('stationHead', 'fullName email badgeNumber')
+            .populate('stationHead', 'fullName email phone badgeNumber')
             .populate({
                 path: 'tenantId',
                 select: 'name code region'
