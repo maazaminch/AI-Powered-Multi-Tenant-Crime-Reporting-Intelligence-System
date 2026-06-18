@@ -41,14 +41,16 @@ const AdminLayout = () => {
   const navItems = [
     { path: '/admin/dashboard', label: 'Dashboard' },
     { path: '/admin/police-stations', label: 'Police Stations' },
-    { path: '/admin/police', label: 'Police' },
+    { path: '/admin/police-management', label: 'Police Management' },
     { path: '/admin/pending-police', label: 'Pending Police' },
     { path: '/admin/tenant-analytics', label: 'Tenant Analytics' },
     { path: '/admin/audit-logs', label: 'Audit Logs' },
     { path: '/admin/notifications', label: 'Notifications' }
   ]
 
-  const isActive = (path) => location.pathname.startsWith(path)
+  // Match exact path or a path with a trailing segment (prevent '/admin/police' matching '/admin/police-stations')
+  const isActive = (path) =>
+    location.pathname === path || location.pathname.startsWith(path + '/')
 
   return (
     <div className="min-h-screen bg-gray-50">

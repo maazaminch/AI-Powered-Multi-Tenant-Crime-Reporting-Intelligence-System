@@ -24,27 +24,36 @@ export const adminService = {
       },
 
       // Police Management
-      getAllPolice: async (page, status) => {
-        const response = await api.get(`/api/admin/all-police?page=${page}&limit=10&status=${status}`)
+      getAllPolice: async (page, status, q, stationId) => {
+        const params = new URLSearchParams()
+        params.set('page', page)
+        params.set('limit', 10)
+        if (status) params.set('status', status)
+        if (q) params.set('q', q)
+        if (stationId) params.set('stationId', stationId)
+        const response = await api.get(`/api/admin/get-all-police?${params.toString()}`)
         return response.data
       },
       getPoliceDetails: async (policeId) => {
-        const response = await api.get(`/api/admin/get-police-details/${policeId}`)
+        const response = await api.get(`/api/admin/police-details/${policeId}`)
         return response.data
       },
       assignPoliceToStation: async (policeId, stationId) => {
-        const response = await api.post(`/api/admin/assign-police-to-station/${policeId}`, { stationId })
+        const response = await api.post(`/api/admin/assign-police/${policeId}`, { stationId })
         return response.data
       },
-      transferPolice: async (policeId, newStationId) => {
-        const response = await api.post(`/api/admin/transfer-police/${policeId}`, { newStationId })
+      transferPolice: async (policeId, toStationId) => {
+        const response = await api.post(`/api/admin/transfer-police/${policeId}`, { toStationId })
         return response.data
       },
-      assignSHO: async (policeId) => {
-        const response = await api.post(`/api/admin/assign-sho/${policeId}`)
+      assignStationHead: async (stationId, policeId) => {
+        const response = await api.post(`/api/admin/assign-station-head/${stationId}/${policeId}`)
         return response.data
       },
-
+      removeStationHead: async (stationId, policeId) => {
+        const response = await api.delete(`/api/admin/remove-station-head/${stationId}/${policeId}`)
+        return response.data
+      },
 
       getPendingPolice: async () => {
         const response = await api.get('/api/admin/pending-police')

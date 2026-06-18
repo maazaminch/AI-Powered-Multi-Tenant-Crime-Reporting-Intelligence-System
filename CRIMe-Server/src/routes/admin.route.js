@@ -59,9 +59,44 @@ adminRoutes.get(
     AdminController.getPendingPolice
 );
 
+adminRoutes.get(
+    "/get-all-police",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    AdminController.getAllPolice
+);
+
+// Police-specific endpoints
+adminRoutes.get(
+    "/police-details/:policeId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    AdminController.getPoliceDetails
+);
+
+adminRoutes.post(
+    "/assign-police/:policeId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    AdminController.assignPoliceToStation
+);
+adminRoutes.post(
+    "/transfer-police/:policeId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    AdminController.transferPolice
+);
+
+
+
+
 // Station Head Management Routes
 adminRoutes.post(
-    "/assign-station-head",
+    "/assign-station-head/:stationId/:policeId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
@@ -69,28 +104,15 @@ adminRoutes.post(
 );
 
 adminRoutes.delete(
-    "/remove-station-head/:stationId",
+    "/remove-station-head/:stationId/:policeId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
     AdminController.removeStationHead
 );
 
-adminRoutes.post(
-    "/transfer-station-head",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN] }),
-    AdminController.transferStationHead
-);
 
-adminRoutes.get(
-    "/station-head/:stationId",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN] }),
-    AdminController.getStationHead
-);
+
 
 // Case Management Routes
 adminRoutes.get(

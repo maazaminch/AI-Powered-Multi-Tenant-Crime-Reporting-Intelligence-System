@@ -30,6 +30,7 @@ import AdminDashboard from '../pages/admin/DashboardPage'
 import PoliceStationsPage from '../pages/admin/PoliceStationsPage'
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage'
 import PendingPolicePage from '../pages/admin/PendingPolicePage'
+import PoliceManagementPage from '../pages/admin/PoliceManagementPage'
 
 // // Importing Police pages
 // import PoliceCases from '../pages/police/AssignedCasesPage'
@@ -60,13 +61,6 @@ const PoliceCases = () => (
   </div>
 )
 
-// const AdminDashboard = () => (
-//   <div className="min-h-screen bg-background p-8">
-//     <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-//     <p className="text-gray-600 mt-2">Admin panel working</p>
-//   </div>
-// )
-
 const Unauthorized = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
@@ -75,6 +69,14 @@ const Unauthorized = () => (
     </div>
   </div>
 )
+
+// const AdminDashboard = () => (
+//   <div className="min-h-screen bg-background p-8">
+//     <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+//     <p className="text-gray-600 mt-2">Admin panel working</p>
+//   </div>
+// )
+
 
 export const router = createBrowserRouter([
   {
@@ -157,10 +159,10 @@ export const router = createBrowserRouter([
         path: 'police-stations',
         element: <PoliceStationsPage />
       },
-      // {
-      //   path: 'police-management',
-      //   element: <PoliceManagementPage />
-      // },
+      {
+        path: 'police-management',
+        element: <PoliceManagementPage />
+      },
       {
         path: 'pending-police',
         element: <PendingPolicePage />
