@@ -42,14 +42,6 @@ adminRoutes.post(
     AdminController.getStations   
 );
 
-adminRoutes.get(
-    "/search-stations",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN] }),
-    AdminController.searchStations
-);
-
 adminRoutes.post(
     "/get-station-detail",
     verifyJWT,

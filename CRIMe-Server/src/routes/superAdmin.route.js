@@ -17,14 +17,6 @@ superAdminRouter.get(
 );
 
 superAdminRouter.get(
-    "/search-tenants",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
-    superAdminController.searchTenantsController
-);
-
-superAdminRouter.get(
     "/tenant-details/:id",
     verifyJWT,
     tenantGuard,

@@ -26,6 +26,31 @@ userRouter.get(
     userController.searchUserController
 );
 
+userRouter.get(
+    "/search-tenants",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    userController.searchTenantsController
+);
+
+userRouter.get(
+    "/search-stations",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    userController.searchStationsController
+);
+
+userRouter.get(
+    "/search-cases",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN, Roles.POLICE, Roles.CITIZEN], 
+        flags: [UserFlags.IS_SUPER_ADMIN] }),
+    userController.searchCasesController
+);
+
 userRouter.delete(
     "/delete-user/:id",
     verifyJWT,

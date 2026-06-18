@@ -5,6 +5,8 @@ import NotificationService from "../../services/notification.service.js";
 import User from "../../models/user.model.js";
 import Invite from "../../models/invite.model.js";
 import Case from "../../models/case.model.js";
+import Tenant from "../../models/tenant.model.js";
+import PoliceStation from "../../models/policeStation.model.js";
 import escapeRegex from "../../utils/escapeRegex.js";
 import mongoose from "mongoose";
 
@@ -287,7 +289,188 @@ class UserController {
             'Users fetched successfully'))
 
         })
-    
+
+
+    // Tenant search (super admin only) — by name or code
+    static searchTenantsController = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        if (!currentUser.isSuperAdmin) {
+            throw new apiError(403, 'Only SuperAdmin can search tenants');
+        }
+
+        let { q = "", page = 1, limit = 10 } = req.query;
+        page = Math.max(parseInt(page, 10) || 1, 1);
+        limit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+        const skip = (page - 1) * limit;
+
+        const filter = {};
+        if (q && q.trim().length > 0) {
+            const safeQuery = escapeRegex(q.trim());
+            filter.$or = [
+                { name: { $regex: safeQuery, $options: 'i' } },
+                { code: { $regex: safeQuery, $options: 'i' } }
+            ];
+        }
+
+        const [tenants, total] = await Promise.all([
+            Tenant.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
+            Tenant.countDocuments(filter)
+        ]);
+
+        return res.status(200).json(new apiResponse(200, {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            results: tenants
+        }, 'Tenants fetched successfully'));
+    })
+
+
+    // Police station search (admin only, own tenant) — by name or code
+    static searchStationsController = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        if (currentUser.role !== 'ADMIN') {
+            throw new apiError(403, 'Not allowed to search stations');
+        }
+
+        let { q = "", page = 1, limit = 10 } = req.query;
+        page = Math.max(parseInt(page, 10) || 1, 1);
+        limit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+        const skip = (page - 1) * limit;
+
+        const filter = { tenantId: currentUser.tenantId };
+        if (q && q.trim().length > 0) {
+            const safeQuery = escapeRegex(q.trim());
+            filter.$or = [
+                { name: { $regex: safeQuery, $options: 'i' } },
+                { code: { $regex: safeQuery, $options: 'i' } }
+            ];
+        }
+
+        const [stations, total] = await Promise.all([
+            PoliceStation.find(filter)
+                .populate('stationHead', 'fullName email badgeNumber')
+                .skip(skip)
+                .limit(limit)
+                .sort({ name: 1 }),
+            PoliceStation.countDocuments(filter)
+        ]);
+
+        return res.status(200).json(new apiResponse(200, {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            results: stations
+        }, 'Stations fetched successfully'));
+    })
+
+
+    /**
+     * Case search scoped by caller:
+     *   - Super admin   : any tenant (optionally narrowed by tenantId)
+     *   - Admin         : own tenant
+     *   - Station head  : cases of own police station
+     *   - Regular police: cases assigned to them only
+     *   - Citizen       : own cases only
+     * Text (q) matches caseId, reporter name, reporting citizen's name, and
+     * crimeType / severity when q equals one of those enum values.
+     */
+    static searchCasesController = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        let { q = "", severity: requestedSeverity, crimeType: requestedCrimeType,
+            status: requestedStatus, tenantId: requestedTenantId, page = 1, limit = 10
+        } = req.query;
+
+        page = Math.max(parseInt(page, 10) || 1, 1);
+        limit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+        const skip = (page - 1) * limit;
+
+        const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+        const CRIME_TYPES = [
+            'THEFT', 'ROBBERY', 'ASSAULT', 'MURDER', 'DOMESTIC_VIOLENCE',
+            'CYBER_CRIME', 'KIDNAPPING', 'FRAUD', 'DRUG_OFFENSE',
+            'HARASSMENT', 'TRAFFIC_VIOLATION', 'OTHER'
+        ];
+        const STATUSES = ['PENDING', 'ASSIGNED', 'UNDER_INVESTIGATION', 'RESOLVED', 'CLOSED'];
+
+        const filter = { isArchived: false };
+
+        if (currentUser.isSuperAdmin) {
+            if (requestedTenantId) {
+                filter.tenantId = new mongoose.Types.ObjectId(requestedTenantId);
+            }
+        } else if (currentUser.role === 'ADMIN') {
+            filter.tenantId = currentUser.tenantId;
+        } else if (currentUser.role === 'POLICE') {
+            filter.tenantId = currentUser.tenantId;
+            if (currentUser.isStationHead) {
+                filter.policeStationId = currentUser.policeStationId;
+            } else {
+                filter.assignedTo = currentUser._id;
+            }
+        } else if (currentUser.role === 'CITIZEN') {
+            filter.tenantId = currentUser.tenantId;
+            filter.citizenId = currentUser._id;
+        } else {
+            throw new apiError(403, 'Not allowed to search cases');
+        }
+
+        if (requestedSeverity) {
+            if (!SEVERITIES.includes(requestedSeverity)) throw new apiError(400, 'Invalid severity');
+            filter.severity = requestedSeverity;
+        }
+        if (requestedCrimeType) {
+            if (!CRIME_TYPES.includes(requestedCrimeType)) throw new apiError(400, 'Invalid crime type');
+            filter.crimeType = requestedCrimeType;
+        }
+        if (requestedStatus) {
+            if (!STATUSES.includes(requestedStatus)) throw new apiError(400, 'Invalid status');
+            filter.status = requestedStatus;
+        }
+
+        if (q && q.trim()) {
+            const raw = q.trim();
+            const safeQuery = escapeRegex(raw);
+            const upper = raw.toUpperCase();
+
+            const orConditions = [
+                { caseId: { $regex: safeQuery, $options: 'i' } },
+                { reporterName: { $regex: safeQuery, $options: 'i' } }
+            ];
+            if (SEVERITIES.includes(upper)) orConditions.push({ severity: upper });
+            if (CRIME_TYPES.includes(upper)) orConditions.push({ crimeType: upper });
+
+            const citizenMatch = { role: 'CITIZEN', fullName: { $regex: safeQuery, $options: 'i' } };
+            if (filter.tenantId) citizenMatch.tenantId = filter.tenantId;
+            const citizenIds = await User.distinct('_id', citizenMatch);
+            if (citizenIds.length) orConditions.push({ citizenId: { $in: citizenIds } });
+
+            filter.$or = orConditions;
+        }
+
+        const [cases, total] = await Promise.all([
+            Case.find(filter)
+                .populate('citizenId', 'fullName email')
+                .skip(skip)
+                .limit(limit)
+                .sort({ createdAt: -1 })
+                .lean(),
+            Case.countDocuments(filter)
+        ]);
+
+        return res.status(200).json(new apiResponse(200, {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            results: cases
+        }, 'Cases fetched successfully'));
+    })
 
 
 

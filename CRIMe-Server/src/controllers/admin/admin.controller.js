@@ -4,7 +4,6 @@ import apiResponse from "../../utils/apiResponse.js";
 import User from "../../models/user.model.js";
 import PoliceStation from "../../models/policeStation.model.js";
 import Case from "../../models/case.model.js";
-import escapeRegex from "../../utils/escapeRegex.js";
 import StationHeadService from "../../services/stationHead.service.js";
 import CaseAssignmentService from "../../services/caseAssignment.service.js";
 import TenantTransferService from "../../services/tenantTransfer.service.js";
@@ -331,49 +330,6 @@ class AdminController {
 
         res.status(200).json(
             new apiResponse(200, station, "Station details fetched successfully")
-        );
-    });
-
-    // Police station search — admin only, scoped to its own tenant. By name or code.
-    static searchStations = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Not allowed to search stations");
-        }
-
-        let { q = "", page = 1, limit = 10 } = req.query;
-        page = Math.max(parseInt(page, 10) || 1, 1);
-        limit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
-        const skip = (page - 1) * limit;
-
-        const filter = { tenantId: currentUser.tenantId };
-
-        if (q && q.trim().length > 0) {
-            const safeQuery = escapeRegex(q.trim());
-            filter.$or = [
-                { name: { $regex: safeQuery, $options: "i" } },
-                { code: { $regex: safeQuery, $options: "i" } }
-            ];
-        }
-
-        const [stations, total] = await Promise.all([
-            PoliceStation.find(filter)
-                .populate('stationHead', 'fullName email badgeNumber')
-                .skip(skip)
-                .limit(limit)
-                .sort({ name: 1 }),
-            PoliceStation.countDocuments(filter)
-        ]);
-
-        return res.status(200).json(
-            new apiResponse(200, {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-                results: stations
-            }, "Stations fetched successfully")
         );
     });
 }

@@ -4,7 +4,6 @@ import apiResponse from "../../utils/apiResponse.js";
 import User from "../../models/user.model.js";
 import Tenant from "../../models/tenant.model.js";
 import Case from "../../models/case.model.js";
-import escapeRegex from "../../utils/escapeRegex.js";
 import NotificationService from "../../services/notification.service.js";
 
 class SuperAdminController {
@@ -588,47 +587,6 @@ class SuperAdminController {
             )
         );
     }); 
-
-    // Tenant search (super admin only) — by name or code
-    static searchTenantsController = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (!currentUser.isSuperAdmin) {
-            throw new apiError(403, "Only SuperAdmin can search tenants");
-        }
-
-        let { q = "", page = 1, limit = 10 } = req.query;
-        page = Math.max(parseInt(page, 10) || 1, 1);
-        limit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
-        const skip = (page - 1) * limit;
-
-        const filter = {};
-        if (q && q.trim().length > 0) {
-            const safeQuery = escapeRegex(q.trim());
-            filter.$or = [
-                { name: { $regex: safeQuery, $options: "i" } },
-                { code: { $regex: safeQuery, $options: "i" } }
-            ];
-        }
-
-        const [tenants, total] = await Promise.all([
-            Tenant.find(filter)
-                .skip(skip)
-                .limit(limit)
-                .sort({ createdAt: -1 }),
-            Tenant.countDocuments(filter)
-        ]);
-
-        return res.status(200).json(
-            new apiResponse(200, {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-                results: tenants
-            }, "Tenants fetched successfully")
-        );
-    });
 
     static getTenantDetails = wrapAsync(async (req, res) => {
         const tenantId = req.params.id;
