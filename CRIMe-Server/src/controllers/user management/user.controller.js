@@ -4,6 +4,8 @@ import apiResponse from "../../utils/apiResponse.js";
 import NotificationService from "../../services/notification.service.js";
 import User from "../../models/user.model.js";
 import Invite from "../../models/invite.model.js";
+import Case from "../../models/case.model.js";
+import escapeRegex from "../../utils/escapeRegex.js";
 import mongoose from "mongoose";
 
 class UserController {
@@ -156,97 +158,134 @@ class UserController {
     );
     });
 
+    /**
+     * Tenant/role scoped user search reusable by every panel.
+     *
+     * Scope matrix (caller -> searchable roles / data):
+     *   - Super admin   : ADMIN, POLICE, CITIZEN across any tenant (tenantId required)
+     *   - Admin         : POLICE (incl. station heads) + CITIZEN within own tenant
+     *   - Station head  : POLICE of own station + CITIZENs who filed a case at that station
+     *   - Regular police: CITIZENs who filed a case at own station only
+     *   - Citizen       : not allowed
+     *
+     * Text match: fullName, email (+ badgeNumber when the target role is POLICE).
+     */
     static searchUserController = wrapAsync(async(req, res) => {
         const currentUser = req.user;
         let { q = "", page = 1, limit = 10, tenantId: requestedTenantId, role: requestedRole,
             status: requestedStatus
          } = req.query;
-        
-        //pagination 
+
+        //pagination
         page = Math.max(parseInt(page, 10) || 1, 1);
         limit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
         const skip = (page - 1) * limit;
-    
-        const filter = { }
-    
-        //Tenant filter
-        if(currentUser.isSuperAdmin){
-            if(!requestedTenantId) throw new apiError(400, 'Tenant ID is required')
-            
-                // filter.tenantId = requestedTenantId
-                filter.tenantId = new mongoose.Types.ObjectId(requestedTenantId);
-        } else {
-            filter.tenantId = currentUser.tenantId
-        }
-    
-        
-        //easier version
-        let allowedRoles = [];
-    
-        if (currentUser.isSuperAdmin) {
-        allowedRoles = ['ADMIN', 'POLICE', 'CITIZEN'];
-        } else if (currentUser.role === 'ADMIN') {
-        allowedRoles = ['POLICE', 'CITIZEN'];
-        } else if (currentUser.role === 'POLICE') {
-        allowedRoles = ['CITIZEN'];
-        } else {
-        throw new apiError(403, 'Not allowed to search users');
-        }
-    
-    
-    
+
+        //Caller classification
+        const isSuperAdmin = currentUser.isSuperAdmin;
+        const isAdmin = !isSuperAdmin && currentUser.role === 'ADMIN';
+        const isStationHead = !isSuperAdmin && currentUser.role === 'POLICE' && currentUser.isStationHead;
+        const isPolice = !isSuperAdmin && currentUser.role === 'POLICE' && !currentUser.isStationHead;
+
+        let allowedRoles;
+        if (isSuperAdmin) allowedRoles = ['ADMIN', 'POLICE', 'CITIZEN'];
+        else if (isAdmin) allowedRoles = ['POLICE', 'CITIZEN'];
+        else if (isStationHead) allowedRoles = ['POLICE', 'CITIZEN'];
+        else if (isPolice) allowedRoles = ['CITIZEN'];
+        else throw new apiError(403, 'Not allowed to search users');
+
+        //Restrict to a single requested role when provided
+        let targetRoles = allowedRoles;
         if (requestedRole) {
-        if (!allowedRoles.includes(requestedRole)) {
-            throw new apiError(403, 'Not allowed to search this role');
-        }
-        filter.role = requestedRole;
-        } else {
-        filter.role = { $in: allowedRoles };
-        }
-    
-    
-        //Status filter
-        if(requestedStatus){
-            if(!['PENDING', 'APPROVED', 'BLOCKED'].includes(requestedStatus)){
-                throw new apiError(400, 'Invalid status')
+            if (!allowedRoles.includes(requestedRole)) {
+                throw new apiError(403, 'Not allowed to search this role');
             }
-            if(!(currentUser.isSuperAdmin || currentUser.role === 'ADMIN')){
+            targetRoles = [requestedRole];
+        }
+
+        //Super admin must target a specific tenant
+        if (isSuperAdmin && !requestedTenantId) {
+            throw new apiError(400, 'Tenant ID is required');
+        }
+
+        //Status filter (only super admin & admin may filter on status)
+        let statusFilter = null;
+        if (requestedStatus) {
+            if (!['PENDING', 'APPROVED', 'BLOCKED', 'REJECTED'].includes(requestedStatus)) {
+                throw new apiError(400, 'Invalid status');
+            }
+            if (!(isSuperAdmin || isAdmin)) {
                 throw new apiError(403, 'Not allowed to search users on status');
             }
-            filter.status = requestedStatus;
+            statusFilter = requestedStatus;
         }
-    
-        
-        //Name search filter
-        if( q && q.trim().length > 0){
-            const safeQuery = escapeRegex(q.trim());
-            filter.fullName = { $regex: safeQuery, $options: 'i' };
+
+        const safeQuery = q && q.trim().length > 0 ? escapeRegex(q.trim()) : null;
+
+        //Citizens scoped to a station are derived from the cases filed there
+        let stationCitizenIds = null;
+        if ((isStationHead || isPolice) && targetRoles.includes('CITIZEN')) {
+            stationCitizenIds = await Case.distinct('citizenId', {
+                policeStationId: currentUser.policeStationId,
+                citizenId: { $ne: null }
+            });
         }
-    
-        //Query
-        const users = await User.find(filter)
-        .select('-password -nationalIdHash')
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 })
-        .lean();
-    
-        if(users.length === 0){
-            throw new apiError(404, 'No users found');
+
+        //Build one clause per target role since scope differs per role
+        const roleClauses = targetRoles.map((role) => {
+            const clause = { role };
+
+            if (isSuperAdmin) {
+                clause.tenantId = new mongoose.Types.ObjectId(requestedTenantId);
+            } else if (isAdmin) {
+                clause.tenantId = currentUser.tenantId;
+            } else if (isStationHead) {
+                if (role === 'POLICE') clause.policeStationId = currentUser.policeStationId;
+                else clause._id = { $in: stationCitizenIds };
+            } else if (isPolice) {
+                clause._id = { $in: stationCitizenIds };
+            }
+
+            if (safeQuery) {
+                const textOr = [
+                    { fullName: { $regex: safeQuery, $options: 'i' } },
+                    { email: { $regex: safeQuery, $options: 'i' } }
+                ];
+                if (role === 'POLICE') {
+                    textOr.push({ badgeNumber: { $regex: safeQuery, $options: 'i' } });
+                }
+                clause.$or = textOr;
+            }
+
+            return clause;
+        });
+
+        const filter = roleClauses.length === 1 ? roleClauses[0] : { $or: roleClauses };
+        if (statusFilter) {
+            filter.status = statusFilter;
         }
-        const total = await User.countDocuments(filter);
-    
+
+        const [users, total] = await Promise.all([
+            User.find(filter)
+                .select('-password -nationalIdHash')
+                .skip(skip)
+                .limit(limit)
+                .sort({ createdAt: -1 })
+                .lean(),
+            User.countDocuments(filter)
+        ]);
+
         return res.status(200)
-        .json(new apiResponse(200, 
+        .json(new apiResponse(200,
             {
                 page,
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit),
                 results: users
-            }, 
+            },
             'Users fetched successfully'))
-    
+
         })
     
 

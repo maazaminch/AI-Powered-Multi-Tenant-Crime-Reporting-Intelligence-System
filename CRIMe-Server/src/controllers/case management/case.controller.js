@@ -9,6 +9,7 @@ import NotificationService from "../../services/notification.service.js";
 import PDFService from "../../services/pdf.service.js";
 import geminiAIService from "../../services/geminiAI.service.js";
 import escapeRegex from "../../utils/escapeRegex.js";
+import mongoose from "mongoose";
 
 
 class CaseController {
@@ -251,117 +252,129 @@ class CaseController {
             return res.status(200).json(new apiResponse(200, newCase, "Anonymous case created successfully"))
     })
 
-    //fix needed
+    /**
+     * Tenant/station scoped case search reusable by every panel.
+     *
+     * Scope (caller -> visible cases):
+     *   - Super admin   : any tenant (optionally narrowed by tenantId)
+     *   - Admin         : own tenant
+     *   - Police / SHO  : cases of own police station
+     *   - Citizen       : own cases only
+     *
+     * Text (q) matches: caseId, reporter name (guest), reporting citizen's name,
+     * and crimeType / severity when q equals one of those enum values.
+     */
     static searchCaseController = wrapAsync(async (req, res) => {
-    
+
         const currentUser = req.user;
-    
-        const {
-            q,
+
+        let {
+            q = "",
             severity: requestedSeverity,
             crimeType: requestedCrimeType,
             status: requestedStatus,
+            tenantId: requestedTenantId,
             page = 1,
             limit = 10
         } = req.query;
-    
-        const pageNum = Math.max(parseInt(page) || 1, 1);
-        const limitNum = Math.min(parseInt(limit) || 10, 100);
+
+        const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
         const skip = (pageNum - 1) * limitNum;
-    
+
+        const SEVERITIES = ["LOW","MEDIUM","HIGH","CRITICAL"];
+        const CRIME_TYPES = [
+            "THEFT","ROBBERY","ASSAULT","MURDER","DOMESTIC_VIOLENCE",
+            "CYBER_CRIME","KIDNAPPING","FRAUD","DRUG_OFFENSE",
+            "HARASSMENT","TRAFFIC_VIOLATION","OTHER"
+        ];
+        const STATUSES = ["PENDING","ASSIGNED","UNDER_INVESTIGATION","RESOLVED","CLOSED"];
+
         const filter = { isArchived: false };
-    
-        // Tenant isolation
-        if (!currentUser.isSuperAdmin) {
+
+        // Scope by caller
+        if (currentUser.isSuperAdmin) {
+            if (requestedTenantId) {
+                filter.tenantId = new mongoose.Types.ObjectId(requestedTenantId);
+            }
+        } else if (currentUser.role === "ADMIN") {
             filter.tenantId = currentUser.tenantId;
-        }
-    
-        // Role-based visibility
-        if (currentUser.role === "CITIZEN") {
+        } else if (currentUser.role === "POLICE") {
+            filter.tenantId = currentUser.tenantId;
+            filter.policeStationId = currentUser.policeStationId;
+        } else if (currentUser.role === "CITIZEN") {
+            filter.tenantId = currentUser.tenantId;
             filter.citizenId = currentUser._id;
+        } else {
+            throw new apiError(403, "Not allowed to search cases");
         }
-    
-        if (currentUser.role === "POLICE") {
-            filter.assignedPoliceId = currentUser._id;
-        }
-    
-        // Filters
+
+        // Explicit filters
         if (requestedSeverity) {
-            if (!["LOW","MEDIUM","HIGH","CRITICAL"].includes(requestedSeverity)) {
+            if (!SEVERITIES.includes(requestedSeverity)) {
                 throw new apiError(400, "Invalid severity");
             }
             filter.severity = requestedSeverity;
         }
-    
+
         if (requestedCrimeType) {
-            if (![
-                "THEFT","ROBBERY","ASSAULT","MURDER","DOMESTIC_VIOLENCE",
-                "CYBER_CRIME","KIDNAPPING","FRAUD","DRUG_OFFENSE",
-                "HARASSMENT","TRAFFIC_VIOLATION","OTHER"
-            ].includes(requestedCrimeType)) {
+            if (!CRIME_TYPES.includes(requestedCrimeType)) {
                 throw new apiError(400, "Invalid crime type");
             }
             filter.crimeType = requestedCrimeType;
         }
-    
+
         if (requestedStatus) {
-            if (![
-              "PENDING",
-              "ASSIGNED",
-              "UNDER_INVESTIGATION",
-              "RESOLVED",
-              "CLOSED"
-            ].includes(requestedStatus)) {
+            if (!STATUSES.includes(requestedStatus)) {
                 throw new apiError(400, "Invalid status");
             }
             filter.status = requestedStatus;
         }
-    
-        // Search(now through q we can search severity and status too)
+
+        // Free text search
         if (q && q.trim()) {
-        const safeQuery = escapeRegex(q.trim().toUpperCase());
-    
-        const orConditions = [
-            { caseId: { $regex: safeQuery, $options: "i" } },
-            { reporterName: { $regex: safeQuery, $options: "i" } },
-            { description: { $regex: safeQuery, $options: "i" } }
-        ];
-    
-        // Check if q matches severity
-        if (["LOW","MEDIUM","HIGH","CRITICAL"].includes(safeQuery)) {
-            orConditions.push({ severity: safeQuery });
+            const raw = q.trim();
+            const safeQuery = escapeRegex(raw);
+            const upper = raw.toUpperCase();
+
+            const orConditions = [
+                { caseId: { $regex: safeQuery, $options: "i" } },
+                { reporterName: { $regex: safeQuery, $options: "i" } }
+            ];
+
+            if (SEVERITIES.includes(upper)) orConditions.push({ severity: upper });
+            if (CRIME_TYPES.includes(upper)) orConditions.push({ crimeType: upper });
+
+            // Match by reporting citizen's name (scoped to the same tenant when known)
+            const citizenMatch = {
+                role: "CITIZEN",
+                fullName: { $regex: safeQuery, $options: "i" }
+            };
+            if (filter.tenantId) citizenMatch.tenantId = filter.tenantId;
+            const citizenIds = await User.distinct("_id", citizenMatch);
+            if (citizenIds.length) orConditions.push({ citizenId: { $in: citizenIds } });
+
+            filter.$or = orConditions;
         }
-    
-        // Check if q matches status
-        if ([
-              "PENDING",
-              "ASSIGNED",
-              "UNDER_INVESTIGATION",
-              "RESOLVED",
-              "CLOSED"
-            ].includes(safeQuery)) {
-            orConditions.push({ status: safeQuery });
-        }
-    
-        filter.$or = orConditions;
-    }
-    
+
         const [cases, total] = await Promise.all([
             Case.find(filter)
+                .populate("citizenId", "fullName email")
                 .skip(skip)
                 .limit(limitNum)
                 .sort({ createdAt: -1 })
                 .lean(),
             Case.countDocuments(filter)
         ]);
-    
+
         return res.status(200).json(
             new apiResponse(200, {
-                cases,
-                total,
                 page: pageNum,
-                limit: limitNum
-            }, "Cases found")
+                limit: limitNum,
+                total,
+                totalPages: Math.ceil(total / limitNum),
+                results: cases
+            }, "Cases fetched successfully")
         );
     });
 
