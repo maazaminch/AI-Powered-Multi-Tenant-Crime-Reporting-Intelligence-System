@@ -5,7 +5,6 @@ import User from "../../models/user.model.js";
 import PoliceStation from "../../models/policeStation.model.js";
 import Case from "../../models/case.model.js";
 import escapeRegex from "../../utils/escapeRegex.js";
-import mongoose from "mongoose";
 import StationHeadService from "../../services/stationHead.service.js";
 import CaseAssignmentService from "../../services/caseAssignment.service.js";
 import TenantTransferService from "../../services/tenantTransfer.service.js";
@@ -335,27 +334,20 @@ class AdminController {
         );
     });
 
-    // Police station search — by name or code. Super admin spans any tenant
-    // (optionally narrowed by tenantId); admin is scoped to its own tenant.
+    // Police station search — admin only, scoped to its own tenant. By name or code.
     static searchStations = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 
-        let { q = "", page = 1, limit = 10, tenantId: requestedTenantId } = req.query;
+        if (currentUser.role !== "ADMIN") {
+            throw new apiError(403, "Not allowed to search stations");
+        }
+
+        let { q = "", page = 1, limit = 10 } = req.query;
         page = Math.max(parseInt(page, 10) || 1, 1);
         limit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
         const skip = (page - 1) * limit;
 
-        const filter = {};
-
-        if (currentUser.isSuperAdmin) {
-            if (requestedTenantId) {
-                filter.tenantId = new mongoose.Types.ObjectId(requestedTenantId);
-            }
-        } else if (currentUser.role === "ADMIN") {
-            filter.tenantId = currentUser.tenantId;
-        } else {
-            throw new apiError(403, "Not allowed to search stations");
-        }
+        const filter = { tenantId: currentUser.tenantId };
 
         if (q && q.trim().length > 0) {
             const safeQuery = escapeRegex(q.trim());

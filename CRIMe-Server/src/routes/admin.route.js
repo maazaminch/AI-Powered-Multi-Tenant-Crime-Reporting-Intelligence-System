@@ -46,7 +46,7 @@ adminRoutes.get(
     "/search-stations",
     verifyJWT,
     tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
+    roleGuard({ roles: [Roles.ADMIN] }),
     AdminController.searchStations
 );
 

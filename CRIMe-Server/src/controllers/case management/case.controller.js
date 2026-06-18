@@ -258,7 +258,8 @@ class CaseController {
      * Scope (caller -> visible cases):
      *   - Super admin   : any tenant (optionally narrowed by tenantId)
      *   - Admin         : own tenant
-     *   - Police / SHO  : cases of own police station
+     *   - Station head  : cases of own police station
+     *   - Regular police: cases assigned to them only
      *   - Citizen       : own cases only
      *
      * Text (q) matches: caseId, reporter name (guest), reporting citizen's name,
@@ -301,7 +302,11 @@ class CaseController {
             filter.tenantId = currentUser.tenantId;
         } else if (currentUser.role === "POLICE") {
             filter.tenantId = currentUser.tenantId;
-            filter.policeStationId = currentUser.policeStationId;
+            if (currentUser.isStationHead) {
+                filter.policeStationId = currentUser.policeStationId;
+            } else {
+                filter.assignedTo = currentUser._id;
+            }
         } else if (currentUser.role === "CITIZEN") {
             filter.tenantId = currentUser.tenantId;
             filter.citizenId = currentUser._id;
