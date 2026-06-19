@@ -71,7 +71,7 @@ class AdminController {
         }
 
         const filter = { role: "POLICE" };
-        const validStatuses = ["PENDING", "APPROVED", "BLOCKED"];
+        const validStatuses = ["APPROVED", "BLOCKED"];
         if (status) {
             if (!validStatuses.includes(status)) {
                 throw new apiError(400, "Invalid status");

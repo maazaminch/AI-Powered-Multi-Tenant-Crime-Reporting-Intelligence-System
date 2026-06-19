@@ -40,9 +40,7 @@ const UserSchema = new mongoose.Schema({
   policeStationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "PoliceStation",
-    required: function () {
-      return this.role === "POLICE";
-    },
+    default: null,
     index: true
   },
   isStationHead: {

@@ -148,7 +148,7 @@ class authController {
     // ─────────────────────────────
 
     const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_ORIGIN || 'http://localhost:3000';
-    const inviteLink = `${frontendUrl.replace(/\/$/, '')}/register/invite?token=${rawToken}`;
+    const inviteLink = `${frontendUrl.replace(/\/$/, '')}/register/invite?token=${rawToken}&role=${role}`;
 
     // ─────────────────────────────
     // Send Email
@@ -732,16 +732,3 @@ class authController {
 
 export default authController;
 
-//logout
-// req.session.destroy();
-// res.json({ success: true });
-
-
-// NotificationService.emit({
-//     tenantId,
-//     userId,
-//     type: "CASE_SUBMITTED",
-//     title: "Case Submitted",
-//     message: "Your case has been successfully submitted",
-//     channels: ["inapp","email"]
-//  });

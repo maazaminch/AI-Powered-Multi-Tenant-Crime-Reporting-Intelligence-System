@@ -5,12 +5,23 @@ import { usersService } from '../../services/usersService'
 import { formatError } from '../../lib/utils'
 
 
-export const usePoliceManagement = (page, status, q, stationId) => {
+export const usePoliceManagement = (
+  page,
+  status, 
+  q, 
+  stationId,
+  selectPoliceId) => {
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['police-management', page, status, q, stationId],
     queryFn: () => adminService.getAllPolice(page, status, q, stationId),
+  })
+
+  const { data: policeDetails, isLoading: isPoliceDetailsLoading } = useQuery({
+    queryKey: ['police-details', selectPoliceId],
+    queryFn: () => adminService.getPoliceDetails(selectPoliceId),
+    enabled: !!selectPoliceId,
   })
 
   const statusMutation = useMutation({
@@ -68,9 +79,18 @@ export const usePoliceManagement = (page, status, q, stationId) => {
     },
   })
 
+  const { data: stationsData } = useQuery({
+    queryKey: ['police-stations'],
+    queryFn: () => adminService.getStations(),
+  })
+
+  const policeStations = stationsData?.stations?.filter((station) => station.isActive) ?? []
   return {
     police: data?.police ?? [],
+    policeStations,
     pagination: data?.pagination ?? {},
+    policeDetails,
+    isPoliceDetailsLoading,
     isLoading,
     error,
     statusMutation,

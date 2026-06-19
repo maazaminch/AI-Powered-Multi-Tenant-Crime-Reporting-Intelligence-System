@@ -11,6 +11,7 @@ const RegisterForm = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('token')
+  const inviteRole = searchParams.get('role')
   const isInviteRegistration = Boolean(inviteToken)
   const [formData, setFormData] = useState({
     fullName: '',
@@ -22,7 +23,8 @@ const RegisterForm = () => {
     dateOfBirth: '',
     address: '',
     idType: '',
-    nationalIdHash: ''
+    nationalIdHash: '',
+    badgeNumber: ''
   })
 
   const { register, registerWithInvite, error, clearError } = useAuth()
@@ -32,6 +34,7 @@ const RegisterForm = () => {
   const [profilePic, setProfilePic] = useState(null)
   const [profilePicPreview, setProfilePicPreview] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -331,6 +334,22 @@ const RegisterForm = () => {
                 required
               />
             </div>
+
+            {inviteRole && (
+              <div className="space-y-2">
+                <label htmlFor="badgeNumber" className="text-sm font-medium">
+                  Badge Number
+                </label>
+                <Input
+                  id="badgeNumber"
+                  name="badgeNumber"
+                  placeholder="Enter badge number"
+                  value={formData.badgeNumber}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {displayError && (
