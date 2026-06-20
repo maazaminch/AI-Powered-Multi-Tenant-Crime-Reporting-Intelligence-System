@@ -46,9 +46,6 @@ const UserSchema = new mongoose.Schema({
   isStationHead: {
     type: Boolean,
     default: false,
-    required: function () {
-      return this.role === "POLICE";
-    }
   },
 
 

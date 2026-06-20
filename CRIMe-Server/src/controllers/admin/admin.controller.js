@@ -158,20 +158,25 @@ class AdminController {
         );
     });
     
-    static assignStationHead = wrapAsync(async (req, res) => {
+    static assignOrChangeStationHead = wrapAsync(async (req, res) => {
 
-        const { policeId } = req.params;
-        const { stationId } = req.b
+        const { policeId } = req.body;
+        const { stationId } = req.params;
         const currentUser = req.user;
+
+        if (!stationId || stationId === "undefined") {
+            throw new apiError(400, "Station ID is required");
+        }
+
+        if (!policeId || policeId === "undefined") {
+            throw new apiError(400, "Police ID is required");
+        }
 
         const station = await PoliceStation.findById(stationId);
         if (!station) {
             throw new apiError(404, "Station not found");
         }
 
-        if(station.stationHead) {
-            throw new apiError(400, "Station already has a head. Please remove the current station head before assigning a new one.");
-        }
         // Tenant isolation
         if (!currentUser.isSuperAdmin && station.tenantId.toString() !== currentUser.tenantId.toString()) {
             throw new apiError(403, "Access denied");
@@ -185,21 +190,37 @@ class AdminController {
         if (police.role !== "POLICE") {
             throw new apiError(400, "Only police officers can be assigned as station head");
         }
+        if (police.status !== "APPROVED") {
+            throw new apiError(400, "Police officer must be approved to be assigned as station head");
+        }
 
         if (police.policeStationId?.toString() !== stationId) {
             throw new apiError(400, "Police officer must belong to this station");
         }
 
-        if (police.isStationHead) {
-            throw new apiError(400, "Police officer is already a station head");
+        // Check if police is already SHO of another station
+        if (police.isStationHead && station.stationHead?.toString() !== policeId) {
+            throw new apiError(400, "Police officer is already station head of another station");
         }
+
+        const oldSho = station.stationHead;
 
         const session = await mongoose.startSession();
         let updatedStation;
         let updatedPolice;
+        let isUpdated = false;
         try {
-            session.startTransaction();
+            await session.startTransaction();
             
+            if(station.stationHead){
+                await User.findByIdAndUpdate(
+                    station.stationHead,
+                    { isStationHead: false },
+                    { new: true, session }
+                );
+            }
+
+
             updatedStation = await PoliceStation.findByIdAndUpdate(
                 stationId,
                 { stationHead: policeId },
@@ -212,8 +233,12 @@ class AdminController {
                 { new: true, session }
             );
 
+            if(!updatedStation || !updatedPolice) {
+                throw new apiError(500, "Failed to update station head");
+            }
+
             await session.commitTransaction();
-            await session.endSession();
+            isUpdated = true;
         } catch (error) {
             await session.abortTransaction();
             throw error;
@@ -221,28 +246,46 @@ class AdminController {
             await session.endSession();
         }
             
-         if (updatedPolice && updatedStation){
-            await NotificationService.send({
-                tenantId: updatedPolice.tenantId,
-                userId: policeId,
-                type: "STATION_HEAD_ASSIGNMENT",
-                title: "Station Head Assignment",
-                message: `You have been assigned as the station head of ${updatedStation.name}.`,
-                channels: ["inapp", "email"]
-            });
+         if (isUpdated){
+            const notificationPromises = [
+                NotificationService.send({
+                    tenantId: updatedPolice.tenantId,
+                    userId: policeId,
+                    type: "STATION_HEAD_ASSIGNMENT",
+                    title: "Station Head Assignment",
+                    message: `You have been assigned as the station head of ${updatedStation.name}.`,
+                    channels: ["inapp", "email"]
+                })
+            ];
+
+            if(oldSho){
+                notificationPromises.push(
+                    NotificationService.send({
+                        tenantId: updatedPolice.tenantId,
+                        userId: oldSho,
+                        type: "STATION_HEAD_REMOVAL",
+                        title: "Station Head Removal",
+                        message: `You have been removed as the station head of ${updatedStation.name}.`,
+                        channels: ["inapp" , "email"]
+                    })
+                );
+            }
 
             const admins = await User.find({ tenantId: updatedPolice.tenantId, role: "ADMIN" });
-            for (const admin of admins) {
-                await NotificationService.send({
+            const adminNotificationPromises = admins.map(admin => 
+                NotificationService.send({
                     tenantId: updatedPolice.tenantId,
                     userId: admin._id,
                     type: "STATION_HEAD_ASSIGNMENT",
                     title: "Station Head Assignment",
                     message: `${updatedPolice.fullName} has been assigned as the station head of ${updatedStation.name}.`,
                     channels: ["inapp"]
-                });
-            }
-         }
+                })
+            );
+            notificationPromises.push(...adminNotificationPromises);
+
+            await Promise.all(notificationPromises);
+        }
 
         res.status(200).json(
             new apiResponse(200,
@@ -253,7 +296,7 @@ class AdminController {
     });
 
     static removeStationHead = wrapAsync(async (req, res) => {
-        const { stationId , policeId} = req.params;
+        const { stationId } = req.params;
         const currentUser = req.user;
 
         const station = await PoliceStation.findById(stationId);
@@ -269,20 +312,18 @@ class AdminController {
             throw new apiError(403, "Access denied");
         }
 
-        const police = await User.findById(policeId);
-        if (!police) {
-            throw new apiError(404, "Police officer not found");
-        }
+        const oldSho = await User.findById(station.stationHead);
 
-        if (station.stationHead?.toString() !== policeId) {
-            throw new apiError(400, "This police officer is not the station head of this station");
+        if (!oldSho) {
+            throw new apiError(404, "Station head user not found");
         }
 
         const session = await mongoose.startSession();
         let updatedStation;
-        let updatedPolice;
+        let isRemoved = false;
         try {
-        session.startTransaction();
+        await session.startTransaction();
+            
 
             updatedStation = await PoliceStation.findByIdAndUpdate(
                 stationId,
@@ -290,14 +331,14 @@ class AdminController {
                 { new: true, session }
             );
 
-            updatedPolice = await User.findByIdAndUpdate(
-                policeId,
+            await User.findByIdAndUpdate(
+                oldSho,
                 { isStationHead: false },
-                { new: true, session }
+                { session }
             );
 
             await session.commitTransaction();
-            await session.endSession();
+            isRemoved = true;
     } catch (error) {
         await session.abortTransaction();
         throw error;
@@ -305,32 +346,37 @@ class AdminController {
         await session.endSession();
     }
 
-    if (updatedPolice && updatedStation){
-            await NotificationService.send({
-                tenantId: updatedPolice.tenantId,
-                userId: policeId,
-                type: "STATION_HEAD_REMOVAL",
-                title: "Station Head Removal",
-                message: `You have been removed as the station head of ${updatedStation.name}.`,
-                channels: ["inapp", "email"]
-            });
+    if (isRemoved){
+            const notificationPromises = [
+                NotificationService.send({
+                    tenantId: updatedStation.tenantId,
+                    userId: oldSho,
+                    type: "STATION_HEAD_REMOVAL",
+                    title: "Station Head Removal",
+                    message: `You have been removed as the station head of ${updatedStation.name}.`,
+                    channels: ["inapp", "email"]
+                })
+            ];
 
-            const admins = await User.find({ tenantId: updatedPolice.tenantId, role: "ADMIN" });
-            for (const admin of admins) {
-                await NotificationService.send({
-                    tenantId: updatedPolice.tenantId,
+            const admins = await User.find({ tenantId: updatedStation.tenantId, role: "ADMIN" });
+            const adminNotificationPromises = admins.map(admin => 
+                NotificationService.send({
+                    tenantId: updatedStation.tenantId,
                     userId: admin._id,
                     type: "STATION_HEAD_REMOVAL",
                     title: "Station Head Removal",
-                    message: `${updatedPolice.fullName} has been removed as the station head of ${updatedStation.name}.`,
+                    message: `${oldSho.fullName} has been removed as the station head of ${updatedStation.name}.`,
                     channels: ["inapp"]
-                });
-            }
+                })
+            );
+            notificationPromises.push(...adminNotificationPromises);
+
+            await Promise.all(notificationPromises);
         }
 
         res.status(200).json(
             new apiResponse(200,
-                { updatedStation, updatedPolice },
+                { updatedStation },
                 "Station head removed successfully"
             )
          );

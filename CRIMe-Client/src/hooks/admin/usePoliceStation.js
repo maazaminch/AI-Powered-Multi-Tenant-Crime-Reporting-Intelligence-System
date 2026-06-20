@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {adminService} from '../../services/adminService'
 import { formatError } from '../../lib/utils'
@@ -53,9 +53,33 @@ export const usePoliceStationManagement = (page) => {
     enabled: !!selectedStationId,
   })
 
+  const assignOrChangeShoMutation = useMutation({
+    mutationFn: ({ stationId, policeId }) => adminService.assignOrChangeSho({ stationId, policeId }),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['stationDetails', variables.stationId] })
+      queryClient.invalidateQueries({ queryKey: ['Stations'] })
+      toast.success(response?.message || 'Station head assigned/changed successfully')
+    },
+    onError: (err) => {
+      toast.error(formatError(err))
+    },
+  })
+
+  const removeShoMutation = useMutation({
+    mutationFn: ({ stationId }) => adminService.removeSho(stationId),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['stationDetails', variables.stationId] })
+      queryClient.invalidateQueries({ queryKey: ['Stations'] })
+      toast.success(response?.message || 'Station head removed successfully')
+    },
+    onError: (err) => {
+      toast.error(formatError(err))
+    },
+  })
+
   return {
-    stations,
-    pagination: stations?.pagination,
+    stations: stations?.stations || [],
+    pagination: stations?.pagination || {},
     isLoading,
     error,
     createStation: createStationMutation,
@@ -65,5 +89,7 @@ export const usePoliceStationManagement = (page) => {
     isStationDetailsLoading,
     selectedStationId,
     setSelectedStationId,
+    assignOrChangeSho: assignOrChangeShoMutation,
+    removeSho: removeShoMutation,
   }
 }

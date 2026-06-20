@@ -264,7 +264,7 @@ const PoliceManagementPage = () => {
                 </div>
               </div>
             </div>
-                          )}
+          )}
 
                 {/* <div className="mt-5 space-y-4">
                   {isPoliceDetailsLoading ? (

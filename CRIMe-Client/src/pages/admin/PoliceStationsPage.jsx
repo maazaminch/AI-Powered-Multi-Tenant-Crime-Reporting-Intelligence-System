@@ -4,13 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
-import PoliceStationForm from '../../components/features/police-stations/PoliceStationForm'
 import { formatError } from '../../lib/utils'
+
+import StationDetailsModal from '../../components/features/police-stations/modals/StationDetailsModal'
+import DeleteConfirmationModal from '../../components/features/police-stations/modals/DeleteConfirmationModal'
+import CreateStationModal from '../../components/features/police-stations/modals/CreateStationModal'
+import AssignSHOModal from '../../components/features/police-stations/modals/AssignSHOModal'
+import RemoveSHOModal from '../../components/features/police-stations/modals/RemoveSHOModal'
 
 const PoliceStationsPage = () => {
 
 
   const [page, setPage] = useState(1)
+  const [shoStationId, setShoStationId] = useState(null)
+  const [removeShoStationId, setRemoveShoStationId] = useState(null)
 
   const {
     stations,
@@ -24,6 +31,8 @@ const PoliceStationsPage = () => {
     isStationDetailsLoading,
     selectedStationId,
     setSelectedStationId,
+    assignOrChangeSho,
+    removeSho,
   } = usePoliceStationManagement(page)
 
   //its only for dashboard page because without using location i cannot go to the tenant form directly
@@ -34,7 +43,6 @@ const PoliceStationsPage = () => {
     location.state?.openCreateModal || false)
   const [stationToDelete, setStationToDelete] = useState(null)
 
-  const stationList = stations?.stations ?? []
 
   const handleCreateSubmit = (stationData) => {
     createStation.mutate(stationData, { onSuccess: () => setIsCreateModalOpen(false) })
@@ -51,8 +59,42 @@ const PoliceStationsPage = () => {
     toggleStation.mutate({ stationId: id })
   }
 
+  const handleAssignSho = ({ stationId, policeId }) => {
+    if (!stationId || !policeId) {
+      return
+    }
+    assignOrChangeSho.mutate({ stationId, policeId }, {
+      onSuccess: () => {
+        setShoStationId(null)
+        setSelectedStationId(null)
+      }
+    })
+  }
+
+  const handleRemoveSho = () => {
+    if (!removeShoStationId) return
+    removeSho.mutate({ stationId: removeShoStationId }, {
+      onSuccess: () => {
+        setRemoveShoStationId(null)
+        setSelectedStationId(null)
+      }
+    })
+  }
+
   const pendingToggleId = toggleStation.isPending
     ? toggleStation.variables?.stationId
+    : null
+
+  const pendingDeleteId = deleteStation.isPending
+    ? deleteStation.variables?.stationId
+    : null
+
+  const pendingAssignOrChangeShoId = assignOrChangeSho.isPending
+    ? assignOrChangeSho.variables?.stationId
+    : null
+
+  const pendingRemoveShoId = removeSho.isPending
+    ? removeSho.variables?.stationId
     : null
 
   return (
@@ -73,163 +115,47 @@ const PoliceStationsPage = () => {
             </Button>
           </div>
 
-          {isCreateModalOpen && (
-            <PoliceStationForm
-              onSubmit={handleCreateSubmit}
-              isSubmitting={createStation.isPending}
-              onCancel={() => setIsCreateModalOpen(false)}
-            />
-          )}
+          {/* Create Station */}
+          <CreateStationModal
+            open={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSubmit={handleCreateSubmit}
+            isSubmitting={createStation.isPending}
+          />
 
-          {selectedStationId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full bg-white max-w-md rounded-lg border p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Station Details</h3>
-                  <button
-                    onClick={() => setSelectedStationId(null)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    ✕
-                  </button>
-                </div>
-                {isStationDetailsLoading ? (
-                  <div className="mt-4 space-y-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="h-4 animate-pulse rounded bg-muted"
-                      />
-                    ))}
-                  </div>
-                ) : stationDetails ? (
-                  <div className="mt-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-xs font-semibold uppercase text-muted-foreground">Name</p>
-                          <p className="text-sm font-medium">{stationDetails.name}</p>
-                        </div>
+          {/* Station Details */}
+          <StationDetailsModal
+            open={!!selectedStationId}
+            onClose={() => setSelectedStationId(null)}
+            stationDetails={stationDetails}
+            isLoading={isStationDetailsLoading}
+          />
 
-                        {stationDetails.locationLabel && (
-                          <div>
-                            <p className="text-xs font-semibold uppercase text-muted-foreground">Selected Address</p>
-                            <p className="text-sm font-medium">{stationDetails.locationLabel}</p>
-                          </div>
-                        )}
+          {/* Delete Confirmation */}
+          <DeleteConfirmationModal
+            open={!!stationToDelete}
+            onClose={() => setStationToDelete(null)}
+            onConfirm={handleConfirmDelete}
+            isDeleting={deleteStation.isPending}
+          />
 
-                        <div>
-                          <p className="text-xs font-semibold uppercase text-muted-foreground">Entered Address</p>
-                          <p className="text-sm font-medium">{stationDetails.address}</p>
-                        </div>
+          {/* Assign/Change SHO */}
+          <AssignSHOModal
+            open={!!shoStationId}
+            onClose={() => setShoStationId(null)}
+            onAssign={handleAssignSho}
+            stationId={shoStationId}
+            isAssigning={assignOrChangeSho.isPending}
+          />
 
-                        {/* {stationDetails.location?.coordinates && (
-                          <div>
-                            <p className="text-xs font-semibold uppercase text-muted-foreground">Coordinates</p>
-                            <p className="text-sm font-medium">{`${stationDetails.location.coordinates[0]}, ${stationDetails.location.coordinates[1]}`}</p>
-                          </div>
-                        )} */}
-
-                        <div>
-                          <p className="text-xs font-semibold uppercase text-muted-foreground">City</p>
-                          <p className="text-sm font-medium">{stationDetails.city || 'N/A'}</p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-semibold uppercase text-muted-foreground">Status</p>
-                          <Badge variant={stationDetails.isActive ? 'success' : 'muted'}>
-                            {stationDetails.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-
-                        {stationDetails.code && (
-                          <div>
-                            <p className="text-xs font-semibold uppercase text-muted-foreground">Station Code</p>
-                            <p className="text-sm font-medium">{stationDetails.code}</p>
-                          </div>
-                        )}
-
-                        {stationDetails.createdAt && (
-                          <div>
-                            <p className="text-xs font-semibold uppercase text-muted-foreground">Created</p>
-                            <p className="text-sm font-medium">{new Date(stationDetails.createdAt).toLocaleDateString()}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-semibold mb-3">Station Head</h3>
-                        {stationDetails.stationHead ? (
-                          <div className="rounded-lg border p-4 bg-muted space-y-3">
-                            <div>
-                              <p className="text-xs font-semibold uppercase text-muted-foreground">Name</p>
-                              <p className="text-sm font-medium">{stationDetails.stationHead.fullName}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase text-muted-foreground">Email</p>
-                              <p className="text-sm font-medium">{stationDetails.stationHead.email}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase text-muted-foreground">Phone</p>
-                              <p className="text-sm font-medium">{stationDetails.stationHead.phone || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase text-muted-foreground">Badge Number</p>
-                              <p className="text-sm font-medium">{stationDetails.stationHead.badgeNumber || 'N/A'}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="rounded-lg border p-4 text-sm text-muted-foreground">No station head assigned.</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    Failed to load station details
-                  </p>
-                )}
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedStationId(null)}
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {stationToDelete && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-              <div className="bg-background bg-white rounded-lg shadow-xl border p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold">Delete station?</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  This action cannot be undone. The station will be permanently
-                  removed.
-                </p>
-                <div className="mt-6 flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStationToDelete(null)}
-                    disabled={deleteStation.isPending}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleConfirmDelete}
-                    disabled={deleteStation.isPending}
-                  >
-                    {deleteStation.isPending ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Remove SHO */}
+          <RemoveSHOModal
+            open={!!removeShoStationId}
+            onClose={() => setRemoveShoStationId(null)}
+            onConfirm={handleRemoveSho}
+            shoName={stations.find(s => s._id === removeShoStationId)?.stationHead?.fullName || ''}
+            isRemoving={removeSho.isPending}
+          />
 
           {isLoading ? (
             <div className="space-y-3">
@@ -244,14 +170,14 @@ const PoliceStationsPage = () => {
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {formatError(error)}
             </div>
-          ) : stationList.length === 0 ? (
+          ) : stations.length === 0 ? (
             <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
               No stations yet. Create your first station to get started.
             </div>
           ) : (
             
             <div className="space-y-3">
-              {stationList.map((station) => (
+              {stations.map((station) => (
                 <div
                   key={station._id}
                   className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -268,13 +194,46 @@ const PoliceStationsPage = () => {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {station.code ? `${station.code}, ` : ''} 
-                      {station.address}
-                      
+                      <span className="font-semibold">Station Code:</span> {station.code ? station.code : 'N/A'}
                     </p>
+                    {station.stationHead && (
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-semibold">SHO:</span> {station.stationHead.fullName}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex shrink-0 items-center justify-end gap-2 sm:ml-4">
+                    <Button
+                      variant="success"
+                      size="sm"
+                      disabled={
+                        assignOrChangeSho.isPending &&
+                        pendingAssignOrChangeShoId === station._id
+                      }
+                      onClick={() => {
+                        if (!station._id) {
+                          return
+                        }
+                        setShoStationId(station._id)
+                      }}
+                    >
+                      {station.stationHead ? 'Change SHO' : 'Assign SHO'}
+                    </Button>
+                    {station.stationHead && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={
+                          removeSho.isPending &&
+                          pendingRemoveShoId === station._id
+                        }
+                        onClick={() => setRemoveShoStationId(station._id)}
+                      >
+                        Remove SHO
+                      </Button>
+                    )}
+                    
                     <Button
                       variant="outline"
                       size="sm"
@@ -298,10 +257,14 @@ const PoliceStationsPage = () => {
                           ? 'Deactivate'
                           : 'Activate'}
                     </Button>
+                    
                     <Button
                       variant="destructive"
                       size="sm"
-                      disabled={deleteStation.isPending}
+                      disabled={
+                        deleteStation.isPending &&
+                        pendingDeleteId === station._id
+                      }
                       onClick={() => setStationToDelete(station._id)}
                     >
                       Delete

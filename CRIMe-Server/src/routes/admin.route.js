@@ -95,16 +95,16 @@ adminRoutes.post(
 
 
 // Station Head Management Routes
-adminRoutes.post(
-    "/assign-station-head/:stationId/:policeId",
+adminRoutes.patch(
+    "/assign-or-change-sho/:stationId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    AdminController.assignStationHead
+    AdminController.assignOrChangeStationHead
 );
 
-adminRoutes.delete(
-    "/remove-station-head/:stationId/:policeId",
+adminRoutes.patch(
+    "/remove-sho/:stationId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { Button } from '../../ui/Button'
-import { Input } from '../../../components/ui/Input'
-import LocationPicker from '../../map/LocationPicker'
+import { Button } from '../../../ui/Button'
+import { Input } from '../../../ui/Input'
+import LocationPicker from '../../../map/LocationPicker'
 
 const PoliceStationForm = ({
   onSubmit,
