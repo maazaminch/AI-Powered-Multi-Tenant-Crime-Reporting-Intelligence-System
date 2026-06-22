@@ -155,17 +155,46 @@ class authController {
     // ─────────────────────────────
 
         const messageText = `You are invited as ${role}\n\nClick below to register:\n\n${inviteLink}`;
-
         const messageHtml = `
-            <div style="font-family: Arial, sans-serif; line-height:1.4;">
-                <p>You are invited as <strong>${role}</strong></p>
-                <p>
-                    <a href="${inviteLink}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Register Now</a>
-                </p>
-                <p style="font-size:12px;color:#666;margin-top:12px;">Or open this link in your browser:</p>
-                <p style="word-break:break-all;"><a href="${inviteLink}">${inviteLink}</a></p>
+            <div style="font-family:Arial,sans-serif">
+
+            <h2>Crime Reporting System</h2>
+
+            <p>Salam,</p>
+
+            <p>
+            You have been invited to join the Crime Reporting System as an ${role}.
+            </p>
+
+            <p>
+            Use the following link to complete your account registration:
+            </p>
+
+            <p>
+                <a href="${inviteLink}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Register Now</a>
+            </p>
+
+            <p>
+            This invitation link will expire in 24 hours.
+            </p>
+
+            <p>
+            If you did not request this invitation, please ignore this email.
+            </p>
+
             </div>
-        `;
+            `;
+        // const messageHtml = `
+        //     <div style="font-family: Arial, sans-serif; line-height:1.4;">
+        //         <p>You are invited as <strong>${role}</strong></p>
+        //         <p>
+        //             <a href="${inviteLink}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Register Now</a>
+        //         </p>
+        //         <p style="font-size:12px;color:#666;margin-top:12px;">Or open this link in your browser:</p>
+        //         <p style="word-break:break-all;"><a href="${inviteLink}">${inviteLink}</a></p>
+        //     </div>
+        // `;
+        
 
         await NotificationService.send({
         tenantId:
@@ -173,7 +202,7 @@ class authController {
                 ? currentUser.tenantId
                 : null,
 
-        userId: null,
+        userId: currentUser._id,
 
         type: "INVITE",
 

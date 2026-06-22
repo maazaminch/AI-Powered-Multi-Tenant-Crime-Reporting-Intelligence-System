@@ -3,10 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { usePoliceManagement } from '../../hooks/admin/usePoliceManagement'
-import { useQuery } from '@tanstack/react-query'
-import { adminService } from '../../services/adminService'
-import InvitePoliceForm from '../../components/features/police/InvitePoliceForm'
-import AssignOrTransferStationForm from '../../components/features/police/AssignOrTransferStationForm'
+import InvitePoliceModal from '../../components/features/police/modals/InvitePoliceModal'
+import AssignOrTransferStationModal from '../../components/features/police/modals/AssignOrTransferStationModal'
+import PoliceDetailsModal from '../../components/features/police/modals/PoliceDetailsModal'
+import DeleteConfirmationModal from '../../components/features/DeleteConfirmationModal'
 import { formatError } from '../../lib/utils'
 
 const PoliceManagementPage = () => {
@@ -16,6 +16,8 @@ const PoliceManagementPage = () => {
   const [selectedStation, setSelectedStation] = useState('')
 
   const [selectedPoliceId, setSelectedPoliceId] = useState(null)
+  const [policeToDelete, setPoliceToDelete] = useState(null)
+
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'POLICE' })
 
@@ -29,25 +31,27 @@ const PoliceManagementPage = () => {
     pagination,
     isLoading,
     error,
-    statusMutation,
-    deleteMutation,
-    assignMutation,
-    transferMutation,
-    inviteMutation,
+    updateStatus,
+    deletePolice,
+    assignPolice,
+    transferPolice,
+    invitePolice,
     policeDetails,
     isPoliceDetailsLoading,
   } = usePoliceManagement(page, activeTab, searchQuery, selectedStation, selectedPoliceId)
 
 
-
-
-
   const onUpdateStatus = (userId, newStatus) => {
-    statusMutation.mutate({ userId, newStatus })
+    updateStatus.mutate({ userId, newStatus })
   }
 
-  const onDelete = (userId) => {
-    deleteMutation.mutate(userId)
+  const handleConfirmDelete = () => {
+    if (!policeToDelete) return
+    deletePolice.mutate(policeToDelete, {
+      onSuccess: () => {
+        setPoliceToDelete(null)
+      },
+    })
   }
 
   const handleInviteInputChange = (e) => {
@@ -56,7 +60,7 @@ const PoliceManagementPage = () => {
 
   const handleInviteSubmit = (e) => {
     e.preventDefault()
-    inviteMutation.mutate(inviteForm, {
+    invitePolice.mutate(inviteForm, {
       onSuccess: () => {
         setIsInviteModalOpen(false)
         setInviteForm({ email: '', role: 'POLICE' })
@@ -68,14 +72,14 @@ const PoliceManagementPage = () => {
     e.preventDefault()
 
     if (selectedPoliceForStation.policeStationId) {
-      transferMutation.mutate({ policeId: selectedPoliceForStation._id, toStationId: stationForm.stationId }, {
+      transferPolice.mutate({ policeId: selectedPoliceForStation._id, toStationId: stationForm.stationId }, {
         onSuccess: () => {
           setIsStationModalOpen(false)
           setSelectedPoliceForStation(null)
         }
       })
     } else {
-      assignMutation.mutate({ policeId: selectedPoliceForStation._id, stationId: stationForm.stationId }, {
+      assignPolice.mutate({ policeId: selectedPoliceForStation._id, stationId: stationForm.stationId }, {
         onSuccess: () => {
           setIsStationModalOpen(false)
           setSelectedPoliceForStation(null)
@@ -100,8 +104,45 @@ const PoliceManagementPage = () => {
     setStationForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+
   return (
     <div className="space-y-6">
+      <PoliceDetailsModal
+        open={!!selectedPoliceId}
+        onClose={() => setSelectedPoliceId(null)}
+        policeDetails={policeDetails}
+        isLoading={isPoliceDetailsLoading}
+      />
+      {/* Delete Confirmation */}
+      <DeleteConfirmationModal
+        open={!!policeToDelete}
+        onClose={() => setPoliceToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={deletePolice.isPending}
+        entityName='Police Officer'
+      />
+
+      <InvitePoliceModal
+        open={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onSubmit={handleInviteSubmit}
+        isSubmitting={invitePolice.isPending}
+        formData={inviteForm}
+        onChange={handleInviteInputChange}
+      />
+
+      <AssignOrTransferStationModal
+        open={isStationModalOpen}
+        onClose={handleCancelStationModal}
+        onSubmit={handleAssignOrTransferSubmit}
+        isSubmitting={assignPolice.isPending || transferPolice.isPending}
+        formData={stationForm}
+        onChange={handleStationInputChange}
+        policeName={selectedPoliceForStation?.fullName}
+        stations={policeStations}
+        isTransfer={!!selectedPoliceForStation?.policeStationId}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Police Management</CardTitle>
@@ -149,8 +190,10 @@ const PoliceManagementPage = () => {
             </div>
           </div>
         </CardHeader>
-
         <CardContent className="space-y-6">
+
+
+
           {isLoading ? (
             <div className="space-y-3">{[1,2,3].map(i => (<div key={i} className="h-20 animate-pulse rounded-lg border bg-muted/40"/>))}</div>
           ) : error ? (
@@ -170,23 +213,54 @@ const PoliceManagementPage = () => {
                   <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">No {activeTab.toLowerCase()} police found.</div>
                 ) : (
                   <div className="space-y-3">
-                    {police.map((p) => (
-                      <div key={p._id} className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between">
+                    {police.map((police) => (
+                      <div key={police._id} className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between">
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap gap-2">
-                            <p className="font-semibold">{p.fullName}</p>
-                            <Badge variant="success">{p.role}</Badge>
-                            {p.isStationHead && <Badge variant="destructive">Station Head</Badge>}
+                            <p className="font-semibold text-lg">{police.fullName}</p>
+                            <Badge variant="success">{police.status}</Badge>
+                            {police.isStationHead && <Badge variant="destructive">Station Head</Badge>}
                           </div>
-                          <p className="text-sm text-muted-foreground">Badge: {p.badgeNumber ?? '—'}</p>
-                          <p className="text-sm text-muted-foreground">Police Station: {p.policeStationId?.name ?? 'Unassigned'}</p>
-                          <p className="text-sm text-muted-foreground">Email: {p.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            <span className='font-medium'>Badge Number:</span> {police.badgeNumber ?? '—'}</p>
+                          <p className="text-sm text-muted-foreground"><span className='font-medium'>Police Station:</span> {police.policeStationId?.name ?? 'Unassigned'}</p>
                         </div>
+                        
                         <div className="mt-4 flex flex-wrap items-center gap-5 sm:mt-0 sm:ml-4">
-                          <Button size="sm" variant='success' onClick={() => handleOpenStationModal(p)}>{p.policeStationId ? 'Transfer Police Station' : 'Assign Police Station'}</Button>
-                          <Button variant='outline' size="sm" onClick={() => setSelectedPoliceId(p._id)}>View Details</Button>
-                          <Button size="sm" variant="default" disabled={statusMutation.isPending} onClick={() => onUpdateStatus(p._id, p.status === 'APPROVED' ? 'BLOCKED' : 'APPROVED')}>{statusMutation.isPending ? 'Updating...' : p.status === 'APPROVED' ? 'Block' : 'Unblock'}</Button>
-                          <Button size="sm" variant="destructive" disabled={deleteMutation.isPending} onClick={() => onDelete(p._id)}>{deleteMutation.isPending ? 'Deleting...' : 'Delete'}</Button>
+                          
+                          <Button 
+                            size="sm" 
+                            variant='success' 
+                            onClick={() => handleOpenStationModal(police)}
+                            >
+                              {police.policeStationId ? 'Transfer Police Station' : 'Assign Police Station'}
+                          </Button>
+                          
+                          <Button 
+                            variant='outline' 
+                            size="sm" 
+                            onClick={() => setSelectedPoliceId(police._id)}
+                            >
+                              View Details
+                          </Button>
+                          
+                          <Button 
+                            size="sm" 
+                            variant="default" 
+                            disabled={updateStatus.isPending} 
+                            onClick={() => onUpdateStatus(police._id, police.status === 'APPROVED' ? 'BLOCKED' : 'APPROVED')}
+                            >
+                              {updateStatus.isPending ? 'Updating...' : police.status === 'APPROVED' ? 'Block' : 'Unblock'}
+                          </Button>
+                          
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            disabled={deletePolice.isPending} 
+                            onClick={() => setPoliceToDelete(police._id)}
+                            >
+                              {deletePolice.isPending ? 'Deleting...' : 'Delete'}
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -203,105 +277,8 @@ const PoliceManagementPage = () => {
             </div>
           )}
 
-          {selectedPoliceId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-2xl rounded-lg border bg-card p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Police Details</h3>
-                    <p className="text-sm text-muted-foreground">Detailed police information.</p>
-                  </div>
-                  <button onClick={() => setSelectedPoliceId(null)} className="text-muted-foreground hover:text-foreground">✕</button>
-                </div>
-
-                {isPoliceDetailsLoading ? (
-                  <div className="mt-5 space-y-3">
-                    {[1, 2, 3].map((item) => (
-                      <div key={item} className="h-4 animate-pulse rounded bg-muted" />
-                    ))}
-                  </div>
-                ) : policeDetails ? (
-                  <div className="mt-5 space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Name</p>
-                      <p className="text-sm font-medium">{policeDetails.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Email</p>
-                      <p className="text-sm font-medium">{policeDetails.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Status</p>
-                      <Badge variant={policeDetails.status === 'APPROVED' ? 'success' : 'destructive'}>
-                        {policeDetails.status}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Tenant</p>
-                       <p className="text-sm font-medium">
-                        {policeDetails.tenantId?.name ?? 'Unassigned'}
-                          </p>
-                    </div>
-                    {policeDetails.createdAt && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">Created</p>
-                        <p className="text-sm font-medium">
-                          {new Date(policeDetails.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mt-5 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    Unable to load police details.
-                  </div>
-                )}
-                
-                <div className="mt-6 flex justify-end">
-                  <Button variant="outline" onClick={() => setSelectedPoliceId(null)}>
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-                {/* <div className="mt-5 space-y-4">
-                  {isPoliceDetailsLoading ? (
-                    <div className="space-y-3">{[1,2,3].map(i => (<div key={i} className="h-4 animate-pulse rounded bg-muted"/>))}</div>
-                  ) : policeDetails ? (
-                    <div className=''>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Name</p>
-                      <p className="text-sm font-medium">{policeDetails.fullName}</p>
-
-                      <p className="text-xs font-semibold uppercase text-muted-foreground mt-2">Email</p>
-                      <p className="text-sm font-medium">{policeDetails.email}</p>
-
-                      <p className="text-xs font-semibold uppercase text-muted-foreground mt-2">Badge</p>
-                      <p className="text-sm font-medium">{policeDetails.badgeNumber}</p>
-
-                      <p className="text-xs font-semibold uppercase text-muted-foreground mt-2">Station</p>
-                      <p className="text-sm font-medium">{policeDetails.policeStationId?.name ?? 'Unassigned'}</p>
-
-                      <p className="text-xs font-semibold uppercase text-muted-foreground mt-2">Status</p>
-                      <p className="text-sm font-medium">{policeDetails.status}</p>
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Unable to load police details.</div>
-                  )}
-                </div>
-                <div className="mt-6 flex justify-end"><Button variant="outline" onClick={() => setSelectedPoliceId(null)}>Close</Button></div>
-              </div>
-            </div>
-          )} */}
-
-          {isInviteModalOpen && (
-            <InvitePoliceForm formData={inviteForm} onChange={handleInviteInputChange} onSubmit={handleInviteSubmit} onCancel={() => setIsInviteModalOpen(false)} isSubmitting={inviteMutation.isPending} />
-          )}
-
-          {isStationModalOpen && (
-            <AssignOrTransferStationForm policeName={selectedPoliceForStation?.fullName} stations={policeStations} formData={stationForm} onChange={handleStationInputChange} onSubmit={handleAssignOrTransferSubmit} onCancel={handleCancelStationModal} isSubmitting={assignMutation.isPending || transferMutation.isPending} isTransfer={!!selectedPoliceForStation?.policeStationId} />
-          )}
+                               
+          
         </CardContent>
       </Card>
     </div>

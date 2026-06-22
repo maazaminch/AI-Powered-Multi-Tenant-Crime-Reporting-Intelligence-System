@@ -33,7 +33,7 @@ function StatCard({
 
 const AdminDashboard = () => {
 
-  const { stats, isLoading, error } = useDashboardStats()
+  const { dashboardStats, isLoading, error } = useDashboardStats()
   const navigate = useNavigate()
 
   return (
@@ -53,7 +53,7 @@ const AdminDashboard = () => {
           
           <StatCard
             title="Total Police Stations"
-            value={stats?.totalPoliceStations ?? '...'}
+            value={dashboardStats?.totalPoliceStations ?? '...'}
             color="text-blue-600"
             bg="bg-blue-50"
             path="/admin/police-stations"
@@ -61,7 +61,7 @@ const AdminDashboard = () => {
 
           <StatCard
             title="Active Police"
-            value={stats?.approvedPolice ?? '...'}
+            value={dashboardStats?.approvedPolice ?? '...'}
             color="text-green-600"
             bg="bg-green-50"
             path="/admin/police"
@@ -69,7 +69,7 @@ const AdminDashboard = () => {
 
           <StatCard
             title="Pending Requests"
-            value={stats?.pendingPolice ?? '...'}
+            value={dashboardStats?.pendingPolice ?? '...'}
             color="text-yellow-600"
             bg="bg-yellow-50"
             path="/admin/pending-requests"
@@ -77,7 +77,7 @@ const AdminDashboard = () => {
 
           <StatCard
             title="Total Cases"
-            value={stats?.totalCases ?? '...'}
+            value={dashboardStats?.totalCases ?? '...'}
             color="text-purple-600"
             bg="bg-purple-50"
             path="/admin/cases"

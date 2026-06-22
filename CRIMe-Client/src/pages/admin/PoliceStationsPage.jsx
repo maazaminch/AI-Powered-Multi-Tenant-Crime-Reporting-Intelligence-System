@@ -7,7 +7,7 @@ import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
 import { formatError } from '../../lib/utils'
 
 import StationDetailsModal from '../../components/features/police-stations/modals/StationDetailsModal'
-import DeleteConfirmationModal from '../../components/features/police-stations/modals/DeleteConfirmationModal'
+import DeleteConfirmationModal from '../../components/features/DeleteConfirmationModal'
 import CreateStationModal from '../../components/features/police-stations/modals/CreateStationModal'
 import AssignSHOModal from '../../components/features/police-stations/modals/AssignSHOModal'
 import RemoveSHOModal from '../../components/features/police-stations/modals/RemoveSHOModal'
@@ -18,6 +18,7 @@ const PoliceStationsPage = () => {
   const [page, setPage] = useState(1)
   const [shoStationId, setShoStationId] = useState(null)
   const [removeShoStationId, setRemoveShoStationId] = useState(null)
+  const [selectedStationId, setSelectedStationId] = useState(null)
 
   const {
     stations,
@@ -29,11 +30,9 @@ const PoliceStationsPage = () => {
     toggleStation,
     stationDetails,
     isStationDetailsLoading,
-    selectedStationId,
-    setSelectedStationId,
     assignOrChangeSho,
     removeSho,
-  } = usePoliceStationManagement(page)
+  } = usePoliceStationManagement(page, selectedStationId)
 
   //its only for dashboard page because without using location i cannot go to the tenant form directly
   const location = useLocation()
@@ -55,8 +54,8 @@ const PoliceStationsPage = () => {
     })
   }
 
-  const handleToggle = (id) => {
-    toggleStation.mutate({ stationId: id })
+  const handleToggle = (stationId) => {
+    toggleStation.mutate({ stationId })
   }
 
   const handleAssignSho = ({ stationId, policeId }) => {
@@ -188,7 +187,7 @@ const PoliceStationsPage = () => {
                         {station.name}
                       </h4>
                       <Badge
-                        variant={station.isActive ? 'success' : 'muted'}
+                        variant={station.isActive ? 'success' : 'destructive'}
                       >
                         {station.isActive ? 'Active' : 'Inactive'}
                       </Badge>

@@ -38,6 +38,7 @@ class NotificationService {
       }
       if (channels.includes("email") && recipientEmail) {
         try {
+          console.log("EMAIL TARGET:", recipientEmail);
           await sendEmail({
             to: recipientEmail,
             subject: title,
@@ -49,6 +50,7 @@ class NotificationService {
           await notification.save();
         } catch(err) {
           console.error("Email notification failed:", err.message);
+          console.error("Email notification failed:", err);
         }
       }
     }

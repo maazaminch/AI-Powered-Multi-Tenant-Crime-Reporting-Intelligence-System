@@ -268,15 +268,15 @@ class UserController {
             
             await Invite.deleteMany({
                 tenantId: targetUser.tenantId,
-                email: targetUser.email, // adjust if you use userId instead
-            }).session(session);
+                email: targetUser.email,
+            });
 
             
             await User.deleteOne({ _id: targetUser._id }).session(session);
 
             });
 
-            if (currentUser.isSuperAdmin || currentUser.role === "ADMIN") {
+            if (currentUser.isSuperAdmin) {
             const superAdmin = await User.findOne({ isSuperAdmin: true });
 
             if (superAdmin) {

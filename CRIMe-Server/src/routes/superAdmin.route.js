@@ -17,7 +17,7 @@ superAdminRouter.get(
 );
 
 superAdminRouter.get(
-    "/tenant-details/:id",
+    "/tenant-details/:tenantId",
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }), 
@@ -36,7 +36,7 @@ superAdminRouter.post(
 
 //tested
 superAdminRouter.delete(
-    '/delete-tenant/:id',
+    '/delete-tenant/:tenantId',
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }), 
@@ -45,7 +45,7 @@ superAdminRouter.delete(
 
 //tested
 superAdminRouter.put(
-    "/activate-or-deactivate-tenant/:id",
+    "/activate-or-deactivate-tenant/:tenantId",
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }), 

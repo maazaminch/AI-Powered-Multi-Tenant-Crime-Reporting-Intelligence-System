@@ -62,7 +62,6 @@ const PoliceStationSchema = new mongoose.Schema({
   stationHead: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    unique: true,
     default: null
   },
 

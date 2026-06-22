@@ -69,7 +69,7 @@ adminRoutes.get(
 
 // Police-specific endpoints
 adminRoutes.get(
-    "/police-details/:policeId",
+    "/get-police-details/:policeId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
@@ -95,7 +95,7 @@ adminRoutes.post(
 
 
 // Station Head Management Routes
-adminRoutes.patch(
+adminRoutes.post(
     "/assign-or-change-sho/:stationId",
     verifyJWT,
     tenantGuard,
@@ -103,7 +103,7 @@ adminRoutes.patch(
     AdminController.assignOrChangeStationHead
 );
 
-adminRoutes.patch(
+adminRoutes.post(
     "/remove-sho/:stationId",
     verifyJWT,
     tenantGuard,
@@ -147,6 +147,14 @@ adminRoutes.get(
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
     AdminController.dashboardStats
+);
+
+adminRoutes.get(
+    "/tenant-analytics",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    AdminController.getTenantAnalytics
 );
 
 

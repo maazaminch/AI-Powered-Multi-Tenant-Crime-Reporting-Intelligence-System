@@ -13,6 +13,7 @@ const RegisterForm = () => {
   const inviteToken = searchParams.get('token')
   const inviteRole = searchParams.get('role')
   const isInviteRegistration = Boolean(inviteToken)
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -335,7 +336,8 @@ const RegisterForm = () => {
               />
             </div>
 
-            {inviteRole && (
+            {/* make change here */}
+            {isInviteRegistration && inviteRole === 'POLICE' && (
               <div className="space-y-2">
                 <label htmlFor="badgeNumber" className="text-sm font-medium">
                   Badge Number

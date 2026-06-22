@@ -13,13 +13,13 @@ const AssignSHOModal = ({
 }) => {
   const [selectedPoliceId, setSelectedPoliceId] = useState(null);
 
-  const { data: policeData, isLoading: isLoadingPolice } = useQuery({
+  const { data: police, isLoading: isLoadingPolice } = useQuery({
     queryKey: ["stationPolice", stationId],
-    queryFn: () => adminService.getAllPolice(1, "APPROVED", stationId),
+    queryFn: () => adminService.getAllPolice(1, "APPROVED", "",stationId),
     enabled: !!open && !!stationId,
   });
 
-  const stationPolice = policeData?.police || [];
+  const stationPolice = police?.police || [];
 
   const handleSubmit = () => {
     if (!selectedPoliceId || !stationId) {

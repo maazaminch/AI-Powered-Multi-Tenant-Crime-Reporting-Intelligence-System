@@ -1,17 +1,19 @@
 import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useTenantManagement } from '../../hooks/superadmin/useTenantManagement'
 import TenantForm from '../../components/features/tenant/TenantForm'
 import { formatError } from '../../lib/utils'
-import { set } from 'react-hook-form';
+
+import DeleteConfirmationModal from '../../components/features/DeleteConfirmationModal';
 
 const TenantsPage = () => {
 
 
   const [page, setPage] = useState(1)
+  const [selectedTenantId, setSelectedTenantId] = useState(null)
 
   const {
     tenants,
@@ -23,9 +25,7 @@ const TenantsPage = () => {
     toggleTenant,
     tenantDetails,
     isTenantDetailsLoading,
-    selectedTenantId,
-    setSelectedTenantId,
-  } = useTenantManagement(page)
+  } = useTenantManagement(page, selectedTenantId)
 
   //its only for dashboard page because without using location i cannot go to the tenant form directly
   const location = useLocation()
@@ -36,7 +36,7 @@ const TenantsPage = () => {
     location.state?.openCreateModal || false)
   const [tenantToDelete, setTenantToDelete] = useState(null)
 
-  const tenantList = tenants?.tenants ?? []
+  // const tenantList = tenants?.tenants ?? []
 
   const handleInputChange = (e) => {
     setFormData((prev) => ({
@@ -75,6 +75,9 @@ const TenantsPage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Tenant Management</CardTitle>
+          <CardDescription>
+            Manage all tenants. Use the action buttons to view details, activate, deactivate, or delete.
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -100,7 +103,7 @@ const TenantsPage = () => {
 
           {selectedTenantId && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
+              <div className="w-full max-w-md rounded-lg border bg-white bg-card p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">Tenant Details</h3>
                   <button
@@ -146,7 +149,7 @@ const TenantsPage = () => {
                       <div className="mt-1">
                         <Badge
                           variant={
-                            tenantDetails.isActive ? 'success' : 'muted'
+                            tenantDetails.isActive ? 'success' : 'destructive'
                           }
                         >
                           {tenantDetails.isActive ? 'Active' : 'Inactive'}
@@ -189,7 +192,16 @@ const TenantsPage = () => {
             </div>
           )}
 
-          {tenantToDelete && (
+
+          <DeleteConfirmationModal
+            open={!!tenantToDelete}
+            onClose={() => setTenantToDelete(null)}
+            onConfirm={handleConfirmDelete}
+            isDeleting={deleteTenant.isPending}
+            entityName='Tenant'
+          />
+          
+          {/* {tenantToDelete && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
               <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
                 <h3 className="text-lg font-semibold">Delete tenant?</h3>
@@ -217,7 +229,7 @@ const TenantsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {isLoading ? (
             <div className="space-y-3">
@@ -232,14 +244,14 @@ const TenantsPage = () => {
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {formatError(error)}
             </div>
-          ) : tenantList.length === 0 ? (
+          ) : tenants.length === 0 ? (
             <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
               No tenants yet. Create your first tenant to get started.
             </div>
           ) : (
             
             <div className="space-y-3">
-              {tenantList.map((tenant) => (
+              {tenants.map((tenant) => (
                 <div
                   key={tenant._id}
                   className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -250,14 +262,16 @@ const TenantsPage = () => {
                         {tenant.name}
                       </h4>
                       <Badge
-                        variant={tenant.isActive ? 'success' : 'muted'}
+                        variant={tenant.isActive ? 'success' : 'destructive'}
                       >
                         {tenant.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {tenant.region} · {tenant.type}
-                      {tenant.code ? ` · ${tenant.code}` : ''}
+                      <span className="font-semibold">Type:</span> {tenant.type}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-semibold">Code:</span> {tenant.code ? tenant.code : 'N/A'}
                     </p>
                   </div>
 

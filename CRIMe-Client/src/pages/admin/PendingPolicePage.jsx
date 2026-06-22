@@ -15,8 +15,8 @@ const PendingPolicePage = () => {
         isLoading,
         error,
         pagination,
-        approveMutation,
-        rejectMutation,
+        approvePolice,
+        rejectPolice,
     } = usePendingPoliceRequests(page)
 
     return (
@@ -49,30 +49,32 @@ const PendingPolicePage = () => {
                                 <div key={police._id} className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between">
                                     <div className="min-w-0 space-y-2">
                                         <div className="flex flex-wrap gap-2 items-center">
-                                            <p className="font-semibold">{police.fullName}</p>
+                                            <p className="font-semibold text-lg">{police.fullName}</p>
                                             <Badge variant="success">{police.role}</Badge>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">{police.email}</p>
                                         <p className="text-sm text-muted-foreground">
-                                            Tenant: {police.tenantId?.name ?? 'Unassigned'}
+                                            <span className='font-semibold'>Email:</span> {police.email}
                                         </p>
+                                        {/* <p className="text-sm text-muted-foreground">
+                                            Tenant: {police.tenantId?.name ?? 'Unassigned'}
+                                        </p> */}
                                     </div>
                                     <div className="mt-3 flex flex-wrap gap-2 sm:mt-0">
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => approveMutation.mutate(police._id)}
-                                            disabled={approveMutation.isPending}
+                                            onClick={() => approvePolice.mutate(police._id)}
+                                            disabled={approvePolice.isPending}
                                         >
-                                            {approveMutation.isPending ? 'Approving...' : 'Approve'}
+                                            {approvePolice.isPending ? 'Approving...' : 'Approve'}
                                         </Button>
                                         <Button
                                             size="sm"
                                             variant="destructive"
-                                            onClick={() => rejectMutation.mutate(police._id)}
-                                            disabled={rejectMutation.isPending}
+                                            onClick={() => rejectPolice.mutate(police._id)}
+                                            disabled={rejectPolice.isPending}
                                         >
-                                            {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
+                                            {rejectPolice.isPending ? 'Rejecting...' : 'Reject'}
                                         </Button>
                                     </div>
                                 </div>

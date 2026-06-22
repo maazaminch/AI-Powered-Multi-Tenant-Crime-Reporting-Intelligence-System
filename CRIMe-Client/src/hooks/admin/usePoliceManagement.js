@@ -13,7 +13,7 @@ export const usePoliceManagement = (
   selectPoliceId) => {
   const queryClient = useQueryClient()
 
-  const { data, isLoading, error } = useQuery({
+  const { data: police, isLoading, error } = useQuery({
     queryKey: ['police-management', page, status, q, stationId],
     queryFn: () => adminService.getAllPolice(page, status, q, stationId),
   })
@@ -24,80 +24,80 @@ export const usePoliceManagement = (
     enabled: !!selectPoliceId,
   })
 
-  const statusMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: ({ userId, newStatus }) => usersService.updateUserStatus(userId, newStatus),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries(['police-management'])
-      toast.success('Police status updated')
+      toast.success(response?.message || 'Police status updated')
     },
     onError: (err) => {
       toast.error(formatError(err))
     },
   })
 
-  const deleteMutation = useMutation({
+  const deletePoliceMutation = useMutation({
     mutationFn: (userId) => usersService.deleteUser(userId),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries(['police-management'])
-      toast.success('Police deleted successfully')
+      toast.success(response?.message || 'Police deleted successfully')
     },
     onError: (err) => {
       toast.error(formatError(err))
     },
   })
 
-  const assignMutation = useMutation({
+  const assignPoliceMutation = useMutation({
     mutationFn: ({ policeId, stationId }) => adminService.assignPoliceToStation(policeId, stationId),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries(['police-management'])
-      toast.success('Police assigned to station')
+      toast.success(response?.message || 'Police assigned to station')
     },
     onError: (err) => {
       toast.error(formatError(err))
     },
   })
 
-  const transferMutation = useMutation({
+  const transferPoliceMutation = useMutation({
     mutationFn: ({ policeId, toStationId }) => adminService.transferPolice(policeId, toStationId),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries(['police-management'])
-      toast.success('Police transferred successfully')
+      toast.success(response?.message || 'Police transferred successfully')
     },
     onError: (err) => {
       toast.error(formatError(err))
     },
   })
 
-  const inviteMutation = useMutation({
+  const invitePoliceMutation = useMutation({
     mutationFn: (inviteData) => (import('../../services/authService').then(m=>m.default)).then(svc => svc.createInviteLink(inviteData)),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries(['pending-police'])
-      toast.success('Police invite sent')
+      toast.success(response?.message || 'Police invite sent')
     },
     onError: (err) => {
       toast.error(formatError(err))
     },
   })
 
-  const { data: stationsData } = useQuery({
+  const { data: stations } = useQuery({
     queryKey: ['police-stations'],
     queryFn: () => adminService.getStations(),
   })
 
-  const policeStations = stationsData?.stations?.filter((station) => station.isActive) ?? []
+  const policeStations = stations?.stations?.filter((station) => station.isActive) ?? []
   return {
-    police: data?.police ?? [],
-    policeStations,
-    pagination: data?.pagination ?? {},
-    policeDetails,
-    isPoliceDetailsLoading,
     isLoading,
     error,
-    statusMutation,
-    deleteMutation,
-    assignMutation,
-    transferMutation,
-    inviteMutation
+    police: police?.police ?? [],
+    policeStations,
+    pagination: police?.pagination ?? {},
+    policeDetails,
+    isPoliceDetailsLoading,
+    updateStatus: updateStatusMutation,
+    deletePolice: deletePoliceMutation,
+    assignPolice: assignPoliceMutation,
+    transferPolice: transferPoliceMutation,
+    invitePolice: invitePoliceMutation
   }
 
 }

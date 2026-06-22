@@ -31,6 +31,7 @@ import PoliceStationsPage from '../pages/admin/PoliceStationsPage'
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage'
 import PendingPolicePage from '../pages/admin/PendingPolicePage'
 import PoliceManagementPage from '../pages/admin/PoliceManagementPage'
+import AdminAnalyticsPage from '../pages/admin/AdminAnalyticsPage'
 
 // // Importing Police pages
 // import PoliceCases from '../pages/police/AssignedCasesPage'
@@ -167,14 +168,10 @@ export const router = createBrowserRouter([
         path: 'pending-police',
         element: <PendingPolicePage />
       },
-      // {
-      //   path: 'tenant-analytics',
-      //   element: <TenantAnalyticsPage />
-      // },
-      // {
-      //   path: 'audit-logs',
-      //   element: <AuditLogsPage />
-      // },
+      {
+        path: 'tenant-analytics',
+        element: <AdminAnalyticsPage />
+      },
       {
         path: 'notifications',
         element: <AdminNotificationsPage />

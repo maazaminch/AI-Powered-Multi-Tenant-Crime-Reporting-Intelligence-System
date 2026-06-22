@@ -2,11 +2,14 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {adminService} from '../../services/adminService'
 import { formatError } from '../../lib/utils'
-import { useState } from 'react'
 
-export const usePoliceStationManagement = (page) => {
+
+export const usePoliceStationManagement = (
+  page,
+  selectedStationId) => {
+  
+  
   const queryClient = useQueryClient()
-  const [selectedStationId, setSelectedStationId] = useState(null)
 
   const { data: stations, isLoading, error } = useQuery({
     queryKey: ['Stations', page],
@@ -25,7 +28,7 @@ export const usePoliceStationManagement = (page) => {
   })
 
   const deleteStationMutation = useMutation({
-    mutationFn: adminService.deleteStation,
+    mutationFn: (stationId) => adminService.deleteStation(stationId),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['Stations'] })
       toast.success(response?.message || 'Police station deleted successfully')
@@ -36,7 +39,7 @@ export const usePoliceStationManagement = (page) => {
   })
 
   const toggleStationMutation = useMutation({
-    mutationFn: ({ stationId }) =>
+    mutationFn: (stationId) =>
       adminService.activateOrDeactivateStation(stationId),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['Stations'] })
@@ -87,8 +90,6 @@ export const usePoliceStationManagement = (page) => {
     toggleStation: toggleStationMutation,
     stationDetails,
     isStationDetailsLoading,
-    selectedStationId,
-    setSelectedStationId,
     assignOrChangeSho: assignOrChangeShoMutation,
     removeSho: removeShoMutation,
   }

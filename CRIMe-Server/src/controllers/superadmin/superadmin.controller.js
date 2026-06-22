@@ -3,6 +3,7 @@ import apiError from "../../utils/apiError.js";
 import apiResponse from "../../utils/apiResponse.js";
 import User from "../../models/user.model.js";
 import Tenant from "../../models/tenant.model.js";
+import Invite from "../../models/invite.model.js"
 import Case from "../../models/case.model.js";
 import NotificationService from "../../services/notification.service.js";
 
@@ -101,6 +102,7 @@ class SuperAdminController {
         );
     }); 
 
+    // in assign and tranfer conteroller tenantId in invite model should also be updated 
     static assignAdminToTenantController = wrapAsync(async (req, res) => {
         const adminId = req.params.adminId;
         const { tenantId } = req.body;
@@ -130,6 +132,11 @@ class SuperAdminController {
 
         admin.tenantId = tenantId;
         await admin.save();
+
+
+        // const adminInviteTenantIdUpdate =  await Invite.findByIdAndUpdate({
+        //     tenantId: admin.tenantId
+        // })
 
         await NotificationService.send({
             tenantId,
@@ -193,7 +200,6 @@ class SuperAdminController {
                 "Admin transferred to new tenant successfully")
         );
     });
-
 
     static getAdminPerformanceController = wrapAsync(async (req, res) => {
         const currentUser = req.user;
@@ -499,7 +505,7 @@ class SuperAdminController {
         })
     
     static deleteTenantController = wrapAsync(async(req, res) =>{
-            const tenantId = req.params.id;
+            const tenantId = req.params.tenantId;
             const currentUser = req.user;
     
             if(!currentUser.isSuperAdmin) throw new apiError(403, 'Not allowed to delete tenant')
@@ -527,7 +533,7 @@ class SuperAdminController {
         })
     
     static activateOrDeactivateTenantController = wrapAsync(async(req, res) => {
-            const tenantId = req.params.id;
+            const tenantId = req.params.tenantId;
             const currentUser = req.user;
     
             if(!currentUser.isSuperAdmin) throw new apiError(403, 'Not allowed to activate or deactivate tenant')
@@ -589,7 +595,7 @@ class SuperAdminController {
     }); 
 
     static getTenantDetails = wrapAsync(async (req, res) => {
-        const tenantId = req.params.id;
+        const tenantId = req.params.tenantId;
         const currentUser = req.user;
 
         if (!currentUser.isSuperAdmin) {

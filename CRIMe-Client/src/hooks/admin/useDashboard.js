@@ -4,14 +4,14 @@ import { adminService } from "../../services/adminService";
 
 export const useDashboardStats = () => {
 
-    const { data, isLoading, error } = useQuery({
+    const { data: dashboardStats, isLoading, error } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: () => adminService.dashboardStats(),
     staleTime: 1000 * 60,
   });
 
   return {
-    stats: data ?? {},
+    dashboardStats: dashboardStats ?? {},
     isLoading,
     error,
 }

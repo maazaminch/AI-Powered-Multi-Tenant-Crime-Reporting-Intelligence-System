@@ -3,15 +3,18 @@ import api from './api.js'
 export const superAdminService = {
   // Tenant Management
   createTenant: async (tenantData) => {
-    return api.post('/api/superadmin/create-tenant', tenantData)
+    const response = await api.post('/api/superadmin/create-tenant', tenantData)
+    return response.data
   },
 
   deleteTenant: async (tenantId) => {
-    return api.delete(`/api/superadmin/delete-tenant/${tenantId}`)
+    const response = await api.delete(`/api/superadmin/delete-tenant/${tenantId}`)
+    return response.data
   },
 
   activateOrDeactivateTenant: async (tenantId) => {
-    return api.put(`/api/superadmin/activate-or-deactivate-tenant/${tenantId}`)
+    const response = await api.put(`/api/superadmin/activate-or-deactivate-tenant/${tenantId}`)
+    return response.data
   },
 
   getTenants: async (page) => {

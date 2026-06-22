@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useAdminsManagement } from '../../hooks/superadmin/useAdminsManagement'
-import InviteAdminForm from '../../components/features/tenant/InviteAdminForm'
-import AssignOrTransferAdminForm from '../../components/features/tenant/assignOrTransferAdminForm'
+import InviteAdminForm from '../../components/features/admin/forms/InviteAdminForm'
+import AssignOrTransferAdminForm from '../../components/features/admin/forms/AssignOrTransferAdminForm'
 import { formatError } from '../../lib/utils'
 
 const AdminsPage = () => {
@@ -170,12 +170,13 @@ const AdminsPage = () => {
                       <div key={admin._id} className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between">
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap gap-2">
-                            <p className="font-semibold">{admin.fullName}</p>
-                            <Badge variant="secondary">{admin.role}</Badge>
+                            <p className="font-semibold text-lg">{admin.fullName}</p>
+                            <Badge variant={admin.status === 'APPROVED' ? 'success' : 'destructive'}>
+                              {admin.status}
+                            </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">{admin.email}</p>
                           <p className="text-sm text-muted-foreground">
-                            Tenant: {admin.tenantId?.name ?? 'Unassigned'}
+                            <span className="font-semibold">Tenant:</span> {admin.tenantId?.name ?? 'Unassigned'}
                           </p>
                         </div>
                         <div className="mt-4 flex flex-wrap items-center gap-5 sm:mt-0 sm:ml-4">
@@ -241,7 +242,7 @@ const AdminsPage = () => {
 
           {selectedAdminId && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-2xl rounded-lg border bg-card p-6 shadow-lg">
+              <div className="w-full max-w-2xl rounded-lg border bg-white bg-card p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold">Admin Details</h3>
@@ -281,6 +282,12 @@ const AdminsPage = () => {
                       <p className="text-xs font-semibold uppercase text-muted-foreground">Tenant</p>
                       <p className="text-sm font-medium">
                         {adminDetails.tenantId?.name ?? 'Unassigned'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Contact Number</p>
+                      <p className="text-sm font-medium">
+                        {adminDetails.phone ?? 'Unassigned'}
                       </p>
                     </div>
                     {adminDetails.createdAt && (

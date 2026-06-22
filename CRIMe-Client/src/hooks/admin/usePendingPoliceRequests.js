@@ -7,12 +7,12 @@ import { formatError } from '../../lib/utils'
 export const usePendingPoliceRequests = (page) => {
   const queryClient = useQueryClient()
 
-  const { data, isLoading, error } = useQuery({
+  const { data: pendingPolice, isLoading, error } = useQuery({
     queryKey: ['pending-police', page],
     queryFn: () => adminService.getPendingPolice(page),
   })
 
-  const approveMutation = useMutation({
+  const approvePoliceMutation = useMutation({
     mutationFn: (userId) => usersService.updateUserStatus(userId, 'APPROVED'),
     onSuccess: () => {
       queryClient.invalidateQueries(['pending-police'])
@@ -23,7 +23,7 @@ export const usePendingPoliceRequests = (page) => {
     },
   })
 
-  const rejectMutation = useMutation({
+  const rejectPoliceMutation = useMutation({
     mutationFn: (userId) => usersService.updateUserStatus(userId, 'REJECTED'),
     onSuccess: () => {
       queryClient.invalidateQueries(['pending-police'])
@@ -35,12 +35,12 @@ export const usePendingPoliceRequests = (page) => {
   })
 
   return {
-    pendingPolice: data?.pendingPolice ?? [],
-    pagination: data?.pagination ?? {},
+    pendingPolice: pendingPolice?.pendingPolice ?? [],
+    pagination: pendingPolice?.pagination ?? {},
     isLoading,
     error,
-    approveMutation,
-    rejectMutation,
+    approvePolice: approvePoliceMutation,
+    rejectPolice: rejectPoliceMutation,
   }
 }
 

@@ -3,8 +3,8 @@ import api from "./api";
 export const adminService = {
 
       // Station Management
-      createStation: async (stationData) => {
-        const response = await api.post('/api/admin/create-station', stationData)
+      createStation: async (station) => {
+        const response = await api.post('/api/admin/create-station', station)
         return response.data
       },
       deleteStation: async (stationId) => {
@@ -12,7 +12,7 @@ export const adminService = {
         return response.data
       },
       activateOrDeactivateStation: async (stationId) => {
-        const response = await api.put(`/api/admin/activate-or-deactivate-station/${stationId}`)
+        const response = await api.patch(`/api/admin/activate-or-deactivate-station/${stationId}`)
         return response.data
       },
       getStations: async (page) => {
@@ -24,21 +24,27 @@ export const adminService = {
         return response.data
       },
       assignOrChangeSho: async ({ stationId, policeId }) => {
-        const response = await api.patch(`/api/admin/assign-or-change-sho/${stationId}`, { policeId })
+        const response = await api.post(`/api/admin/assign-or-change-sho/${stationId}`, { policeId })
         return response.data
       },
       removeSho: async (stationId) => {
-        const response = await api.patch(`/api/admin/remove-sho/${stationId}`)
+        const response = await api.post(`/api/admin/remove-sho/${stationId}`)
         return response.data
       },
 
+
+
+
       // Police Management
-      getAllPolice: async (page, status, stationId) => {
+      getAllPolice: async (page, status, q, stationId) => {
         const params = new URLSearchParams({
           page: page || 1,
           limit: 10,
           status: status || ''
         })
+        if (q) {
+          params.append('q', q)
+        }
         if (stationId) {
           params.append('stationId', stationId)
         }
@@ -50,11 +56,11 @@ export const adminService = {
         return response.data
       },
       assignPoliceToStation: async (policeId, stationId) => {
-        const response = await api.post(`/api/admin/assign-police-to-station/${policeId}`, { stationId })
+        const response = await api.post(`/api/admin/assign-police/${policeId}`, { stationId })
         return response.data
       },
-      transferPolice: async (policeId, newStationId) => {
-        const response = await api.post(`/api/admin/transfer-police/${policeId}`, { newStationId })
+      transferPolice: async (policeId, stationId) => {
+        const response = await api.post(`/api/admin/transfer-police/${policeId}`, { stationId })
         return response.data
       },
 
@@ -67,6 +73,11 @@ export const adminService = {
       dashboardStats: async () => {
       const response = await api.get('/api/admin/dashboard-stats')
       return response.data;
+      },
+
+      getTenantAnalytics: async () => {
+        const response = await api.get('/api/admin/tenant-analytics')
+        return response.data
       }
 
 }    

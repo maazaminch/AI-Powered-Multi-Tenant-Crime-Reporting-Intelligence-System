@@ -4,9 +4,11 @@ import superAdminService from '../../services/superAdminService'
 import { formatError } from '../../lib/utils'
 import { useState } from 'react'
 
-export const useTenantManagement = (page) => {
+export const useTenantManagement = (
+  page,
+  selectedTenantId
+) => {
   const queryClient = useQueryClient()
-  const [selectedTenantId, setSelectedTenantId] = useState(null)
 
   const { data: tenants, isLoading, error } = useQuery({
     queryKey: ['tenants', page ],
@@ -54,7 +56,7 @@ export const useTenantManagement = (page) => {
   })
 
   return {
-    tenants,
+    tenants: tenants?.tenants || [],
     pagination: tenants?.pagination,
     isLoading,
     error,
@@ -64,6 +66,5 @@ export const useTenantManagement = (page) => {
     tenantDetails,
     isTenantDetailsLoading,
     selectedTenantId,
-    setSelectedTenantId,
   }
 }

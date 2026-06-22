@@ -12,7 +12,7 @@ const StationDetailsModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-lg">
+      <div className="w-full max-w-2xl rounded-lg border bg-white p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Station Details</h3>
 

@@ -35,9 +35,10 @@ class AdminController {
             .select("-password")
             .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .lean();
 
-        if (!pendingPolice || pendingPolice.length === 0) {
+        if (!pendingPolice) {
             throw new apiError(404, "No pending police found");
         }
         
@@ -107,10 +108,12 @@ class AdminController {
         const police = await User.find(filter)
             .select("-password")
             .sort({ createdAt: -1 })
+            .populate('policeStationId', 'name')
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .lean();
 
-        if (!police || police.length === 0) {
+        if (!police) {
             throw new apiError(404, "No police found");
         }
         
@@ -142,7 +145,8 @@ class AdminController {
 
         const police = await User.findById(policeId)
             .select("-password")
-            .populate('policeStationId', 'stationName address city');
+            .populate('policeStationId', 'name')
+            .lean();
 
         if (!police) {
             throw new apiError(404, "Police officer not found");
@@ -453,7 +457,7 @@ class AdminController {
 
     static transferPolice = wrapAsync(async (req, res) => {
         const { policeId } = req.params;
-        const { toStationId } = req.body;
+        const { stationId } = req.body;
         const currentUser = req.user;
 
         if(currentUser.role !== "ADMIN" ){
@@ -476,7 +480,7 @@ class AdminController {
                 "Police officer does not belong to your tenant"
             );
         }
-        if (police.policeStationId?.toString() === toStationId) {
+        if (police.policeStationId?.toString() === stationId) {
             throw new apiError(
                 400,
                 "Police officer is already assigned to this station"
@@ -485,7 +489,7 @@ class AdminController {
 
         const fromStation = await PoliceStation.findById(police.policeStationId);
 
-        const targetStation = await PoliceStation.findById(toStationId);
+        const targetStation = await PoliceStation.findById(stationId);
         if (!targetStation) {
             throw new apiError(404, "The target station not found");
         }
@@ -496,7 +500,7 @@ class AdminController {
 
         const updatedPolice = await User.findByIdAndUpdate(
             policeId,
-            { policeStationId: toStationId },
+            { policeStationId: stationId },
             { new: true }
         );
 
@@ -616,7 +620,7 @@ class AdminController {
             throw new apiError(403, "Access denied");
         }
 
-        const tenantFilter = currentUser.isSuperAdmin ? {} 
+        const tenantFilter = currentUser.isSuperAdmin ? {}
             : { tenantId: currentUser.tenantId };
 
         const [
@@ -649,6 +653,200 @@ class AdminController {
 
         res.status(200).json(
             new apiResponse(200, analytics, "Admin analytics fetched successfully")
+        );
+    });
+
+    static getTenantAnalytics = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        if (currentUser.role !== "ADMIN") {
+            throw new apiError(403, "Access denied");
+        }
+
+        const tenantId = currentUser.tenantId;
+
+        const [
+            totalStations,
+            activeStations,
+            inactiveStations,
+
+            totalPolice,
+            totalCitizens,
+            pendingPolice,
+
+            totalCases,
+            pendingCases,
+            assignedCases,
+            underInvestigationCases,
+            resolvedCases,
+            closedCases,
+
+            casesByStation,
+            topActiveStations,
+            newPoliceThisMonth,
+            newCasesThisMonth,
+
+            averageResolutionTime
+        ] = await Promise.all([
+            PoliceStation.countDocuments({ tenantId }),
+            PoliceStation.countDocuments({ tenantId, isActive: true }),
+            PoliceStation.countDocuments({ tenantId, isActive: false }),
+
+            User.countDocuments({ tenantId, role: "POLICE", status: "APPROVED" }),
+            User.countDocuments({ tenantId, role: "CITIZEN" }),
+            User.countDocuments({ tenantId, role: "POLICE", status: "PENDING" }),
+
+            Case.countDocuments({ tenantId }),
+            Case.countDocuments({ tenantId, status: "PENDING" }),
+            Case.countDocuments({ tenantId, status: "ASSIGNED" }),
+            Case.countDocuments({ tenantId, status: "UNDER_INVESTIGATION" }),
+            Case.countDocuments({ tenantId, status: "RESOLVED" }),
+            Case.countDocuments({ tenantId, status: "CLOSED" }),
+
+            Case.aggregate([
+                {
+                    $match: { tenantId }
+                },
+                {
+                    $group: {
+                        _id: "$policeStationId",
+                        caseCount: { $sum: 1 }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "policeStations",
+                        let: { stationId: "$_id" },
+                        pipeline: [
+                            { $match: { $expr: { $eq: ["$_id", "$$stationId"] } } },
+                            { $project: { name: 1 } }
+                        ],
+                        as: "station"
+                    }
+                },
+                { $unwind: { path: "$station", preserveNullAndEmptyArrays: true } },
+                {
+                    $project: {
+                        stationId: "$_id",
+                        stationName: { $ifNull: ["$station.name", "Unassigned"] },
+                        caseCount: 1
+                    }
+                }
+            ]),
+
+            PoliceStation.aggregate([
+                {
+                    $match: { tenantId }
+                },
+                {
+                    $lookup: {
+                        from: "cases",
+                        let: { stationId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: { $eq: ["$policeStationId", "$$stationId"] }
+                                }
+                            },
+                            {
+                                $count: "caseCount"
+                            }
+                        ],
+                        as: "caseData"
+                    }
+                },
+                {
+                    $addFields: {
+                        caseCount: {
+                            $ifNull: [
+                                { $arrayElemAt: ["$caseData.caseCount", 0] },
+                                0
+                            ]
+                        }
+                    }
+                },
+                { $sort: { caseCount: -1 } },
+                { $limit: 5 },
+                {
+                    $project: {
+                        stationId: "$_id",
+                        stationName: "$name",
+                        caseCount: 1
+                    }
+                }
+            ]),
+
+            User.countDocuments({
+                tenantId,
+                role: "POLICE",
+                status: "APPROVED",
+                createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 30)) }
+            }),
+            Case.countDocuments({
+                tenantId,
+                createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 30)) }
+            }),
+
+            Case.aggregate([
+                {
+                    $match: {
+                        tenantId,
+                        status: "RESOLVED",
+                        resolvedAt: { $exists: true }
+                    }
+                },
+                {
+                    $project: {
+                        resolutionTime: {
+                            $divide: [
+                                { $subtract: ["$resolvedAt", "$createdAt"] },
+                                1000 * 60 * 60 * 24
+                            ]
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        avgResolutionTime: { $avg: "$resolutionTime" }
+                    }
+                }
+            ])
+        ]);
+
+        const tenantAnalytics = {
+            stations: {
+                total: totalStations,
+                active: activeStations,
+                inactive: inactiveStations
+            },
+            users: {
+                total: totalPolice + totalCitizens,
+                police: totalPolice,
+                citizens: totalCitizens,
+                pendingPolice
+            },
+            cases: {
+                total: totalCases,
+                pending: pendingCases,
+                assigned: assignedCases,
+                underInvestigation: underInvestigationCases,
+                resolved: resolvedCases,
+                closed: closedCases
+            },
+            performance: {
+                casesByStation,
+                topActiveStations,
+                averageResolutionTime: averageResolutionTime[0]?.avgResolutionTime?.toFixed(2) || 0
+            },
+            trends: {
+                newPoliceThisMonth,
+                newCasesThisMonth
+            }
+        };
+
+        res.status(200).json(
+            new apiResponse(200, tenantAnalytics, "Tenant analytics fetched successfully")
         );
     });
 
