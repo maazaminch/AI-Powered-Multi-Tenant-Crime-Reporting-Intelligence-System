@@ -84,7 +84,7 @@ const StationDetailsModal = ({
                     variant={
                       stationDetails.isActive
                         ? "success"
-                        : "muted"
+                        : "destructive"
                     }
                   >
                     {stationDetails.isActive

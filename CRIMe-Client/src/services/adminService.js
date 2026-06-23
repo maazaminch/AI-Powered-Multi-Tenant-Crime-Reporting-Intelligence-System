@@ -12,7 +12,7 @@ export const adminService = {
         return response.data
       },
       activateOrDeactivateStation: async (stationId) => {
-        const response = await api.patch(`/api/admin/activate-or-deactivate-station/${stationId}`)
+        const response = await api.post(`/api/admin/activate-or-deactivate-station/${stationId}`)
         return response.data
       },
       getStations: async (page) => {

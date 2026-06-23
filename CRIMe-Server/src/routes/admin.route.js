@@ -26,13 +26,13 @@ adminRoutes.delete(
     AdminController.deleteStation   
 );
 
-adminRoutes.put(
+adminRoutes.post(
     "/activate-or-deactivate-station/:stationId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }), 
     AdminController.activateOrDeactivateStation   
-);
+);  
 
 adminRoutes.get(
     "/get-stations",

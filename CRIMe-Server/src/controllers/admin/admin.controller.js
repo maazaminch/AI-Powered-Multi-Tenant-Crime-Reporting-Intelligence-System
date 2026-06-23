@@ -490,13 +490,12 @@ class AdminController {
         const fromStation = await PoliceStation.findById(police.policeStationId);
 
         const targetStation = await PoliceStation.findById(stationId);
+        
+        
         if (!targetStation) {
-            throw new apiError(404, "The target station not found");
+            throw new apiError(404, "Station not found");
         }
 
-        if (targetStation.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Target Station does not belong to your tenant");
-        }
 
         const updatedPolice = await User.findByIdAndUpdate(
             policeId,
@@ -611,49 +610,6 @@ class AdminController {
                     },
                      "Dashboard statistics fetched successfully")
             );
-    });
-
-    static getAdminAnalytics = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (currentUser.role !== "ADMIN" && !currentUser.isSuperAdmin) {
-            throw new apiError(403, "Access denied");
-        }
-
-        const tenantFilter = currentUser.isSuperAdmin ? {}
-            : { tenantId: currentUser.tenantId };
-
-        const [
-            pendingPoliceCount,
-            pendingCasesCount,
-            totalCasesCount,
-            resolvedCasesCount,
-            activePoliceCount,
-            totalCitizensCount,
-            totalStationsCount
-        ] = await Promise.all([
-            User.countDocuments({ ...tenantFilter, role: "POLICE", status: "PENDING" }),
-            Case.countDocuments({ ...tenantFilter, status: "PENDING" }),
-            Case.countDocuments({ ...tenantFilter, isArchived: false }),
-            Case.countDocuments({ ...tenantFilter, status: "RESOLVED" }),
-            User.countDocuments({ ...tenantFilter, role: "POLICE", status: "APPROVED" }),
-            User.countDocuments({ ...tenantFilter, role: "CITIZEN" }),
-            PoliceStation.countDocuments(tenantFilter)
-        ]);
-
-        const analytics = {
-            pendingPolice: pendingPoliceCount,
-            pendingCases: pendingCasesCount,
-            totalCases: totalCasesCount,
-            resolvedCases: resolvedCasesCount,
-            activePolice: activePoliceCount,
-            totalCitizens: totalCitizensCount,
-            totalStations: totalStationsCount
-        };
-
-        res.status(200).json(
-            new apiResponse(200, analytics, "Admin analytics fetched successfully")
-        );
     });
 
     static getTenantAnalytics = wrapAsync(async (req, res) => {
@@ -849,6 +805,51 @@ class AdminController {
             new apiResponse(200, tenantAnalytics, "Tenant analytics fetched successfully")
         );
     });
+
+    static getAdminAnalytics = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        if (currentUser.role !== "ADMIN" && !currentUser.isSuperAdmin) {
+            throw new apiError(403, "Access denied");
+        }
+
+        const tenantFilter = currentUser.isSuperAdmin ? {}
+            : { tenantId: currentUser.tenantId };
+
+        const [
+            pendingPoliceCount,
+            pendingCasesCount,
+            totalCasesCount,
+            resolvedCasesCount,
+            activePoliceCount,
+            totalCitizensCount,
+            totalStationsCount
+        ] = await Promise.all([
+            User.countDocuments({ ...tenantFilter, role: "POLICE", status: "PENDING" }),
+            Case.countDocuments({ ...tenantFilter, status: "PENDING" }),
+            Case.countDocuments({ ...tenantFilter, isArchived: false }),
+            Case.countDocuments({ ...tenantFilter, status: "RESOLVED" }),
+            User.countDocuments({ ...tenantFilter, role: "POLICE", status: "APPROVED" }),
+            User.countDocuments({ ...tenantFilter, role: "CITIZEN" }),
+            PoliceStation.countDocuments(tenantFilter)
+        ]);
+
+        const analytics = {
+            pendingPolice: pendingPoliceCount,
+            pendingCases: pendingCasesCount,
+            totalCases: totalCasesCount,
+            resolvedCases: resolvedCasesCount,
+            activePolice: activePoliceCount,
+            totalCitizens: totalCitizensCount,
+            totalStations: totalStationsCount
+        };
+
+        res.status(200).json(
+            new apiResponse(200, analytics, "Admin analytics fetched successfully")
+        );
+    });
+
+
 
     // Station Management
     static createStation = wrapAsync(async (req, res) => {

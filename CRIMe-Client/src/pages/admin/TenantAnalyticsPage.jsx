@@ -15,10 +15,10 @@ import {
   ResponsiveContainer
 } from "recharts";
 
-import { useAdminAnalytics } from "../../hooks/admin/useAdminAnalytics";
+import { useTenantAnalytics } from "../../hooks/admin/useTenantAnalytics";
 
-const AdminAnalyticsPage = () => {
-  const { analytics, isLoading, error } = useAdminAnalytics();
+const TenantAnalyticsPage = () => {
+  const { analytics, isLoading, error } = useTenantAnalytics();
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error loading analytics</div>;
@@ -232,4 +232,4 @@ const AdminAnalyticsPage = () => {
   );
 };
 
-export default AdminAnalyticsPage;
+export default TenantAnalyticsPage;

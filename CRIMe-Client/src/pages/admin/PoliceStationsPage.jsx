@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
@@ -55,7 +55,7 @@ const PoliceStationsPage = () => {
   }
 
   const handleToggle = (stationId) => {
-    toggleStation.mutate({ stationId })
+    toggleStation.mutate(stationId)
   }
 
   const handleAssignSho = ({ stationId, policeId }) => {
@@ -81,7 +81,7 @@ const PoliceStationsPage = () => {
   }
 
   const pendingToggleId = toggleStation.isPending
-    ? toggleStation.variables?.stationId
+    ? toggleStation.variables
     : null
 
   const pendingDeleteId = deleteStation.isPending
@@ -101,6 +101,7 @@ const PoliceStationsPage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Police Station Management</CardTitle>
+          <CardDescription>Manage police stations and their details</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">

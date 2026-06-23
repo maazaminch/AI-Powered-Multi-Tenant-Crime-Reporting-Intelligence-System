@@ -27,7 +27,8 @@ export const usePoliceManagement = (
   const updateStatusMutation = useMutation({
     mutationFn: ({ userId, newStatus }) => usersService.updateUserStatus(userId, newStatus),
     onSuccess: (response) => {
-      queryClient.invalidateQueries(['police-management'])
+      queryClient.invalidateQueries({ queryKey: ['police-management'] })
+      queryClient.invalidateQueries({ queryKey: ['police-details', selectPoliceId] })
       toast.success(response?.message || 'Police status updated')
     },
     onError: (err) => {
@@ -38,7 +39,7 @@ export const usePoliceManagement = (
   const deletePoliceMutation = useMutation({
     mutationFn: (userId) => usersService.deleteUser(userId),
     onSuccess: (response) => {
-      queryClient.invalidateQueries(['police-management'])
+      queryClient.invalidateQueries({ queryKey: ['police-management'] })
       toast.success(response?.message || 'Police deleted successfully')
     },
     onError: (err) => {
@@ -49,7 +50,7 @@ export const usePoliceManagement = (
   const assignPoliceMutation = useMutation({
     mutationFn: ({ policeId, stationId }) => adminService.assignPoliceToStation(policeId, stationId),
     onSuccess: (response) => {
-      queryClient.invalidateQueries(['police-management'])
+      queryClient.invalidateQueries({ queryKey: ['police-management'] })
       toast.success(response?.message || 'Police assigned to station')
     },
     onError: (err) => {
@@ -60,7 +61,7 @@ export const usePoliceManagement = (
   const transferPoliceMutation = useMutation({
     mutationFn: ({ policeId, toStationId }) => adminService.transferPolice(policeId, toStationId),
     onSuccess: (response) => {
-      queryClient.invalidateQueries(['police-management'])
+      queryClient.invalidateQueries({ queryKey: ['police-management'] })
       toast.success(response?.message || 'Police transferred successfully')
     },
     onError: (err) => {
@@ -71,7 +72,7 @@ export const usePoliceManagement = (
   const invitePoliceMutation = useMutation({
     mutationFn: (inviteData) => (import('../../services/authService').then(m=>m.default)).then(svc => svc.createInviteLink(inviteData)),
     onSuccess: (response) => {
-      queryClient.invalidateQueries(['pending-police'])
+      queryClient.invalidateQueries({ queryKey: ['pending-police'] })
       toast.success(response?.message || 'Police invite sent')
     },
     onError: (err) => {

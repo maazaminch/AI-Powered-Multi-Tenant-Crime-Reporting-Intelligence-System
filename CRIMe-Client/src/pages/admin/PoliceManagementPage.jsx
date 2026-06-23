@@ -218,12 +218,13 @@ const PoliceManagementPage = () => {
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap gap-2">
                             <p className="font-semibold text-lg">{police.fullName}</p>
-                            <Badge variant="success">{police.status}</Badge>
+                            <Badge variant={police.status === "APPROVED" ? "success" : "destructive"}>{police.status}</Badge>
                             {police.isStationHead && <Badge variant="destructive">Station Head</Badge>}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             <span className='font-medium'>Badge Number:</span> {police.badgeNumber ?? '—'}</p>
-                          <p className="text-sm text-muted-foreground"><span className='font-medium'>Police Station:</span> {police.policeStationId?.name ?? 'Unassigned'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            <span className='font-medium'>Police Station:</span> {police.policeStationId?.name ?? 'Unassigned'}</p>
                         </div>
                         
                         <div className="mt-4 flex flex-wrap items-center gap-5 sm:mt-0 sm:ml-4">

@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { adminService } from "../../services/adminService";
 
-export const useAdminAnalytics = () => {
+export const useTenantAnalytics = () => {
     const { data, isLoading, error } = useQuery({
-        queryKey: ["admin-analytics"],
+        queryKey: ["tenant-analytics"],
         queryFn: () => adminService.getTenantAnalytics(),
         staleTime: 1000 * 60,
     });

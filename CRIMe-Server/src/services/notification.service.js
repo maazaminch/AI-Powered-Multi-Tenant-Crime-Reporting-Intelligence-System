@@ -49,7 +49,9 @@ class NotificationService {
           notification.deliveryStatus.email = true;
           await notification.save();
         } catch(err) {
-          console.error("Email notification failed:", err.message);
+          if (err.message) {
+            console.error("Email notification failed:", err.message);
+          }
           console.error("Email notification failed:", err);
         }
       }

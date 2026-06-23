@@ -324,7 +324,7 @@ class authController {
         email: invite.email
     });
 
-    if (existingUser) {
+    if (existingUser && existingUser.status !== "REJECTED") {
         throw new apiError(
             400,
             "User already exists"

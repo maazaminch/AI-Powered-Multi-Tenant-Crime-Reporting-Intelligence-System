@@ -271,7 +271,33 @@ class UserController {
                 email: targetUser.email,
             });
 
-            
+            // Clear station head reference if the user was a station head
+            if (targetUser.role === "POLICE" && targetUser.isStationHead) {
+                await PoliceStation.updateOne(
+                    { stationHead: targetUser._id },
+                    { stationHead: null },
+                    { session }
+                );
+            }
+
+            // Clear case assignments if the user was a police officer
+            if (targetUser.role === "POLICE") {
+                await Case.updateMany(
+                    { assignedTo: targetUser._id },
+                    { assignedTo: null },
+                    { session }
+                );
+            }
+
+            // Clear police station assignment if the user was a police officer
+            if (targetUser.role === "POLICE" && targetUser.policeStationId) {
+                await User.findByIdAndUpdate(
+                    targetUser._id,
+                    { policeStationId: null, isStationHead: false },
+                    { session }
+                );
+            }
+
             await User.deleteOne({ _id: targetUser._id }).session(session);
 
             });
