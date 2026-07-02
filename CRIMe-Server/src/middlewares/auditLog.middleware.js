@@ -20,7 +20,7 @@ const auditAction = (
             userId: req.user?._id || null,
             role: req.user?.role || null,
             flags: {
-              isSuperadmin: req.user?.isSuperadmin || false,
+              isSuperAdmin: req.user?.isSuperAdmin || false,
               isStationHead: req.user?.isStationHead || false,
             },
           },

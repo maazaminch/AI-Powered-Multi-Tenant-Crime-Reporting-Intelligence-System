@@ -33,8 +33,6 @@ const verifyJWT = wrapAsync(async (req, res, next) => {
     catch (error) {
         console.error("JWT Error:", error.message);
         next(error);
-        throw new apiError(400, "Invalid access token");
-        
     }
 });
 

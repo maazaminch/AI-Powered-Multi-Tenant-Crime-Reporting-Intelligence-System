@@ -12,24 +12,16 @@ class AdminController {
 
     // Police Management
     static getPendingPolice = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
-        }
-
-        const filter = {
-            role: "POLICE",
-            status: "PENDING"
-        };
-
-        if (!currentUser.isSuperAdmin) {
-            filter.tenantId = currentUser.tenantId;
-        }
 
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
+
+        const filter = {
+            role: "POLICE",
+            status: "PENDING",
+            ...req.tenantFilter
+        };
 
         const pendingPolice = await User.find(filter)
             .select("-password")
@@ -38,9 +30,9 @@ class AdminController {
             .limit(limit)
             .lean();
 
-        if (!pendingPolice) {
-            throw new apiError(404, "No pending police found");
-        }
+        // if (pendingPolice.length === 0) {
+        //     throw new apiError(404, "No pending police found");
+        // }
         
         const totalPendingPolice = await User.countDocuments(filter);
         const totalPages = Math.ceil(totalPendingPolice / limit);
@@ -62,16 +54,14 @@ class AdminController {
     });
 
     static getAllPolice = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
         const status = req.query.status;
         const q = req.query.q;
         const stationId = req.query.stationId;
 
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
-        }
-
-        const filter = { role: "POLICE" };
+        const filter = { 
+            role: "POLICE",
+            ...req.tenantFilter
+         };
         const validStatuses = ["APPROVED", "BLOCKED"];
         if (status) {
             if (!validStatuses.includes(status)) {
@@ -97,10 +87,6 @@ class AdminController {
             }
         }
 
-        if (!currentUser.isSuperAdmin) {
-            filter.tenantId = currentUser.tenantId;
-        }
-
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
@@ -113,9 +99,9 @@ class AdminController {
             .limit(limit)
             .lean();
 
-        if (!police) {
-            throw new apiError(404, "No police found");
-        }
+        // if (police.length === 0) {
+        //     throw new apiError(404, "No police found");
+        // }
         
         const totalPolice = await User.countDocuments(filter);
         const totalPages = Math.ceil(totalPolice / limit);
@@ -143,18 +129,19 @@ class AdminController {
             throw new apiError(403, "Access denied");
         }
 
-        const police = await User.findById(policeId)
+        const filter = {
+            _id: policeId,
+            role: 'POLICE',
+            ...req.tenantFilter
+        };
+        
+        const police = await User.findOne(filter)
             .select("-password")
             .populate('policeStationId', 'name')
             .lean();
 
         if (!police) {
             throw new apiError(404, "Police officer not found");
-        }
-
-        // Tenant isolation
-        if (!currentUser.isSuperAdmin && police.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Access denied");
         }
 
         res.status(200).json(
@@ -166,7 +153,6 @@ class AdminController {
 
         const { policeId } = req.body;
         const { stationId } = req.params;
-        const currentUser = req.user;
 
         if (!stationId || stationId === "undefined") {
             throw new apiError(400, "Station ID is required");
@@ -181,12 +167,12 @@ class AdminController {
             throw new apiError(404, "Station not found");
         }
 
-        // Tenant isolation
-        if (!currentUser.isSuperAdmin && station.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Access denied");
+        const filter = {
+            _id: policeId,
+            role: 'POLICE',
+            ...req.tenantFilter
         }
-
-        const police = await User.findById(policeId);
+        const police = await User.findOne(filter);
         if (!police) {
             throw new apiError(404, "Police officer not found");
         }
@@ -301,7 +287,6 @@ class AdminController {
 
     static removeStationHead = wrapAsync(async (req, res) => {
         const { stationId } = req.params;
-        const currentUser = req.user;
 
         const station = await PoliceStation.findById(stationId);
         if (!station) {
@@ -311,12 +296,12 @@ class AdminController {
             throw new apiError(400, "This station does not have a station head assigned");
         }
 
-        // Tenant isolation
-        if (!currentUser.isSuperAdmin && station.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Access denied");
+        const filter = {
+            _id: station.stationHead,
+            role: 'POLICE',
+            ...req.tenantFilter
         }
-
-        const oldSho = await User.findById(station.stationHead);
+        const oldSho = await User.findOne(filter);
 
         if (!oldSho) {
             throw new apiError(404, "Station head user not found");
@@ -336,7 +321,7 @@ class AdminController {
             );
 
             await User.findByIdAndUpdate(
-                oldSho,
+                oldSho._id,
                 { isStationHead: false },
                 { session }
             );
@@ -389,33 +374,25 @@ class AdminController {
     static assignPoliceToStation = wrapAsync(async (req, res) => {
         const { policeId } = req.params;
         const { stationId } = req.body;
-        const currentUser = req.user;
 
-        if(currentUser.role !== "ADMIN" ){
-            throw new apiError(403, "Only admin can assign police to station");
+        const filter = {
+            _id: policeId,
+            role: 'POLICE',
+            ...req.tenantFilter
         }
-
-        const police = await User.findById(policeId);
+        const police = await User.findOne(filter);
         if (!police) {
             throw new apiError(404, "Police officer not found");
         }
         if(police.policeStationId) {
             throw new apiError(400, "Police officer is already assigned to a station");
         }
-        if(police.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Police officer does not belong to your tenant");
-        }
 
         const station = await PoliceStation.findById(stationId);
         if (!station) {
             throw new apiError(404, "Station not found");
         }
-        if(station.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Station does not belong to your tenant");
-        }
-        if(police.policeStationId?.toString() === stationId) {
-            throw new apiError(400, "Police officer is already assigned to this station");
-        }
+
 
         const updatedPolice = await User.findByIdAndUpdate(
             policeId,
@@ -458,13 +435,13 @@ class AdminController {
     static transferPolice = wrapAsync(async (req, res) => {
         const { policeId } = req.params;
         const { stationId } = req.body;
-        const currentUser = req.user;
 
-        if(currentUser.role !== "ADMIN" ){
-            throw new apiError(403, "Only admin can transfer police");
+        const filter = {
+            _id: policeId,
+            role: 'POLICE',
+            ...req.tenantFilter
         }
-
-        const police = await User.findById(policeId);
+        const police = await User.findOne(filter);
         if (!police) {
             throw new apiError(404, "Police officer not found");
         }
@@ -474,12 +451,6 @@ class AdminController {
                 "Remove station head assignment before transferring officer"
             );
         }
-        if (police.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(
-                403,
-                "Police officer does not belong to your tenant"
-            );
-        }
         if (police.policeStationId?.toString() === stationId) {
             throw new apiError(
                 400,
@@ -487,7 +458,7 @@ class AdminController {
             );
         }
 
-        const fromStation = await PoliceStation.findById(police.policeStationId);
+        const fromStation = police.policeStationId ? await PoliceStation.findById(police.policeStationId) : null;
 
         const targetStation = await PoliceStation.findById(stationId);
         
@@ -497,8 +468,8 @@ class AdminController {
         }
 
 
-        const updatedPolice = await User.findByIdAndUpdate(
-            policeId,
+        const updatedPolice = await User.findOneAndUpdate(
+            filter,
             { policeStationId: stationId },
             { new: true }
         );
@@ -508,22 +479,22 @@ class AdminController {
         }
 
         await NotificationService.send({
-            tenantId: police.tenantId,
-            userId: policeId,
+            tenantId: updatedPolice.tenantId,
+            userId: updatedPolice._id,
             type: "POLICE_TRANSFER",
             title: "Police Transfer",
             message: `You have been transferred to ${targetStation.name}.`,
             channels: ["inapp"]
         });
 
-        const admins = await User.find({ tenantId: police.tenantId, role: "ADMIN" });
+        const admins = await User.find({ tenantId: updatedPolice.tenantId, role: "ADMIN" });
         for (const admin of admins) {
             await NotificationService.send({
-                tenantId: police.tenantId,
+                tenantId: updatedPolice.tenantId,
                 userId: admin._id,
                 type: "POLICE_TRANSFER",
                 title: "Police Transfer",
-                message: `${police.fullName} has been transferred from ${fromStation.name} to ${targetStation.name}.`,
+                message: `${updatedPolice.fullName} has been transferred from ${fromStation?.name || 'Unassigned'} to ${targetStation.name}.`,
                 channels: ["inapp"]
             });
         }
@@ -537,7 +508,7 @@ class AdminController {
 
     
     // Case Management (Station Level)
-
+    // these controllers not updated
     static getStationCases = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 
@@ -546,7 +517,7 @@ class AdminController {
         }
 
         const filter = {
-            tenantId: currentUser.tenantId
+            ...req.tenantFilter,
         };
 
         const cases = await Case.find(filter)
@@ -567,7 +538,7 @@ class AdminController {
         }
 
         const pendingCases = await Case.find({
-            tenantId: currentUser.tenantId,
+            ...req.tenantFilter,
             status: "PENDING"
         })
             .populate('citizenId', 'fullName email')
@@ -587,7 +558,7 @@ class AdminController {
                 throw new apiError(403, "Only Admin can access dashboard statistics");
                 }
 
-            const filter = { tenantId: currentUser.tenantId };
+            const filter = { ...req.tenantFilter };
     
             const [
                 totalPoliceStations,
@@ -619,8 +590,6 @@ class AdminController {
             throw new apiError(403, "Access denied");
         }
 
-        const tenantId = currentUser.tenantId;
-
         const [
             totalStations,
             activeStations,
@@ -644,24 +613,24 @@ class AdminController {
 
             averageResolutionTime
         ] = await Promise.all([
-            PoliceStation.countDocuments({ tenantId }),
-            PoliceStation.countDocuments({ tenantId, isActive: true }),
-            PoliceStation.countDocuments({ tenantId, isActive: false }),
+            PoliceStation.countDocuments({ ...req.tenantFilter }),
+            PoliceStation.countDocuments({ ...req.tenantFilter, isActive: true }),
+            PoliceStation.countDocuments({ ...req.tenantFilter, isActive: false }),
 
-            User.countDocuments({ tenantId, role: "POLICE", status: "APPROVED" }),
-            User.countDocuments({ tenantId, role: "CITIZEN" }),
-            User.countDocuments({ tenantId, role: "POLICE", status: "PENDING" }),
+            User.countDocuments({ ...req.tenantFilter, role: "POLICE", status: "APPROVED" }),
+            User.countDocuments({ ...req.tenantFilter, role: "CITIZEN" }),
+            User.countDocuments({ ...req.tenantFilter, role: "POLICE", status: "PENDING" }),
 
-            Case.countDocuments({ tenantId }),
-            Case.countDocuments({ tenantId, status: "PENDING" }),
-            Case.countDocuments({ tenantId, status: "ASSIGNED" }),
-            Case.countDocuments({ tenantId, status: "UNDER_INVESTIGATION" }),
-            Case.countDocuments({ tenantId, status: "RESOLVED" }),
-            Case.countDocuments({ tenantId, status: "CLOSED" }),
+            Case.countDocuments({ ...req.tenantFilter }),
+            Case.countDocuments({ ...req.tenantFilter, status: "PENDING" }),
+            Case.countDocuments({ ...req.tenantFilter, status: "ASSIGNED" }),
+            Case.countDocuments({ ...req.tenantFilter, status: "UNDER_INVESTIGATION" }),
+            Case.countDocuments({ ...req.tenantFilter, status: "RESOLVED" }),
+            Case.countDocuments({ ...req.tenantFilter, status: "CLOSED" }),
 
             Case.aggregate([
                 {
-                    $match: { tenantId }
+                    $match: { ...req.tenantFilter }
                 },
                 {
                     $group: {
@@ -692,7 +661,7 @@ class AdminController {
 
             PoliceStation.aggregate([
                 {
-                    $match: { tenantId }
+                    $match: { ...req.tenantFilter }
                 },
                 {
                     $lookup: {
@@ -733,20 +702,20 @@ class AdminController {
             ]),
 
             User.countDocuments({
-                tenantId,
+                ...req.tenantFilter,
                 role: "POLICE",
                 status: "APPROVED",
                 createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 30)) }
             }),
             Case.countDocuments({
-                tenantId,
+                ...req.tenantFilter,
                 createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 30)) }
             }),
 
             Case.aggregate([
                 {
                     $match: {
-                        tenantId,
+                        ...req.tenantFilter,
                         status: "RESOLVED",
                         resolvedAt: { $exists: true }
                     }
@@ -806,49 +775,6 @@ class AdminController {
         );
     });
 
-    static getAdminAnalytics = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (currentUser.role !== "ADMIN" && !currentUser.isSuperAdmin) {
-            throw new apiError(403, "Access denied");
-        }
-
-        const tenantFilter = currentUser.isSuperAdmin ? {}
-            : { tenantId: currentUser.tenantId };
-
-        const [
-            pendingPoliceCount,
-            pendingCasesCount,
-            totalCasesCount,
-            resolvedCasesCount,
-            activePoliceCount,
-            totalCitizensCount,
-            totalStationsCount
-        ] = await Promise.all([
-            User.countDocuments({ ...tenantFilter, role: "POLICE", status: "PENDING" }),
-            Case.countDocuments({ ...tenantFilter, status: "PENDING" }),
-            Case.countDocuments({ ...tenantFilter, isArchived: false }),
-            Case.countDocuments({ ...tenantFilter, status: "RESOLVED" }),
-            User.countDocuments({ ...tenantFilter, role: "POLICE", status: "APPROVED" }),
-            User.countDocuments({ ...tenantFilter, role: "CITIZEN" }),
-            PoliceStation.countDocuments(tenantFilter)
-        ]);
-
-        const analytics = {
-            pendingPolice: pendingPoliceCount,
-            pendingCases: pendingCasesCount,
-            totalCases: totalCasesCount,
-            resolvedCases: resolvedCasesCount,
-            activePolice: activePoliceCount,
-            totalCitizens: totalCitizensCount,
-            totalStations: totalStationsCount
-        };
-
-        res.status(200).json(
-            new apiResponse(200, analytics, "Admin analytics fetched successfully")
-        );
-    });
-
 
 
     // Station Management
@@ -903,18 +829,17 @@ class AdminController {
         const currentUser = req.user;
         const { stationId } = req.params;
 
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
-        }
 
-        const station = await PoliceStation.findById(stationId);
+        const filter = { 
+            _id: stationId,
+            ...req.tenantFilter
+        };
+        
+        const station = await PoliceStation.findOne(filter);
         if (!station) {
             throw new apiError(404, "Station not found");
         }
 
-        if (station.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Access denied");
-        }
 
         // Permanently remove the station document
         await PoliceStation.findByIdAndDelete(stationId);
@@ -927,19 +852,17 @@ class AdminController {
     static activateOrDeactivateStation = wrapAsync(async(req, res) => {
         const currentUser = req.user;
         const { stationId } = req.params;
-
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
-        }
-
-        const station = await PoliceStation.findById(stationId);
+        
+        const filter = { 
+            _id: stationId,
+            ...req.tenantFilter
+        };
+        
+        const station = await PoliceStation.findOne(filter);
         if (!station) {
             throw new apiError(404, "Station not found");
         }
 
-        if (station.tenantId.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Access denied");
-        }
 
         station.isActive = !station.isActive;
         await station.save();
@@ -950,25 +873,20 @@ class AdminController {
     });
 
     static getStations = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
-        }
-
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const totalStations = await PoliceStation.countDocuments({ tenantId: currentUser.tenantId });
+        const totalStations = await PoliceStation.countDocuments({ ...req.tenantFilter });
 
         const stations = await PoliceStation.find({
-            tenantId: currentUser.tenantId
+            ...req.tenantFilter
         })
             .populate('stationHead', 'fullName email badgeNumber')
             .skip(skip)
             .limit(limit)
-            .sort({ name: 1 });
+            .sort({ name: 1 })
+            .lean();
 
         const totalPages = Math.ceil(totalStations / limit);         
 
@@ -989,26 +907,22 @@ class AdminController {
 
     static getStationDetails = wrapAsync(async (req, res) => {
         const { stationId } = req.params;
-        const currentUser = req.user;
 
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
-        }
-
-        const station = await PoliceStation.findById(stationId)
+        const filter = { 
+            _id: stationId,
+            ...req.tenantFilter
+        };
+        
+        const station = await PoliceStation.findOne(filter)
             .populate('stationHead', 'fullName email phone badgeNumber')
             .populate({
                 path: 'tenantId',
                 select: 'name code region'
-            });
+            })
+            .lean();
 
         if (!station) {
             throw new apiError(404, "Station not found");
-        }
-
-        // Tenant isolation
-        if (!currentUser.isSuperAdmin && station.tenantId._id.toString() !== currentUser.tenantId.toString()) {
-            throw new apiError(403, "Access denied");
         }
 
         res.status(200).json(

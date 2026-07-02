@@ -55,7 +55,7 @@ adminRoutes.get(
     "/pending-police",
     verifyJWT,
     tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
+    roleGuard({ roles: [Roles.ADMIN]}),
     AdminController.getPendingPolice
 );
 
@@ -132,14 +132,6 @@ adminRoutes.get(
 );
 
 // Analytics Dashboard Routes
-
-adminRoutes.get(
-    "/analytics",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
-    AdminController.getAdminAnalytics
-);
 
 adminRoutes.get(
     "/dashboard-stats",

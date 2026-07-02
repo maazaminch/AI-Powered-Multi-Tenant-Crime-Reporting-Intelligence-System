@@ -1,4 +1,5 @@
 import { isCelebrateError } from "celebrate"
+import apiResponse from "../utils/apiResponse.js"
 
 const errorHandler = (err, req, res, next) => {
   console.error("ERROR:", err)
@@ -21,7 +22,7 @@ const errorHandler = (err, req, res, next) => {
     message = err.message
   }
 
-  res.status(status).json({ success: false, message })
+  res.status(status).json(new apiResponse(status, null, message))
 }
 
 export default errorHandler;

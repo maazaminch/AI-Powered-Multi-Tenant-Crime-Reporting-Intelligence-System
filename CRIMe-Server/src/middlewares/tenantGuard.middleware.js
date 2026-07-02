@@ -1,75 +1,103 @@
 import wrapAsync from "../utils/wrapAsync.js";
+import apiError from "../utils/apiError.js";
+
 import Tenant from "../models/tenant.model.js";
-import User from "../models/user.model.js";
 import PoliceStation from "../models/policeStation.model.js";
 
-// Tenant guard protects data boundaries.
-// Role / permission guard protects authority boundaries.
+import { Roles } from "../constants/roles.js";
+
 const tenantGuard = wrapAsync(async (req, res, next) => {
 
-    // Super Admin has global scope
+    // Super Admin bypass
     if (req.user.isSuperAdmin) {
-      req.tenantFilter = {};
-      req.stationFilter = {};
-      return next();
+        req.tenantFilter = {};
+        req.stationFilter = {};
+        return next();
     }
-  
+
+    // User must belong to a tenant
     if (!req.user.tenantId) {
-      return res.status(403).json({ message: "Tenant context missing." });
+        return next(new apiError(403, "Tenant context missing."));
     }
-    
+
+    // Verify tenant exists
     const tenant = await Tenant.findById(req.user.tenantId);
+
     if (!tenant) {
-      return res.status(403).json({ message: "Tenant not found." });
-    }
-    if(!tenant.isActive) {
-      return res.status(403).json({ message: "Tenant is not active." });
+        return next(new apiError(403, "Tenant not found."));
     }
 
-    // Force tenant scope on all queries
-    req.tenantFilter = { tenantId: req.user.tenantId };
-  
-    // Station-specific filtering based on user role
+    if (!tenant.isActive) {
+        return next(new apiError(403, "Tenant is inactive."));
+    }
+
+    // Tenant scope
+    req.tenantFilter = Object.freeze({
+        tenantId: req.user.tenantId
+    });
+
+    // Station scope
     if (req.user.isStationHead && req.user.policeStationId) {
-      // Station heads see only their station
-      req.stationFilter = { policeStationId: req.user.policeStationId };
-    } else if (req.user.role === "POLICE" && req.user.policeStationId) {
-      // Police see only their assigned cases from their station
-      req.stationFilter = { 
-        policeStationId: req.user.policeStationId,
-        assignedTo: req.user._id 
-      };
+
+        req.stationFilter = Object.freeze({
+            policeStationId: req.user.policeStationId
+        });
+
+    } else if (
+        req.user.role === Roles.POLICE &&
+        req.user.policeStationId
+    ) {
+
+        req.stationFilter = Object.freeze({
+            policeStationId: req.user.policeStationId,
+            assignedTo: req.user._id
+        });
+
     } else {
-      // Admins and others see tenant-wide (no station filter)
-      req.stationFilter = {};
-    }
-  
-    // Protect write payloads
-    if (req.body?.tenantId && req.body.tenantId.toString() !== req.user.tenantId.toString()) {
-      return res.status(403).json({ message: "Cross-tenant write blocked." });
+
+        // Admin
+        req.stationFilter = Object.freeze({});
     }
 
-    // Protect station assignments in payloads
-    if (req.body?.policeStationId && req.user.role !== "ADMIN" && !req.user.isSuperAdmin) {
-      // Non-admin users cannot change station assignments
-      const station = await PoliceStation.findById(req.body.policeStationId);
-      if (!station || station.tenantId.toString() !== req.user.tenantId.toString()) {
-        return res.status(403).json({ message: "Invalid station assignment." });
-      }
-
-      // Police and station heads can only use their own station
-      if ((req.user.role === "POLICE" || req.user.isStationHead) && 
-          req.body.policeStationId.toString() !== req.user.policeStationId?.toString()) {
-        return res.status(403).json({ message: "You can only use your own station." });
-      }
+    // Prevent cross-tenant payloads
+    if (
+        req.body?.tenantId &&
+        req.body.tenantId.toString() !== req.user.tenantId.toString()
+    ) {
+        return next(new apiError(403, "Cross-tenant write blocked."));
     }
-  
-    // Force payload tenantId
+
+    // Validate station assignment
+    if (
+        req.body?.policeStationId &&
+        req.user.role !== Roles.ADMIN &&
+        !req.user.isSuperAdmin
+    ) {
+
+        const station = await PoliceStation.findById(req.body.policeStationId);
+
+        if (!station) {
+            return next(new apiError(404, "Police station not found."));
+        }
+
+        if (!station.tenantId.equals(req.user.tenantId)) {
+            return next(new apiError(403, "Invalid station assignment."));
+        }
+
+        if (
+            (req.user.role === Roles.POLICE || req.user.isStationHead) &&
+            !station._id.equals(req.user.policeStationId)
+        ) {
+            return next(new apiError(403, "You can only access your own station."));
+        }
+    }
+
+    // Force tenant ownership
     if (req.body) {
-    req.body.tenantId = req.user.tenantId || null;
+        req.body.tenantId = req.user.tenantId;
     }
-  
+
     next();
-  });
-  
+});
+
 export default tenantGuard;
