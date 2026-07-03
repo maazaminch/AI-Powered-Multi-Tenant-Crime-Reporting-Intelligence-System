@@ -32,7 +32,7 @@ const LoginForm = () => {
         { navigate('/citizen/dashboard') }
       else if (user.role === 'POLICE')
         { if (user.isStationHead)
-          { navigate('/police/station-dashboard') }
+          { navigate('/station-head/dashboard') }
         else { navigate('/police/assigned-cases') } }
       else if (user.role === 'ADMIN')
         { if (user.isSuperAdmin)

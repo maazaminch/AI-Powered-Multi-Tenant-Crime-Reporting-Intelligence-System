@@ -31,7 +31,7 @@ export const useAdminsManagement = (
   const statusMutation = useMutation({
     mutationFn: ({ userId, newStatus }) => usersService.updateUserStatus(userId, newStatus),
     onSuccess: () => {
-      queryClient.invalidateQueries(['superadmin-admins'])
+      queryClient.invalidateQueries({ queryKey: ['superadmin-admins']})
       toast.success('Admin status updated')
     },
     onError: (err) => {
@@ -42,8 +42,8 @@ export const useAdminsManagement = (
   const deleteMutation = useMutation({
     mutationFn: (userId) => usersService.deleteUser(userId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['superadmin-admins'])
-      queryClient.invalidateQueries(['superadmin-pending-admins'])
+      queryClient.invalidateQueries({queryKey: ['superadmin-admins']})
+      queryClient.invalidateQueries({queryKey: ['superadmin-pending-admins']})
       toast.success('Admin deleted successfully')
     },
     onError: (err) => {
@@ -54,7 +54,7 @@ export const useAdminsManagement = (
   const assignMutation = useMutation({
     mutationFn: ({adminId, tenantId}) => superAdminService.assignAdminToTenant(adminId, tenantId),
     onSuccess: ()=> {
-      queryClient.invalidateQueries(['superadmin-admins'])
+      queryClient.invalidateQueries({queryKey: ['superadmin-admins']})
       toast.success('Admin assigned to tenant successfully')
     },
     onError: (err) => {
@@ -65,7 +65,7 @@ export const useAdminsManagement = (
     const transferMutation = useMutation({
     mutationFn: ({adminId, tenantId}) => superAdminService.transferAdmin(adminId, tenantId),
     onSuccess: ()=> {
-      queryClient.invalidateQueries(['superadmin-admins'])
+      queryClient.invalidateQueries({queryKey: ['superadmin-admins']})
       toast.success('Admin transferred to new tenant successfully')
     },
     onError: (err) => {
@@ -76,7 +76,7 @@ export const useAdminsManagement = (
   const inviteMutation = useMutation({
     mutationFn: (inviteData) => authService.createInviteLink(inviteData),
     onSuccess: () => {
-      queryClient.invalidateQueries(['superadmin-pending-admins'])
+      queryClient.invalidateQueries({queryKey: ['superadmin-pending-admins']})
       toast.success('Admin invite sent successfully')
     },
     onError: (err) => {

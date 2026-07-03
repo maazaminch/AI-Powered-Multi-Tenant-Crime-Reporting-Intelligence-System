@@ -5,6 +5,7 @@ import ProtectedRoute from '../components/common/ProtectedRoute'
 import PublicLayout from '../components/layout/PublicLayout'
 import SuperAdminLayout from '../components/layout/SuperAdminLayout'
 import AdminLayout from '../components/layout/AdminLayout'
+import StationHeadLayout from '../components/layout/StationHeadLayout'
 // import PoliceLayout from '../components/layout/PoliceLayout'
 // import CitizenLayout from '../components/layout/CitizenLayout'
 
@@ -32,6 +33,13 @@ import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage'
 import PendingPolicePage from '../pages/admin/PendingPolicePage'
 import PoliceManagementPage from '../pages/admin/PoliceManagementPage'
 import TenantAnalyticsPage from '../pages/admin/TenantAnalyticsPage'
+
+// Importing StationHead pages
+import StationHeadDashboard from '../pages/station-head/DashboardPage'
+import StationPolicePage from '../pages/station-head/StationPolicePage'
+// import StationCasesPage from '../pages/station-head/StationCasesPage'
+// import StationAnalyticsPage from '../pages/station-head/StationAnalyticsPage'
+import StationHeadNotificationPage from '../pages/station-head/StationHeadNotificationPage'
 
 // // Importing Police pages
 // import PoliceCases from '../pages/police/AssignedCasesPage'
@@ -175,6 +183,28 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <AdminNotificationsPage />
+      }
+    ]
+  },
+  {
+    path: '/station-head/*',
+    element: (
+      <ProtectedRoute allowedRoles={['POLICE']} requiredFlags={{ isStationHead: true }}>
+        <StationHeadLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: 'dashboard',
+        element: <StationHeadDashboard />
+      },
+      {
+        path: 'station-police',
+        element: <StationPolicePage />
+      },
+      {
+        path: 'notifications',
+        element: <StationHeadNotificationPage />
       }
     ]
   },

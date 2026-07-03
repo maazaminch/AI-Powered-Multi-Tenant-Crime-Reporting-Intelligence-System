@@ -7,7 +7,16 @@ import { Roles, UserFlags } from "../constants/roles.js";
 
 const stationHeadRouter = express.Router();
 
-// Police Management Routes
+//dashboard
+stationHeadRouter.get(
+    "/dashboard-stats",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    StationHeadController.dashboardStats
+);
+
+// Station Police Routes
 stationHeadRouter.get(
     "/station-police",
     verifyJWT,
@@ -15,6 +24,18 @@ stationHeadRouter.get(
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
     StationHeadController.getStationPolice
 );
+
+stationHeadRouter.get(
+    "/station-police/:policeId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    StationHeadController.getPoliceDetails
+);
+
+
+
+
 
 stationHeadRouter.post(
     "/assign-case-to-police",
@@ -39,6 +60,8 @@ stationHeadRouter.get(
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
     StationHeadController.getPolicePerformance
 );
+
+
 
 // Case Management Routes
 stationHeadRouter.get(

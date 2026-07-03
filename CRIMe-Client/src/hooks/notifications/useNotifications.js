@@ -16,6 +16,11 @@ export const useNotifications = (page) => {
         queryFn: notificationsService.getUserNotificationsForHeader,
     })
 
+    const {data: unreadCount} = useQuery({
+        queryKey: ['unread-count'],
+        queryFn: notificationsService.getUnreadCount,
+    })
+
     const markAsReadMutation = useMutation({
         mutationFn: (notificationId) => 
             notificationsService.markAsRead(notificationId),
@@ -26,10 +31,7 @@ export const useNotifications = (page) => {
         },
     })
 
-    const {data: unreadCount} = useQuery({
-        queryKey: ['unread-count'],
-        queryFn: notificationsService.getUnreadCount,
-    })
+
 
     return {
         notifications: data?.notifications,

@@ -8,14 +8,14 @@ export const usePendingAdminRequests = () => {
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['superadmin-pending-admins'],
+    queryKey: ['pending-admins'],
     queryFn: () => superAdminService.getPendingAdmins(),
   })
 
   const approveMutation = useMutation({
     mutationFn: (userId) => usersService.updateUserStatus(userId, 'APPROVED'),
     onSuccess: () => {
-      queryClient.invalidateQueries(['superadmin-pending-admins'])
+      queryClient.invalidateQueries({queryKey: ['pending-admins']})
       toast.success('Admin approved successfully')
     },
     onError: (err) => {
@@ -26,7 +26,7 @@ export const usePendingAdminRequests = () => {
   const rejectMutation = useMutation({
     mutationFn: (userId) => usersService.updateUserStatus(userId, 'REJECTED'),
     onSuccess: () => {
-      queryClient.invalidateQueries(['superadmin-pending-admins'])
+      queryClient.invalidateQueries({queryKey: ['pending-admins']})
       toast.success('Admin request rejected')
     },
     onError: (err) => {
