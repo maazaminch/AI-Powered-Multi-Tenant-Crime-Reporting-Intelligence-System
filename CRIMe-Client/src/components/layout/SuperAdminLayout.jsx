@@ -118,7 +118,7 @@ const SuperAdminLayout = () => {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-96" align="end">
+                <DropdownMenuContent className="w-96 bg-white" align="end">
                   <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                   {isLoading ? (
                     <div className="p-4 text-sm text-muted-foreground">Loading notifications...</div>
@@ -127,7 +127,7 @@ const SuperAdminLayout = () => {
                   ) : (
                     <div className="max-h-72 space-y-2 overflow-y-auto p-2 cursor-pointer">
                       {headerNotificationsList.map((notification) => (
-                        <div key={notification._id} className={`rounded-md border px-3 py-2 ${!notification.isRead ? 'bg-slate-100' : 'bg-white'}`}>
+                        <div key={notification._id} className={`rounded-md border px-3 py-2 ${!notification.isRead ? 'bg-slate-200' : 'bg-white'}`}>
                           <p className="font-medium text-sm">{notification.title}</p>
                           <p className="text-xs text-muted-foreground">{notification.message}</p>
                           <p className="text-[10px] text-muted-foreground mt-1">{new Date(notification.createdAt).toLocaleDateString()}</p>
@@ -136,7 +136,7 @@ const SuperAdminLayout = () => {
                     </div>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className='cursor-pointer border border-slate-300 hover:bg-gray-900' >
+                  <DropdownMenuItem asChild className='cursor-pointer border bg-white border-slate-300 hover:bg-gray-50' >
                     <Link to="/superadmin/notifications">View all notifications</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -146,7 +146,7 @@ const SuperAdminLayout = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="text-black bg-white hover:bg-gray-500">My Account</Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" align="start">
+                <DropdownMenuContent className="w-40 bg-white" align="start">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >

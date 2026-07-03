@@ -65,7 +65,7 @@ const AdminNotificationsPage = () => {
                 <div 
                 key={notification._id} 
                 onClick={() => handleMarkAsRead(notification._id)} style={{ cursor: 'pointer' }}
-                className={`rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between ${!notification.isRead ? 'border-blue-500' : 'border-gray-200'}`}>
+                className={`rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between ${!notification.isRead ? 'border-blue-500 bg-gray-100' : 'border-gray-200'}`}>
                   <div className="min-w-0 space-y-2">
                     <p className="font-semibold">{notification.title}</p>
                     <p className="text-sm text-muted-foreground">{notification.message}</p>

@@ -122,7 +122,7 @@ const AdminLayout = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuPortal>
-                <DropdownMenuContent className="w-96" align="end">
+                <DropdownMenuContent className="w-96 bg-white" align="end">
                   <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                   {isLoading ? (
                     <div className="p-4 text-sm text-muted-foreground">Loading notifications...</div>
@@ -151,7 +151,7 @@ const AdminLayout = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="text-black bg-white hover:bg-gray-500">My Account</Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" align="start">
+                <DropdownMenuContent className="w-40 bg-white" align="start">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >
