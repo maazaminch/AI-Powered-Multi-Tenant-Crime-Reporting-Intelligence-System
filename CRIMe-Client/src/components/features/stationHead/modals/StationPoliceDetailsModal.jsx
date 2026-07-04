@@ -4,7 +4,10 @@ import { Button } from '../../../ui/Button'
 import { Badge } from '../../../ui/Badge'
 import { Badge as BadgeIcon, Calendar, Mail, Phone, AlertCircle, ArrowRight, X } from 'lucide-react'
 
-const StationPoliceDetailsModal = ({ police, policeDetails, isLoading, onClose, onCaseClick }) => {
+const StationPoliceDetailsModal = ({ open, policeDetails, isLoading, error, onClose }) => {
+  
+  if(!open) return null;
+  
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -12,7 +15,7 @@ const StationPoliceDetailsModal = ({ police, policeDetails, isLoading, onClose, 
         <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Officer Details</h2>
-            <p className="text-muted-foreground">{police.fullName}</p>
+            <p className="text-muted-foreground">{policeDetails?.officer?.fullName}</p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
@@ -26,6 +29,11 @@ const StationPoliceDetailsModal = ({ police, policeDetails, isLoading, onClose, 
               {[1, 2, 3, 4].map((item) => (
                 <div key={item} className="h-20 animate-pulse rounded-lg bg-muted" />
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+              <p className="text-muted-foreground">Failed to load officer details</p>
             </div>
           ) : policeDetails ? (
             <>

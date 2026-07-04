@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useStationPolice, usePoliceDetails } from '../../hooks/stationHead/useStationPolice'
+import { useStationPolice } from '../../hooks/stationHead/useStationPolice'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -10,16 +9,26 @@ import { Shield, Badge as BadgeIcon, Clock, CheckCircle, AlertCircle } from 'luc
 
 const StationPolicePage = () => {
   const [page, setPage] = useState(1)
-  const { police, pagination, isLoading, error } = useStationPolice(page)
   const [selectedPoliceId, setSelectedPoliceId] = useState(null)
-  const navigate = useNavigate()
+
+
+  const { 
+    police, 
+    pagination, 
+    isLoading, 
+    error,
+    policeDetails,
+    isDetailsLoading,
+    isDetailsError
+  } = useStationPolice(page, selectedPoliceId)
+
 
   const handlePoliceClick = (policeId) => {
     setSelectedPoliceId(policeId)
   }
 
-  const handleCaseClick = (caseId) => {
-    navigate(`/station-head/case-details/${caseId}`)
+  const handleClose = () => {
+    setSelectedPoliceId(null)
   }
 
   const getOnDutyBadge = (status) => {
@@ -36,9 +45,8 @@ const StationPolicePage = () => {
     )
   }
 
-  const selectedPolice = police.find(p => p._id === selectedPoliceId)
-  const { policeDetails, isLoading: isDetailsLoading } = usePoliceDetails(selectedPoliceId)
-
+  // const selectedPolice = police.find(p => p._id === selectedPoliceId)
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -76,18 +84,18 @@ const StationPolicePage = () => {
               {police.map((officer) => (
                 <div 
                   key={officer._id} 
-                  className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => handlePoliceClick(officer._id)}
+                  className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap gap-2 items-center">
                       <p className="font-semibold text-lg">{officer.fullName}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <BadgeIcon className="w-3 h-3" />
-                        {officer.badgeNumber}
-                      </div>
+                      
                       {getOnDutyBadge(officer.onDutyStatus)}
                     </div>
+
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="font-medium">Badge Number</span> {officer.badgeNumber}
+                      </div>
                     
                     <div className="flex flex-wrap gap-6 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -106,7 +114,8 @@ const StationPolicePage = () => {
                   </div>
                   
                   <div className="mt-4 sm:mt-0 sm:ml-4">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm"
+                    onClick={() => setSelectedPoliceId(officer._id)}>
                       View Details
                     </Button>
                   </div>
@@ -141,15 +150,13 @@ const StationPolicePage = () => {
       )}
 
       {/* Police Details Modal */}
-      {selectedPolice && (
-        <StationPoliceDetailsModal 
-          police={selectedPolice}
+      <StationPoliceDetailsModal 
+          open={!!selectedPoliceId}
           policeDetails={policeDetails}
           isLoading={isDetailsLoading}
-          onClose={() => setSelectedPoliceId(null)}
-          onCaseClick={handleCaseClick}
+          error={isDetailsError}
+          onClose={handleClose}
         />
-      )}
     </div>
   )
 }

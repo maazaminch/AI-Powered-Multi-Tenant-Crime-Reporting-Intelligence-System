@@ -15,7 +15,13 @@ export const stationHeadService = {
 
   // Get police details
   getPoliceDetails: async (policeId) => {
-    const response = await api.get(`/api/station-head/station-police/${policeId}`)
+    const response = await api.get(`/api/station-head/station-police-details/${policeId}`)
+    return response.data
+  },
+
+  // Get station cases with filters
+  getStationCases: async (params = {}) => {
+    const response = await api.get('/api/station-head/station-cases', { params })
     return response.data
   }
 }

@@ -26,16 +26,55 @@ stationHeadRouter.get(
 );
 
 stationHeadRouter.get(
-    "/station-police/:policeId",
+    "/station-police-details/:policeId",
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
     StationHeadController.getPoliceDetails
 );
 
+// Station Cases
+stationHeadRouter.get(
+    "/station-cases",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    StationHeadController.getStationCases
+);
 
 
+// Case Details
+stationHeadRouter.get(
+    "/case-details/:caseId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    StationHeadController.getCaseDetails
+);
 
+stationHeadRouter.patch(
+    "/update-case-status/:caseId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    StationHeadController.updateCaseStatus
+);
+
+stationHeadRouter.post(
+    "/add-case-update",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    StationHeadController.addCaseUpdate
+);
+
+stationHeadRouter.get(
+    "/get-case-update/:caseId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    StationHeadController.getCaseUpdates
+);
 
 stationHeadRouter.post(
     "/assign-case-to-police",
@@ -53,6 +92,9 @@ stationHeadRouter.post(
     StationHeadController.reassignCase
 );
 
+
+
+
 stationHeadRouter.get(
     "/police-performance/:policeId",
     verifyJWT,
@@ -63,38 +105,6 @@ stationHeadRouter.get(
 
 
 
-// Case Management Routes
-stationHeadRouter.get(
-    "/station-cases",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    StationHeadController.getStationCases
-);
-
-stationHeadRouter.get(
-    "/pending-cases",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    StationHeadController.getPendingCases
-);
-
-stationHeadRouter.get(
-    "/case-details/:caseId",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    StationHeadController.getCaseDetails
-);
-
-stationHeadRouter.patch(
-    "/update-case-status/:caseId",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    StationHeadController.updateCaseStatus
-);
 
 // Station Operations Routes
 stationHeadRouter.get(

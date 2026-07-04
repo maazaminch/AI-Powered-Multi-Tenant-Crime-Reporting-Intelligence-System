@@ -21,13 +21,6 @@ const CaseSchema = new mongoose.Schema({
     index: true
   },
 
-
-  reportingMode: {
-   type: String,
-   enum: ["AUTHENTICATED", "GUEST"],
-   default: "AUTHENTICATED"
-  },
-
   // Evidences
   evidenceFiles: [{ 
     type: mongoose.Schema.Types.ObjectId,
@@ -36,12 +29,31 @@ const CaseSchema = new mongoose.Schema({
     default: []
    }],
 
-  // ───── Reporter Identity ─────
-  citizenId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-
-  reporterName: { type: String, required: function() { return this.reportingMode === "GUEST" } },
-  reporterEmail: { type: String, required: function() { return this.reportingMode === "GUEST" } },
-  reporterPhone: { type: String, required: function() { return this.reportingMode === "GUEST" } },
+  // ───── Reporter Identity (Unified) ─────
+  reporter: {
+    type: {
+      type: String,
+      enum: ["CITIZEN", "GUEST"],
+      required: true
+    },
+    citizenId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User",
+      required: function() { return this.type === "CITIZEN" }
+    },
+    name: { 
+      type: String, 
+      required: true 
+    },
+    email: { 
+      type: String, 
+      required: true 
+    },
+    phone: { 
+      type: String, 
+      required: true 
+    }
+  },
 
   // ───── Crime Classification (CRITICAL) ─────
   crimeType: {
@@ -114,6 +126,11 @@ CaseSchema.index({ tenantId: 1, createdAt: -1 });
 CaseSchema.index({ tenantId: 1, status: 1 });
 CaseSchema.index({ tenantId: 1, crimeType: 1 });
 CaseSchema.index({ tenantId: 1, severity: 1 });
+
+// Search indexes
+CaseSchema.index({ "reporter.name": 1 });
+CaseSchema.index({ "reporter.email": 1 });
+CaseSchema.index({ "reporter.phone": 1 });
 
 // System Analytics indexes
 CaseSchema.index({ createdAt: 1 });
