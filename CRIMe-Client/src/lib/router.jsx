@@ -38,6 +38,7 @@ import TenantAnalyticsPage from '../pages/admin/TenantAnalyticsPage'
 import StationHeadDashboard from '../pages/station-head/DashboardPage'
 import StationPolicePage from '../pages/station-head/StationPolicePage'
 import StationCasesPage from '../pages/station-head/StationCasesPage'
+import CaseDetailsPage from '../pages/station-head/CaseDetailsPage'
 // import StationAnalyticsPage from '../pages/station-head/StationAnalyticsPage'
 import StationHeadNotificationPage from '../pages/station-head/StationHeadNotificationPage'
 
@@ -205,6 +206,10 @@ export const router = createBrowserRouter([
       {
         path: 'station-cases',
         element: <StationCasesPage />
+      },
+      {
+        path: 'case-details',
+        element: <CaseDetailsPage />
       },
       {
         path: 'notifications',

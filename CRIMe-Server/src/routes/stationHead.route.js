@@ -53,15 +53,15 @@ stationHeadRouter.get(
 );
 
 stationHeadRouter.patch(
-    "/update-case-status/:caseId",
+    "/close-case-status/:caseId",
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    StationHeadController.updateCaseStatus
+    StationHeadController.closeCaseStatus
 );
 
 stationHeadRouter.post(
-    "/add-case-update",
+    "/add-case-update/:caseId",
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
@@ -69,7 +69,7 @@ stationHeadRouter.post(
 );
 
 stationHeadRouter.get(
-    "/get-case-update/:caseId",
+    "/get-case-updates/:caseId", 
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
@@ -77,7 +77,7 @@ stationHeadRouter.get(
 );
 
 stationHeadRouter.post(
-    "/assign-case-to-police",
+    "/assign-case-to-police/:caseId",
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
@@ -85,7 +85,7 @@ stationHeadRouter.post(
 );
 
 stationHeadRouter.post(
-    "/reassign-case",
+    "/reassign-case/:caseId",
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),

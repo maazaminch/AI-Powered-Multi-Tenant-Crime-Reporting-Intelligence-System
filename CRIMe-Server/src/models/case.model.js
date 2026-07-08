@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import apiError from "../utils/apiError.js";
-import Tenant from "./tenant.model.js";
 import { customAlphabet } from "nanoid";
 
 const CaseSchema = new mongoose.Schema({
@@ -16,9 +15,7 @@ const CaseSchema = new mongoose.Schema({
   // ───── FIR / Case Identity ─────
   caseId: {
     type: String,
-    required: true,
     unique: true,
-    index: true
   },
 
   // Evidences
@@ -39,7 +36,7 @@ const CaseSchema = new mongoose.Schema({
     citizenId: { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: "User",
-      required: function() { return this.type === "CITIZEN" }
+      //required: function() { return this.type === "CITIZEN" }
     },
     name: { 
       type: String, 
@@ -135,7 +132,11 @@ CaseSchema.index({ "reporter.phone": 1 });
 // System Analytics indexes
 CaseSchema.index({ createdAt: 1 });
 
-
+CaseSchema.index({ policeStationId: 1, status: 1, createdAt: -1 });
+CaseSchema.index({ policeStationId: 1, crimeType: 1 });
+CaseSchema.index({ policeStationId: 1, severity: 1 });
+CaseSchema.index({ policeStationId: 1, assignedTo: 1 });
+CaseSchema.index({ policeStationId: 1, isArchived: 1 });
 
 const nanoid = customAlphabet(
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
@@ -145,7 +146,7 @@ const nanoid = customAlphabet(
 
 
 
-  CaseSchema.pre("validate", async function () {
+  CaseSchema.pre("validate", function () {
     try{
   // Generate only if missing
   if (!this.caseId) {

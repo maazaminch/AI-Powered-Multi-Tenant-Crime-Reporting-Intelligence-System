@@ -106,11 +106,11 @@ const StationPoliceDetailsModal = ({ open, policeDetails, isLoading, error, onCl
                 <CardHeader>
                   <CardTitle className="text-lg">Active Cases</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    {policeDetails.activeCases.length} cases currently assigned
+                    {policeDetails.activeCases?.length || 0} cases currently assigned
                   </p>
                 </CardHeader>
                 <CardContent>
-                  {policeDetails.activeCases.length === 0 ? (
+                  {!policeDetails.activeCases || policeDetails.activeCases.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       No active cases
                     </div>

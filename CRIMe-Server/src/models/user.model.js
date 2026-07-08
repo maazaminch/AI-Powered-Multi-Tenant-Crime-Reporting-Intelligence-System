@@ -7,12 +7,10 @@ const UserSchema = new mongoose.Schema({
   tenantId: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Tenant",
-  required: false,
-  index: true
 },
 
   fullName: { type: String, required: true, trim: true },
-  email: { type: String, required: true , unique: true, trim: true},
+  email: { type: String, required: true , unique: true, trim: true, lowercase: true},
   phone: { type: String, required: true , unique: true, trim: true},
   password: { type: String, required: true },
   // confirmPassword: {type: String, required: true}, its only required in frontend
@@ -94,12 +92,15 @@ const UserSchema = new mongoose.Schema({
 UserSchema.index({ tenantId: 1, role: 1 }); // fast tenant-role queries
 UserSchema.index({ tenantId: 1, fullName: 1, role: 1 });
 UserSchema.index({ tenantId: 1, fullName: 1 }); 
+UserSchema.index({ isSuperAdmin: 1 }); 
+UserSchema.index({ policeStationId: 1, isStationHead: 1 }); // SHO lookup
+UserSchema.index({ tenantId: 1, status: 1 });               // pending approvals
+UserSchema.index({ tenantId: 1, policeStationId: 1 });      // station police list
+UserSchema.index({ isStationHead: 1 }); 
 
 
-UserSchema.pre("save", async function() {
-  try {
-   
-  if (this.dateOfBirth) {
+UserSchema.pre("save", function() {
+  if (!this.dateOfBirth) return 
     const today = new Date();
     const birthDate = new Date(this.dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -108,12 +109,7 @@ UserSchema.pre("save", async function() {
       age--;
     }
     this.age = age;
-  } 
-  } catch (error) {
-   console.log(error) 
-  }
-  
-});
+  });
 
 
 export default mongoose.model("User", UserSchema);

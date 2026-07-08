@@ -16,7 +16,7 @@ class NotificationService {
 
     const notification = await Notification.create({
       tenantId,
-      userId,
+      userId: userId || null,
       type,
       title,
       message,

@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStationCases } from '../../hooks/stationHead/useStationCases'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import { formatError } from '../../lib/utils'
 import { 
   FileText, 
