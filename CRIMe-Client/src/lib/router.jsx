@@ -39,7 +39,7 @@ import StationHeadDashboard from '../pages/station-head/DashboardPage'
 import StationPolicePage from '../pages/station-head/StationPolicePage'
 import StationCasesPage from '../pages/station-head/StationCasesPage'
 import CaseDetailsPage from '../pages/station-head/CaseDetailsPage'
-// import StationAnalyticsPage from '../pages/station-head/StationAnalyticsPage'
+import StationAnalyticsPage from '../pages/station-head/StationAnalyticsPage'
 import StationHeadNotificationPage from '../pages/station-head/StationHeadNotificationPage'
 
 // // Importing Police pages
@@ -210,6 +210,10 @@ export const router = createBrowserRouter([
       {
         path: 'case-details',
         element: <CaseDetailsPage />
+      },
+      {
+        path: 'station-analytics',
+        element: <StationAnalyticsPage/>
       },
       {
         path: 'notifications',

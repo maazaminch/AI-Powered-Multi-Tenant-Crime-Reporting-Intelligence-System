@@ -999,7 +999,7 @@ class StationHeadController {
             throw new apiError(403, "Only station heads can access this endpoint");
         }
 
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, period = 'daily' } = req.query;
         const dateFilter = {};
 
         if (startDate || endDate) {
@@ -1008,52 +1008,169 @@ class StationHeadController {
             if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
         }
 
+        const filter = {
+            ...req.tenantFilter,
+            ...req.stationFilter,
+            ...dateFilter
+        };
+
         const [
+            // Overview Cards
             totalCases,
             pendingCases,
+            assignedCases,
             underInvestigationCases,
             resolvedCases,
+            closedCases,
             totalPolice,
             activePolice,
-            avgResolutionTime
+            
+            // Crime Type Breakdown
+            crimeTypeBreakdown,
+            
+            // Severity Distribution
+            severityDistribution,
+            
+            // Police Performance
+            policePerformance,
+            
+            // Time Trends
+            timeTrends,
+            
+            // Resolution Metrics
+            avgResolutionTime,
+            resolutionRate
         ] = await Promise.all([
-            Case.countDocuments({
-                policeStationId: currentUser.policeStationId,
-                ...dateFilter
-            }),
-            Case.countDocuments({
-                policeStationId: currentUser.policeStationId,
-                status: "ASSIGNED",
-                ...dateFilter
-            }),
-            Case.countDocuments({
-                policeStationId: currentUser.policeStationId,
-                status: "UNDER_INVESTIGATION",
-                ...dateFilter
-            }),
-            Case.countDocuments({
-                policeStationId: currentUser.policeStationId,
-                status: "RESOLVED",
-                ...dateFilter
-            }),
-            User.countDocuments({
-                role: "POLICE",
-                status: "APPROVED",
-                policeStationId: currentUser.policeStationId
-            }),
-            User.countDocuments({
-                role: "POLICE",
-                status: "APPROVED",
-                policeStationId: currentUser.policeStationId,
-                isStationHead: false
-            }),
-            // Average resolution time calculation
+            // Overview Cards
+            Case.countDocuments(filter),
+            Case.countDocuments({ ...filter, status: "PENDING" }),
+            Case.countDocuments({ ...filter, status: "ASSIGNED" }),
+            Case.countDocuments({ ...filter, status: "UNDER_INVESTIGATION" }),
+            Case.countDocuments({ ...filter, status: "RESOLVED" }),
+            Case.countDocuments({ ...filter, status: "CLOSED" }),
+            User.countDocuments({ role: "POLICE", isStationHead: false, status: "APPROVED", policeStationId: currentUser.policeStationId }),
+            User.countDocuments({ role: "POLICE", isStationHead: false, status: "APPROVED", policeStationId: currentUser.policeStationId }),
+            
+            // Crime Type Breakdown
+            Case.aggregate([
+                { $match: filter },
+                {
+                    $group: {
+                        _id: "$crimeType",
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { count: -1 } }
+            ]),
+            
+            // Severity Distribution
+            Case.aggregate([
+                { $match: filter },
+                {
+                    $group: {
+                        _id: "$severity",
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { count: -1 } }
+            ]),
+            
+            // Police Performance
+            User.aggregate([
+                {
+                    $match: {
+                        role: "POLICE",
+                        status: "APPROVED",
+                        isStationHead: false,
+                        policeStationId: currentUser.policeStationId
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "cases",
+                        let: { policeId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: { $eq: ["$assignedTo", "$$policeId"] },
+                                    ...filter
+                                }
+                            },
+                            {
+                                $group: {
+                                    _id: null,
+                                    totalAssigned: { $sum: 1 },
+                                    resolved: {
+                                        $sum: {
+                                            $cond: [{ $eq: ["$status", "RESOLVED"] }, 1, 0]
+                                        }
+                                    }
+                                }
+                            }
+                        ],
+                        as: "caseStats"
+                    }
+                },
+                {
+                    $addFields: {
+                        totalAssigned: { $ifNull: [{ $arrayElemAt: ["$caseStats.totalAssigned", 0] }, 0] },
+                        resolved: { $ifNull: [{ $arrayElemAt: ["$caseStats.resolved", 0] }, 0] }
+                    }
+                },
+                {
+                    $addFields: {
+                        resolutionRate: {
+                            $cond: [
+                                { $gt: ["$totalAssigned", 0] },
+                                { $multiply: [{ $divide: ["$resolved", "$totalAssigned"] }, 100] },
+                                0
+                            ]
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        policeId: "$_id",
+                        fullName: 1,
+                        badgeNumber: 1,
+                        email: 1,
+                        totalAssigned: 1,
+                        resolved: 1,
+                        resolutionRate: { $round: ["$resolutionRate", 2] }
+                    }
+                },
+                { $sort: { resolved: -1 } }
+            ]),
+            
+            // Time Trends
+            Case.aggregate([
+                { $match: filter },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: "$createdAt" },
+                            month: { $month: "$createdAt" },
+                            day: period === 'daily' ? { $dayOfMonth: "$createdAt" } : null
+                        },
+                        totalCases: { $sum: 1 },
+                        resolvedCases: {
+                            $sum: {
+                                $cond: [{ $eq: ["$status", "RESOLVED"] }, 1, 0]
+                            }
+                        }
+                    }
+                },
+                { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
+                { $limit: 30 }
+            ]),
+            
+            // Resolution Metrics
             Case.aggregate([
                 {
                     $match: {
-                        policeStationId: currentUser.policeStationId,
+                        ...filter,
                         status: "RESOLVED",
-                        ...dateFilter
+                        updatedAt: { $exists: true }
                     }
                 },
                 {
@@ -1061,8 +1178,38 @@ class StationHeadController {
                         _id: null,
                         avgResolutionTime: {
                             $avg: {
-                                $subtract: ["$updatedAt", "$createdAt"]
+                                $divide: [
+                                    { $subtract: ["$updatedAt", "$createdAt"] },
+                                    1000 * 60 * 60 * 24 // Convert to days
+                                ]
                             }
+                        }
+                    }
+                }
+            ]),
+            
+            // Resolution Rate
+            Case.aggregate([
+                { $match: filter },
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: 1 },
+                        resolved: {
+                            $sum: {
+                                $cond: [{ $eq: ["$status", "RESOLVED"] }, 1, 0]
+                            }
+                        }
+                    }
+                },
+                {
+                    $addFields: {
+                        resolutionRate: {
+                            $cond: [
+                                { $gt: ["$total", 0] },
+                                { $multiply: [{ $divide: ["$resolved", "$total"] }, 100] },
+                                0
+                            ]
                         }
                     }
                 }
@@ -1070,14 +1217,36 @@ class StationHeadController {
         ]);
 
         const analytics = {
-            totalCases,
-            pendingCases,
-            underInvestigationCases,
-            resolvedCases,
-            totalPolice,
-            activePolice,
-            avgResolutionTime: avgResolutionTime[0]?.avgResolutionTime || 0,
-            resolutionRate: totalCases > 0 ? ((resolvedCases / totalCases) * 100).toFixed(2) : 0
+            overview: {
+                totalCases,
+                pendingCases,
+                assignedCases,
+                underInvestigationCases,
+                resolvedCases,
+                closedCases,
+                totalPolice,
+                activePolice,
+                resolutionRate: resolutionRate[0]?.resolutionRate?.toFixed(2) || 0,
+                avgResolutionTime: avgResolutionTime[0]?.avgResolutionTime?.toFixed(2) || 0
+            },
+            crimeTypeBreakdown: crimeTypeBreakdown.map(item => ({
+                crimeType: item._id,
+                count: item.count,
+                percentage: totalCases > 0 ? ((item.count / totalCases) * 100).toFixed(2) : 0
+            })),
+            severityDistribution: severityDistribution.map(item => ({
+                severity: item._id,
+                count: item.count,
+                percentage: totalCases > 0 ? ((item.count / totalCases) * 100).toFixed(2) : 0
+            })),
+            policePerformance: policePerformance,
+            timeTrends: timeTrends.map(item => ({
+                date: period === 'daily' 
+                    ? `${item._id.year}-${String(item._id.month).padStart(2, '0')}-${String(item._id.day).padStart(2, '0')}`
+                    : `${item._id.year}-${String(item._id.month).padStart(2, '0')}`,
+                totalCases: item.totalCases,
+                resolvedCases: item.resolvedCases
+            }))
         };
 
         res.status(200).json(

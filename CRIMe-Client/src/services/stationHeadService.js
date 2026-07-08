@@ -59,8 +59,12 @@ export const stationHeadService = {
   reassignCase: async (caseId, policeId) => {
     const response = await api.post(`/api/station-head/reassign-case/${caseId}`, { PoliceId: policeId })
     return response.data
-  }
+  },
 
+  stationAnalytics: async (params = {}) => {
+    const response = await api.get('/api/station-head/station-analytics', { params })
+    return response.data
+  }
   
 }
 
