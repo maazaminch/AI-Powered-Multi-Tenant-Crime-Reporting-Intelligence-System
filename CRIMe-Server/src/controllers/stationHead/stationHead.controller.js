@@ -501,6 +501,11 @@ class StationHeadController {
             throw new apiError(403, "Only station heads can access this endpoint");
         }
 
+        const blockUpdateStatuses = ['PENDING', 'CLOSED']
+        if (blockUpdateStatuses.includes(caseDoc.status)) {
+            throw new apiError(400, `Cannot add updates to a ${caseDoc.status} case`);
+        }
+
         const validUpdateTypes = ["NOTE", "EVIDENCE", "STATEMENT", "ARREST"];
         if (!validUpdateTypes.includes(updateType)) {
             throw new apiError(400, "Invalid update type");
@@ -508,11 +513,12 @@ class StationHeadController {
 
         const filter = {
             _id: caseId,
+            isArchived: false,
             ...req.tenantFilter,
             ...req.stationFilter
         }
 
-        const caseDoc = await Case.findOne(filter);
+        const caseDoc = await Case.findOne(filter).lean();
         if (!caseDoc) {
             throw new apiError(404, "Case not found");
         }
@@ -539,17 +545,63 @@ class StationHeadController {
             updateData.evidenceFiles = evidenceFiles;
         }
 
-        const caseUpdate = await CaseUpdate.create(updateData);
-
-        // If adding evidence, update case document
-        if (updateType === "EVIDENCE" && evidenceFiles) {
-            caseDoc.evidenceFiles.push(...evidenceFiles);
-            await caseDoc.save();
-        }
+        await Promise.all([
+            CaseUpdate.create(updateData),
+            updateType === "EVIDENCE" && evidenceFiles?.length
+                ? Case.findByIdAndUpdate(caseId, {
+                    $push: { evidenceFiles: { $each: evidenceFiles } }
+                })
+                : Promise.resolve()
+            ]);
 
         res.status(201).json(
             new apiResponse(201, caseUpdate, "Case update added successfully")
         );
+
+        const afterResponse = async () => {
+            
+            const tasks = []
+
+            const assignedPolice = caseDoc.assignedTo;
+            tasks.push(NotificationService.send({
+                tenantId: caseDoc.tenantId,
+                userId: assignedPolice,
+                type: "add_case_update",
+                title: "Case Update",
+                message: `A new update has been added to case ${caseDoc.caseId}`,
+                channels: ["inapp"]
+            }))
+
+            if(caseDoc.reporter.type === 'CITIZEN' && caseDoc.reporter.citizenId) {
+                tasks.push(NotificationService.send({
+                    tenantId: caseDoc.tenantId,
+                    userId: assignedPolice,
+                    type: "add_case_update",
+                    title: "Case Update",
+                    message: `A new update has been added to case ${caseDoc.caseId}`,
+                    channels: ["inapp"]
+
+                }))
+            }
+
+            if(caseDoc.reporter?.type === 'GUEST' && caseDoc.reporter?.email) {
+                tasks.push(NotificationService.send({
+                    tenantId: caseDoc.tenantId,
+                    userId: null,
+                    email: caseDoc.reporter.email,
+                    type: "add_case_update",
+                    title: "Case Update",
+                    message: `A new update has been added to case ${caseDoc.caseId}`,
+                    channels: ["email"]
+
+                }))
+            }
+
+            await Promise.all(tasks)
+        }
+
+        afterResponse().catch(err => logger.error("Error sending notifications", err));
+        
     });
 
     static getCaseUpdates = wrapAsync(async (req, res) => {
@@ -901,7 +953,7 @@ class StationHeadController {
 
 
 
-    
+    //not used
     static getPolicePerformance = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 
@@ -972,6 +1024,7 @@ class StationHeadController {
 
 
     // Station Operations
+    //notused
     static getStationDetails = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 
@@ -1260,3 +1313,4 @@ class StationHeadController {
 }
 
 export default StationHeadController;
+

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from "react-router-dom"
-import { useDashboardStats } from '../../hooks/admin/useDashboard'
+import { useDashboard } from '../../hooks/police/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 
@@ -31,9 +31,9 @@ function StatCard({
   )
 }
 
-const AdminDashboard = () => {
+const PoliceDashboard = () => {
 
-  const { dashboardStats, isLoading, error } = useDashboardStats()
+  const { stats, isLoading, error } = useDashboard()
   const navigate = useNavigate()
 
   return (
@@ -41,10 +41,10 @@ const AdminDashboard = () => {
       {/* System Overview */}
       <Card className="border border-slate-200 bg-white shadow-sm">
       <CardHeader>
-        <CardTitle>{dashboardStats?.tenant?.name} - {dashboardStats?.tenant?.type}</CardTitle>
+        <CardTitle>{stats?.station?.name}</CardTitle>
 
         <CardDescription>
-          Overview of all Police Stations and Tenant performance
+          Overview of your own cases
         </CardDescription>
       </CardHeader>
 
@@ -52,35 +52,35 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           
           <StatCard
-            title="Total Police Stations"
-            value={dashboardStats?.totalPoliceStations ?? '...'}
-            color="text-blue-600"
-            bg="bg-blue-50"
-            path="/admin/police-stations"
-          />
-
-          <StatCard
-            title="Active Police"
-            value={dashboardStats?.approvedPolice ?? '...'}
-            color="text-green-600"
-            bg="bg-green-50"
-            path="/admin/police-management"
-          />
-
-          <StatCard
-            title="Pending Requests"
-            value={dashboardStats?.pendingPolice ?? '...'}
-            color="text-yellow-600"
-            bg="bg-yellow-50"
-            path="/admin/pending-police"
-          />
-
-          <StatCard
             title="Total Cases"
-            value={dashboardStats?.totalCases ?? '...'}
+            value={stats?.totalCases ?? '...'}
             color="text-purple-600"
             bg="bg-purple-50"
-            path="/admin/cases"
+            path="/police/total-cases"
+          />
+
+          <StatCard
+            title="Assigned Cases"
+            value={stats?.assignedCases ?? '...'}
+            color="text-blue-600"
+            bg="bg-blue-50"
+            path="/police/assigned-cases"
+          />
+
+          <StatCard
+            title="UnderInvestigation Cases"
+            value={stats?.underInvestigationCases ?? '...'}
+            color="text-green-600"
+            bg="bg-green-50"
+            path="/police/under-investigation-cases"
+          />
+
+          <StatCard
+            title="Resolved Cases"
+            value={stats?.resolvedCases ?? '...'}
+            color="text-yellow-600"
+            bg="bg-yellow-50"
+            path="/police/resolved-cases"
           />
 
         </div>
@@ -101,27 +101,23 @@ const AdminDashboard = () => {
               variant="success"
               className="w-full"
               onClick={() =>
-                navigate("/admin/police-stations", {
-                  state: { openCreateModal: true },
-                })
+                navigate("/police/my-cases")
               }
             >
-              Create New Police Station
+              Personal Cases
             </Button>
-            <Button 
+            <Button variant="outline" className="w-full"
+              onClick={() => navigate('/police/notification')}
+            >
+              Notifications
+            </Button>
+            {/* <Button 
               variant="outline" 
               className="w-full"
-              onClick={() => navigate('/admin/pending-police')}
+              onClick={() => navigate('/police/')}
             >
-              View Pending Police
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => navigate('/admin/tenant-analytics')}
-            >
-              Tenant Analytics
-            </Button>
+              Analytics
+            </Button> */}
           </div>
         </CardContent>
       </Card>
@@ -146,4 +142,4 @@ const AdminDashboard = () => {
   )
 }
 
-export default AdminDashboard
+export default PoliceDashboard

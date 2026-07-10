@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/Dropdown-menu"
 
-const StationHeadLayout = () => {
+const PoliceLayout = () => {
   const { headerNotifications, unreadCount, isLoading } = useNotifications()
   const headerNotificationsList = headerNotifications?.notifications || []
 
@@ -39,11 +39,9 @@ const StationHeadLayout = () => {
   }
 
   const navItems = [
-    { path: '/station-head/dashboard', label: 'Dashboard' },
-    { path: '/station-head/station-police', label: 'Station Police' },
-    { path: '/station-head/station-cases', label: 'Station Cases' },
-    { path: '/station-head/station-analytics', label: 'Station Analytics' },
-    { path: '/station-head/notifications', label: 'Notifications' }
+    { path: '/police/dashboard', label: 'Dashboard' },
+    { path: '/police/cases', label: 'Cases' },
+    { path: '/police/notifications', label: 'Notifications' }
   ]
 
   // Match exact path or a path with a trailing segment (prevent '/admin/police' matching '/admin/police-stations')
@@ -104,7 +102,7 @@ const StationHeadLayout = () => {
             </div>
 
             <div className="flex-1 text-center">
-              <h1 className="text-2xl font-bold text-white">Station Head Panel</h1>
+              <h1 className="text-2xl font-bold text-white">Police Panel</h1>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -139,7 +137,7 @@ const StationHeadLayout = () => {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className='cursor-pointer border border-slate-300 hover:bg-gray-900' >
-                    <Link to="/admin/notifications">View all notifications</Link>
+                    <Link to="/police/notifications">View all notifications</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
                 </DropdownMenuPortal>
@@ -151,32 +149,14 @@ const StationHeadLayout = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40 bg-white" align="start">
                   <DropdownMenuGroup>
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >
                       Profile
                       <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >
-                      Billing
-                      <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
                     </DropdownMenuItem>
                     <DropdownMenuItem className='cursor-pointer hover:bg-gray-500'  >
                       Settings
                       <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
                     </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >Admins</DropdownMenuItem>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>Invite Admins</DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                          <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >Email</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
@@ -210,4 +190,4 @@ const StationHeadLayout = () => {
   )
 }
 
-export default StationHeadLayout
+export default PoliceLayout

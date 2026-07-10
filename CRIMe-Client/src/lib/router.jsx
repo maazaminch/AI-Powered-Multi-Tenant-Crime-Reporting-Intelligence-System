@@ -6,7 +6,7 @@ import PublicLayout from '../components/layout/PublicLayout'
 import SuperAdminLayout from '../components/layout/SuperAdminLayout'
 import AdminLayout from '../components/layout/AdminLayout'
 import StationHeadLayout from '../components/layout/StationHeadLayout'
-// import PoliceLayout from '../components/layout/PoliceLayout'
+import PoliceLayout from '../components/layout/PoliceLayout'
 // import CitizenLayout from '../components/layout/CitizenLayout'
 
 // Importing public pages
@@ -43,6 +43,8 @@ import StationAnalyticsPage from '../pages/station-head/StationAnalyticsPage'
 import StationHeadNotificationPage from '../pages/station-head/StationHeadNotificationPage'
 
 // // Importing Police pages
+import PoliceDashboard from '../pages/police/DashboardPage'
+import PoliceNotificationPage from '../pages/police/PoliceNotificationPage'
 // import PoliceCases from '../pages/police/AssignedCasesPage'
 
 // // Importing Citizen pages
@@ -222,6 +224,28 @@ export const router = createBrowserRouter([
     ]
   },
   {
+    path: '/police/*',
+    element: (
+      <ProtectedRoute allowedRoles={['POLICE']} requiredFlags={{ isStationHead: false }}>
+        <PoliceLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: 'dashboard',
+        element: <PoliceDashboard />
+      },
+      // {
+      //   path: 'cases',
+      //   element: <PoliceCases />
+      // },
+      {
+        path: 'notifications',
+        element: <PoliceNotificationPage />
+      }
+    ]
+  },
+  {
     path: '/citizen/*',
     element: (
       <ProtectedRoute allowedRoles={['CITIZEN']}>
@@ -232,20 +256,6 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: <CitizenDashboard />
-      }
-    ]
-  },
-  {
-    path: '/police/*',
-    element: (
-      <ProtectedRoute allowedRoles={['POLICE']}>
-        <div className="min-h-screen bg-background">Police Layout</div>
-      </ProtectedRoute>
-    ),
-    children: [
-      {
-        path: 'assigned-cases',
-        element: <PoliceCases />
       }
     ]
   },
