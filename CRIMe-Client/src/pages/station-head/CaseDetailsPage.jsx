@@ -7,13 +7,14 @@ import { Badge } from '../../components/ui/Badge'
 import { Separator } from '../../components/ui/Separator'
 import { useCaseDetails } from '../../hooks/stationHead/useCaseDetails'
 import { useStationCases } from '../../hooks/stationHead/useStationCases'
-import { AddNoteModal } from '../../components/features/stationHead/modals/AddNoteModal'
-import { AddStatementModal } from '../../components/features/stationHead/modals/AddStatementModal'
-import { AddArrestModal } from '../../components/features/stationHead/modals/AddArrestModal'
+import { AddNoteModal } from '../../components/features/shared/modals/AddNoteModal'
+import { AddStatementModal } from '../../components/features/shared/modals/AddStatementModal'
+import { AddArrestModal } from '../../components/features/shared/modals/AddArrestModal'
 import { AssignCaseModal } from '../../components/features/stationHead/modals/AssignCaseModal'
 import { CloseCaseModal } from '../../components/features/stationHead/modals/CloseCaseModal'
 import LocationView from '../../components/map/LocationView'
 import { toast } from 'sonner'
+import { useStationPolice } from '../../hooks/stationHead/useStationPolice'
 
 const CaseDetailsPage = () => {
   const { caseId } = useParams()
@@ -29,6 +30,7 @@ const CaseDetailsPage = () => {
 
   const { caseDetails, updates, isLoading, error, refetchDetails, refetchUpdates, closeCase, isClosingCase, addUpdate, isAddingUpdate, assignCase, isAssigning, reassignCase, isReassigning } = useCaseDetails(caseId)
   const { cases: stationCases } = useStationCases({ status: 'PENDING' })
+  const { police } = useStationPolice()
 
   const getStatusColor = (status) => {
     const colors = {
@@ -73,13 +75,27 @@ const CaseDetailsPage = () => {
     return colors[type] || 'bg-gray-100 text-gray-700'
   }
 
+  // Group updates by date
+  const groupUpdatesByDate = (updates) => {
+    if (!updates || updates.length === 0) return {}
+    
+    return updates.reduce((groups, update) => {
+      const date = new Date(update.createdAt).toLocaleDateString()
+      if (!groups[date]) {
+        groups[date] = []
+      }
+      groups[date].push(update)
+      return groups
+    }, {})
+  }
+
   const handleAddNote = async (data) => {
     try {
       await addUpdate(data)
       setShowNoteModal(false)
       toast.success('Note added successfully')
     } catch (error) {
-      toast.error('Failed to add note')
+      toast.error(error.backendMessage || 'Failed to add note')
     }
   }
 
@@ -89,7 +105,7 @@ const CaseDetailsPage = () => {
       setShowStatementModal(false)
       toast.success('Statement added successfully')
     } catch (error) {
-      toast.error('Failed to add statement')
+      toast.error(error.backendMessage || 'Failed to add statement')
     }
   }
 
@@ -99,7 +115,7 @@ const CaseDetailsPage = () => {
       setShowArrestModal(false)
       toast.success('Arrest recorded successfully')
     } catch (error) {
-      toast.error('Failed to record arrest')
+      toast.error(error.backendMessage || 'Failed to record arrest')
     }
   }
 
@@ -109,7 +125,7 @@ const CaseDetailsPage = () => {
       setShowAssignModal(false)
       toast.success('Case assigned successfully')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to assign case')
+      toast.error(error.backendMessage || 'Failed to assign case')
     }
   }
 
@@ -119,7 +135,7 @@ const CaseDetailsPage = () => {
       setShowCloseModal(false)
       toast.success('Case closed successfully')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to close case')
+      toast.error(error.backendMessage || 'Failed to close case')
     }
   }
 
@@ -128,7 +144,7 @@ const CaseDetailsPage = () => {
       await reassignCase(policeId)
       toast.success('Case reassigned successfully')
     } catch (error) {
-      toast.error('Failed to reassign case')
+      toast.error(error.backendMessage || 'Failed to reassign case')
     }
   }
 
@@ -171,22 +187,23 @@ const CaseDetailsPage = () => {
   const canAddUpdates = ['ASSIGNED', 'UNDER_INVESTIGATION'].includes(caseDetails.status)
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl">
+    <div className="container mx-auto py-8 px-4 max-w-7xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/station-head/station-cases')}>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-10">
+          <Button variant="default" onClick={() => navigate('/station-head/station-cases')} className="w-fit">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Case {caseDetails.caseId}</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-3xl font-bold">Case ID: {caseDetails.caseId}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Created on {new Date(caseDetails.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+
+        <div className="flex gap-3">
           {canAssign && (
             <Button onClick={() => setShowAssignModal(true)}>
               <UserPlus className="w-4 h-4 mr-2" />
@@ -194,7 +211,7 @@ const CaseDetailsPage = () => {
             </Button>
           )}
           {canReassign && (
-            <Button variant="outline" onClick={() => setShowAssignModal(true)}>
+            <Button variant="default" onClick={() => setShowAssignModal(true)}>
               <UserPlus className="w-4 h-4 mr-2" />
               Reassign
             </Button>
@@ -208,15 +225,15 @@ const CaseDetailsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {/* Case Info Card */}
-          <Card>
-            <CardHeader>
+          <Card className="border border-slate-400">
+            <CardHeader className="pb-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-xl mb-2">{caseDetails.crimeType}</CardTitle>
+                  <CardTitle className="text-2xl mb-3">{caseDetails.crimeType}</CardTitle>
                   <div className="flex gap-2 flex-wrap">
                     <Badge className={getStatusColor(caseDetails.status)}>
                       {caseDetails.status.replace('_', ' ')}
@@ -234,38 +251,42 @@ const CaseDetailsPage = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6 pt-4">
               <div>
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
+                <h3 className="font-semibold mb-3 flex items-center gap-2 text-lg">
+                  <FileText className="w-5 h-5" />
                   Description
                 </h3>
-                <p className="text-muted-foreground">{caseDetails.description}</p>
+                <p className="text-muted-foreground leading-relaxed">{caseDetails.description}</p>
               </div>
               
               {caseDetails.aiSummary && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-semibold mb-2 text-blue-900">AI Summary</h3>
-                  <p className="text-sm text-blue-800">{caseDetails.aiSummary}</p>
+                <div className="bg-blue-50 border border-slate-200 rounded-lg p-5">
+                  <h3 className="font-semibold mb-3 text-slate-900 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    AI Summary
+                  </h3>
+                  <p className="text-sm text-slate-800 leading-relaxed">{caseDetails.aiSummary}</p>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                <MapPin className="w-5 h-5" />
+                <span className="font-medium">Location:</span>
                 <span>{caseDetails.addressText || 'Location not specified'}</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Location Map */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
+          <Card className="border border-slate-400">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <MapPin className="w-5 h-5" />
                 Incident Location
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <LocationView location={caseDetails.location} height={300} />
               {caseDetails.addressText && (
                 <p className="text-sm text-muted-foreground mt-3 flex items-center gap-2">
@@ -277,30 +298,30 @@ const CaseDetailsPage = () => {
           </Card>
 
           {/* Reporter Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-4 h-4" />
+          <Card className="border border-slate-400">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <User className="w-5 h-5" />
                 Reporter Information
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="font-medium">{caseDetails.reporter?.name}</p>
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">Name</p>
+                  <p className="font-medium text-base">{caseDetails.reporter?.name}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <p className="font-medium">{caseDetails.reporter?.type}</p>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">Type</p>
+                  <p className="font-medium text-base">{caseDetails.reporter?.type}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{caseDetails.reporter?.email}</p>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">Email</p>
+                  <p className="font-medium text-base">{caseDetails.reporter?.email}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{caseDetails.reporter?.phone}</p>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">Phone</p>
+                  <p className="font-medium text-base">{caseDetails.reporter?.phone}</p>
                 </div>
               </div>
             </CardContent>
@@ -308,25 +329,31 @@ const CaseDetailsPage = () => {
 
           {/* Assigned Officer */}
           {caseDetails.assignedTo && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
+            <Card className="border border-slate-400">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Shield className="w-5 h-5" />
                   Assigned Officer
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
+              <CardContent className="pt-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="font-medium">{caseDetails.assignedTo.fullName}</p>
-                    <p className="text-sm text-muted-foreground">Badge: {caseDetails.assignedTo.badgeNumber}</p>
-                    <p className="text-sm text-muted-foreground">{caseDetails.assignedTo.email}</p>
+                    <p className="font-medium text-lg">Name</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.assignedTo?.fullName}</p>
                   </div>
-                  {canReassign && (
-                    <Button variant="outline" size="sm" onClick={() => setShowAssignModal(true)}>
-                      Reassign
-                    </Button>
-                  )}
+                  <div>
+                    <p className="font-medium text-lg">Badge Number</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.assignedTo?.badgeNumber}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Email</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.assignedTo?.email}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Contact</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.assignedTo?.phone}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -334,14 +361,14 @@ const CaseDetailsPage = () => {
 
           {/* Evidence */}
           {caseDetails.evidenceFiles && caseDetails.evidenceFiles.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileIcon className="w-4 h-4" />
+            <Card className="border border-slate-400">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <FileIcon className="w-5 h-5" />
                   Evidence Files
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 <div className="grid grid-cols-2 gap-4">
                   {caseDetails.evidenceFiles.map((file, index) => (
                     <div key={index} className="flex items-center gap-2 p-2 border rounded-lg">
@@ -356,100 +383,15 @@ const CaseDetailsPage = () => {
         </div>
 
         {/* Timeline Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Case Timeline</CardTitle>
-                {canAddUpdates && (
-                  <Button size="sm" variant="outline" onClick={() => setShowNoteModal(true)}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Note
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {updates && updates.length > 0 ? (
-                  updates.map((update, index) => (
-                    <div key={index} className="relative pl-6 pb-4 border-l-2 border-muted last:border-0">
-                      <div className={`absolute left-0 top-0 w-8 h-8 rounded-full flex items-center justify-center ${getUpdateTypeColor(update.updateType)}`}>
-                        {getUpdateTypeIcon(update.updateType)}
-                      </div>
-                      <div className="mb-1">
-                        <Badge variant="outline" className="text-xs">
-                          {update.updateType.replace('_', ' ')}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {new Date(update.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium">
-                        {update.updatedBy?.fullName || 'System'}
-                      </p>
-                      {update.remarks && (
-                        <p className="text-sm text-muted-foreground mt-1">{update.remarks}</p>
-                      )}
-                      {update.note && (
-                        <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-                          <p className="font-medium text-blue-900">Note:</p>
-                          <p className="text-blue-800">{update.note}</p>
-                        </div>
-                      )}
-                      {update.statement && (
-                        <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
-                          <p className="font-medium text-purple-900">Statement:</p>
-                          <p className="text-purple-800">{update.statement}</p>
-                          {update.witnessName && (
-                            <p className="text-xs text-purple-600 mt-1">Witness: {update.witnessName}</p>
-                          )}
-                        </div>
-                      )}
-                      {update.arrest && (
-                        <div className="mt-2 p-2 bg-red-50 rounded text-sm">
-                          <p className="font-medium text-red-900">Arrest:</p>
-                          <p className="text-red-800">{update.arrest.arrestedPersonName}</p>
-                          <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.arrestReason}</p>
-                        </div>
-                      )}
-                      {update.previousStatus && update.newStatus && (
-                        <div className="mt-2 flex items-center gap-2 text-sm">
-                          <Badge className={getStatusColor(update.previousStatus)}>
-                            {update.previousStatus}
-                          </Badge>
-                          <span>→</span>
-                          <Badge className={getStatusColor(update.newStatus)}>
-                            {update.newStatus}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No updates yet
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="space-y-8">
 
           {/* Quick Actions */}
           {canAddUpdates && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
+            <Card className="border border-slate-400">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl">Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  onClick={() => setShowNoteModal(true)}
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Add Note
-                </Button>
+              <CardContent className="space-y-3 pt-4">
                 <Button 
                   variant="outline" 
                   className="w-full justify-start" 
@@ -469,6 +411,96 @@ const CaseDetailsPage = () => {
               </CardContent>
             </Card>
           )}
+
+          
+          <Card className="border border-slate-400">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">Case Timeline</CardTitle>
+                {canAddUpdates && (
+                  <Button size="sm" variant="outline" onClick={() => setShowNoteModal(true)}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Note
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="max-h-[500px] overflow-y-auto pr-2">
+                {updates && updates.length > 0 ? (
+                  Object.entries(groupUpdatesByDate(updates)).map(([date, dateUpdates]) => (
+                    <div key={date} className="mb-6">
+                      <div className="sticky top-0 bg-white z-20 py-3 border-b mb-4 shadow-sm">
+                        <p className="text-sm font-semibold text-muted-foreground">{date}</p>
+                      </div>
+                      <div className="space-y-4">
+                        {dateUpdates.map((update, index) => (
+                          <div key={index} className="relative pl-6 pb-4 border-l-2 border-muted last:border-0">
+                            <div className={`absolute left-0 top-0 w-8 h-8 rounded-full flex items-center justify-center ${getUpdateTypeColor(update.updateType)}`}>
+                              {getUpdateTypeIcon(update.updateType)}
+                            </div>
+                            <div className="mb-1">
+                              <Badge variant="outline" className="text-xs">
+                                {update.updateType.replace('_', ' ')}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground ml-2">
+                                {new Date(update.createdAt).toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium">
+                              {update.updatedBy?.fullName || 'System'}
+                            </p>
+                            {update.remarks && (
+                              <p className="text-sm text-muted-foreground mt-1">{update.remarks}</p>
+                            )}
+                            {update.note && (
+                              <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
+                                <p className="font-medium text-blue-900">Note:</p>
+                                <p className="text-blue-800">{update.note}</p>
+                              </div>
+                            )}
+                            {update.statement && (
+                              <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
+                                <p className="font-medium text-purple-900">Statement:</p>
+                                <p className="text-purple-800">{update.statement}</p>
+                                {update.witnessName && (
+                                  <p className="text-xs text-purple-600 mt-1">Witness: {update.witnessName}</p>
+                                )}
+                              </div>
+                            )}
+                            {update.arrest && (
+                              <div className="mt-2 p-2 bg-red-50 rounded text-sm">
+                                <p className="font-medium text-red-900">Arrest:</p>
+                                <p className="text-red-800">{update.arrest.arrestedPersonName}</p>
+                                <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.arrestReason}</p>
+                              </div>
+                            )}
+                            {update.previousStatus && update.newStatus && (
+                              <div className="mt-2 flex items-center gap-2 text-sm">
+                                <Badge className={getStatusColor(update.previousStatus)}>
+                                  {update.previousStatus}
+                                </Badge>
+                                <span>→</span>
+                                <Badge className={getStatusColor(update.newStatus)}>
+                                  {update.newStatus}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No updates yet
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          
         </div>
       </div>
 
@@ -499,7 +531,7 @@ const CaseDetailsPage = () => {
         onClose={() => setShowAssignModal(false)}
         onAssign={canReassign ? handleReassignCase : handleAssignCase}
         isAssigning={isAssigning || isReassigning}
-        policeOfficers={stationCases}
+        policeOfficers={police}
       />
 
       <CloseCaseModal

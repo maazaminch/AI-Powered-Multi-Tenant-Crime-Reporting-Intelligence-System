@@ -11,7 +11,7 @@ export const AddNoteModal = ({ open, onClose, onAddNote, isAdding }) => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (note.trim()) {
-      onAddNote({ updateType: 'NOTE', note, remarks: 'Note added by Station Head' })
+      onAddNote({ updateType: 'NOTE', note })
       setNote('')
     }
   }
@@ -23,7 +23,7 @@ export const AddNoteModal = ({ open, onClose, onAddNote, isAdding }) => {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-white">
         <DialogHeader>
           <DialogTitle>Add Note</DialogTitle>
         </DialogHeader>

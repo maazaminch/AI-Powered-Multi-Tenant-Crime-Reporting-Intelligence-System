@@ -48,9 +48,9 @@ const StationCasesPage = () => {
   const getSeverityColor = (severity) => {
     switch (severity) {
       case 'CRITICAL': return 'destructive'
-      case 'HIGH': return 'destructive'
+      case 'HIGH': return 'pink'
       case 'MEDIUM': return 'warning'
-      case 'LOW': return 'secondary'
+      case 'LOW': return 'info'
       default: return 'secondary'
     }
   }
@@ -58,10 +58,10 @@ const StationCasesPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING': return 'warning'
-      case 'ASSIGNED': return 'default'
-      case 'UNDER_INVESTIGATION': return 'default'
+      case 'ASSIGNED': return 'purple'
+      case 'UNDER_INVESTIGATION': return 'pink'
       case 'RESOLVED': return 'success'
-      case 'CLOSED': return 'secondary'
+      case 'CLOSED': return 'info'
       default: return 'secondary'
     }
   }
@@ -285,13 +285,13 @@ const StationCasesPage = () => {
                         </div>
                       )}
 
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                      {/* <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                         {caseItem.description}
-                      </p>
+                      </p> */}
                     </div>
 
                     {/* Assigned Officer */}
-                    <div className="flex sm:flex-col items-start gap-2 sm:min-w-[150px]">
+                    <div className="flex items-center justify-between gap-8 sm:min-w-[150px]">
                       {caseItem.assignedTo ? (
                         <div className="flex items-center gap-2 text-sm">
                           <User className="w-4 h-4 text-blue-500" />
@@ -301,8 +301,16 @@ const StationCasesPage = () => {
                           </div>
                         </div>
                       ) : (
-                        <Badge variant="secondary">Unassigned</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">Unassigned</Badge>
+                        </div>
                       )}
+
+                      <Button size="sm"
+                        onClick={() => handleCaseClick(caseItem.caseId)}
+                        >
+                        Case Details
+                      </Button>
                     </div>
                   </div>
                 </div>

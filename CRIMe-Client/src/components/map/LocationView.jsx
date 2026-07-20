@@ -28,18 +28,20 @@ export default function LocationView({ location, height = 300 }) {
   }
 
   return (
-    <MapContainer
-      center={position}
-      zoom={15}
-      style={{ height, width: '100%' }}
-      zoomControl={false}
-      attributionControl={false}
-      scrollWheelZoom={false}
-      dragging={false}
-      doubleClickZoom={false}
-    >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <Marker position={position} />
-    </MapContainer>
+    <div style={{ height, width: '100%', zIndex: 0, position: 'relative' }}>
+      <MapContainer
+        center={position}
+        zoom={15}
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={false}
+        attributionControl={false}
+        scrollWheelZoom={false}
+        dragging={false}
+        doubleClickZoom={false}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <Marker position={position} />
+      </MapContainer>
+    </div>
   )
 }

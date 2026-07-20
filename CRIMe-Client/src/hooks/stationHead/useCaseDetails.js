@@ -33,9 +33,12 @@ export const useCaseDetails = (caseId) => {
   // Add case update
   const addCaseUpdateMutation = useMutation({
     mutationFn: (updateData) => stationHeadService.addCaseUpdate(caseId, updateData),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['case-updates', caseId])
       queryClient.invalidateQueries(['case-details', caseId])
+      // Also refetch immediately to ensure fresh data
+      queryClient.refetchQueries(['case-updates', caseId])
+      queryClient.refetchQueries(['case-details', caseId])
     },
   })
 

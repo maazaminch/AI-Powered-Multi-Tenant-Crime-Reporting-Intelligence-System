@@ -161,7 +161,7 @@ class PoliceController {
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,
@@ -276,7 +276,7 @@ class PoliceController {
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,
@@ -316,7 +316,7 @@ class PoliceController {
         };
 
         const updatedCase = await Case.findOneAndUpdate(
-            { _id: caseId },
+            { caseId: caseId },
             updateData,
             { new: true }
         ).lean();
@@ -397,7 +397,7 @@ class PoliceController {
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,
@@ -431,7 +431,7 @@ class PoliceController {
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,

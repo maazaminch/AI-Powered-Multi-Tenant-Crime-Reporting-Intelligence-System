@@ -35,6 +35,10 @@ api.interceptors.response.use(
       // window.location.href = '/login'
     }
     
+    // Extract error message from backend response
+    const errorMessage = error.response?.data?.message || error.message || 'An error occurred'
+    error.backendMessage = errorMessage
+    
     return Promise.reject(error)
   }
 )

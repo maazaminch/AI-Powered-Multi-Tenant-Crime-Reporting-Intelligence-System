@@ -356,16 +356,16 @@ class StationHeadController {
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             ...req.tenantFilter,
             ...req.stationFilter
         }
 
-        const caseDetails = await Case.findById(filter)
-            .populate('assignedTo', 'fullName badgeNumber email')
+        const caseDetails = await Case.findOne(filter)
+            .populate('assignedTo', 'fullName badgeNumber email phone')
             .populate('reporter.citizenId', 'fullName email phone')
             .populate('policeStationId', 'name address')
-            .populate('evidenceFiles')
+            // .populate('evidenceFiles')
             .lean();
 
         if (!caseDetails) {
@@ -394,7 +394,7 @@ class StationHeadController {
         
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             ...req.tenantFilter,
             ...req.stationFilter,
             isArchived: false 
@@ -415,8 +415,8 @@ class StationHeadController {
             throw new apiError(400, "Case is already closed");
         }
 
-        const updatedCase = await Case.findByIdAndUpdate(
-            { _id: caseId, status: "RESOLVED" },
+        const updatedCase = await Case.findOneAndUpdate(
+            { caseId: caseId, status: "RESOLVED" },
             { status: newStatus },
             { new: true }
         ).lean();
@@ -501,18 +501,13 @@ class StationHeadController {
             throw new apiError(403, "Only station heads can access this endpoint");
         }
 
-        const blockUpdateStatuses = ['PENDING', 'CLOSED']
-        if (blockUpdateStatuses.includes(caseDoc.status)) {
-            throw new apiError(400, `Cannot add updates to a ${caseDoc.status} case`);
-        }
-
         const validUpdateTypes = ["NOTE", "EVIDENCE", "STATEMENT", "ARREST"];
         if (!validUpdateTypes.includes(updateType)) {
             throw new apiError(400, "Invalid update type");
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             isArchived: false,
             ...req.tenantFilter,
             ...req.stationFilter
@@ -521,6 +516,11 @@ class StationHeadController {
         const caseDoc = await Case.findOne(filter).lean();
         if (!caseDoc) {
             throw new apiError(404, "Case not found");
+        }
+
+        const blockUpdateStatuses = ['PENDING', 'CLOSED']
+        if (blockUpdateStatuses.includes(caseDoc.status)) {
+            throw new apiError(400, `Cannot add updates to a ${caseDoc.status} case`);
         }
 
         const updateData = {
@@ -545,7 +545,7 @@ class StationHeadController {
             updateData.evidenceFiles = evidenceFiles;
         }
 
-        await Promise.all([
+        const [caseUpdate] = await Promise.all([
             CaseUpdate.create(updateData),
             updateType === "EVIDENCE" && evidenceFiles?.length
                 ? Case.findByIdAndUpdate(caseId, {
@@ -554,8 +554,14 @@ class StationHeadController {
                 : Promise.resolve()
             ]);
 
+        // Populate the caseUpdate before sending response
+        const populatedUpdate = await CaseUpdate.findById(caseUpdate._id)
+            .populate('updatedBy', 'fullName badgeNumber')
+            // .populate('evidenceFiles')
+            .lean();
+
         res.status(201).json(
-            new apiResponse(201, caseUpdate, "Case update added successfully")
+            new apiResponse(201, populatedUpdate, "Case update added successfully")
         );
 
         const afterResponse = async () => {
@@ -613,7 +619,7 @@ class StationHeadController {
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             ...req.tenantFilter,
             ...req.stationFilter
         }
@@ -624,7 +630,7 @@ class StationHeadController {
 
         const updates = await CaseUpdate.find({ caseId: caseDoc._id })
             .populate('updatedBy', 'fullName badgeNumber')
-            .populate('evidenceFiles')
+            // .populate('evidenceFiles')
             .sort({ createdAt: -1 });
 
         res.status(200).json(
@@ -643,7 +649,7 @@ class StationHeadController {
         
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             ...req.tenantFilter,
             ...req.stationFilter
         }
@@ -685,7 +691,7 @@ class StationHeadController {
 
         // Update case assignment
         const updatedCase = await Case.findOneAndUpdate(
-            { _id: caseId, status: "PENDING" },
+            { caseId: caseId, status: "PENDING" },
             {
                 assignedTo: policeId,
                 assignedBy: currentUser._id,
@@ -713,7 +719,7 @@ class StationHeadController {
             // Create case update
             tasks.push(CaseUpdate.create({
             tenantId: caseData.tenantId,
-            caseId: caseId,
+            caseId: caseData._id,
             updaterRole: currentUser.role,
             updatedBy: currentUser._id,
             updateType: "STATUS_UPDATE",
@@ -799,7 +805,7 @@ class StationHeadController {
         }
 
         const filter = {
-            _id: caseId,
+            caseId: caseId,
             ...req.tenantFilter,
             ...req.stationFilter
         }
@@ -827,6 +833,9 @@ class StationHeadController {
         if (newPolice.policeStationId?.toString() !== caseData.policeStationId?.toString()) {
             throw new apiError(400, "New police officer must belong to the same station");
         }
+        if (newPolice._id.toString() === caseData.assignedTo?.toString()) {
+            throw new apiError(400, "Cannot reassign to the same police officer");
+        }
 
         // Only allow reassignment if case is UNDER_INVESTIGATION
         if (caseData.status !== 'ASSIGNED') {
@@ -837,7 +846,7 @@ class StationHeadController {
 
         // Update case assignment
         const updatedCase = await Case.findOneAndUpdate(
-            { _id: caseId },
+            { caseId: caseId },
             {
                 assignedTo: PoliceId,
                 assignedBy: currentUser._id
@@ -863,7 +872,7 @@ class StationHeadController {
 
             tasks.push(CaseUpdate.create({
                     tenantId: caseData.tenantId,
-                    caseId: caseId,
+                    caseId: caseData._id,
                     updaterRole: currentUser.role,
                     updatedBy: currentUser._id,
                     updateType: "STATUS_UPDATE",

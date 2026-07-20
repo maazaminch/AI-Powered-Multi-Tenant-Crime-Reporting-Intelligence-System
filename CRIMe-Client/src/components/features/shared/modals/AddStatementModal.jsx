@@ -18,8 +18,7 @@ export const AddStatementModal = ({ open, onClose, onAddStatement, isAdding }) =
         updateType: 'STATEMENT',
         statement,
         witnessName,
-        witnessContact,
-        remarks: 'Statement added by Station Head'
+        witnessContact
       })
       setStatement('')
       setWitnessName('')
@@ -36,7 +35,7 @@ export const AddStatementModal = ({ open, onClose, onAddStatement, isAdding }) =
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-white">
         <DialogHeader>
           <DialogTitle>Add Statement</DialogTitle>
         </DialogHeader>

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../ui/Dialog'
 import { Button } from '../../../ui/Button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/Select'
 import { Label } from '../../../ui/Label'
 import { Loader2 } from 'lucide-react'
 
@@ -23,7 +22,7 @@ export const AssignCaseModal = ({ open, onClose, onAssign, isAssigning, policeOf
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[400px] bg-white">
         <DialogHeader>
           <DialogTitle>Assign Case to Police Officer</DialogTitle>
         </DialogHeader>
@@ -31,18 +30,20 @@ export const AssignCaseModal = ({ open, onClose, onAssign, isAssigning, policeOf
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="police">Select Police Officer *</Label>
-              <Select value={selectedPolice} onValueChange={setSelectedPolice} required>
-                <SelectTrigger id="police">
-                  <SelectValue placeholder="Select a police officer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {policeOfficers?.map((police) => (
-                    <SelectItem key={police._id} value={police._id}>
-                      {police.fullName} - {police.badgeNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                id="police"
+                value={selectedPolice}
+                onChange={(e) => setSelectedPolice(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {/* <option value="">Select a police officer</option> */}
+                {policeOfficers?.map((police) => (
+                  <option key={police._id} value={police._id}>
+                    {police.fullName} - {police.badgeNumber}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <DialogFooter>

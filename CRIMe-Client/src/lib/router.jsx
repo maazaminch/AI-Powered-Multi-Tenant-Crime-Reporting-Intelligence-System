@@ -42,10 +42,11 @@ import CaseDetailsPage from '../pages/station-head/CaseDetailsPage'
 import StationAnalyticsPage from '../pages/station-head/StationAnalyticsPage'
 import StationHeadNotificationPage from '../pages/station-head/StationHeadNotificationPage'
 
-// // Importing Police pages
+// Importing Police pages
 import PoliceDashboard from '../pages/police/DashboardPage'
+import PoliceCasesPage from '../pages/police/CasesPage'
+import PoliceCaseDetailsPage from '../pages/police/CaseDetailsPage'
 import PoliceNotificationPage from '../pages/police/PoliceNotificationPage'
-// import PoliceCases from '../pages/police/AssignedCasesPage'
 
 // // Importing Citizen pages
 // import CitizenDashboard from '../pages/citizen/DashboardPage'
@@ -210,7 +211,7 @@ export const router = createBrowserRouter([
         element: <StationCasesPage />
       },
       {
-        path: 'case-details',
+        path: 'case-details/:caseId',
         element: <CaseDetailsPage />
       },
       {
@@ -235,10 +236,14 @@ export const router = createBrowserRouter([
         path: 'dashboard',
         element: <PoliceDashboard />
       },
-      // {
-      //   path: 'cases',
-      //   element: <PoliceCases />
-      // },
+      {
+        path: 'cases',
+        element: <PoliceCasesPage />
+      },
+      {
+        path: 'case-details/:caseId',
+        element: <PoliceCaseDetailsPage />
+      },
       {
         path: 'notifications',
         element: <PoliceNotificationPage />
