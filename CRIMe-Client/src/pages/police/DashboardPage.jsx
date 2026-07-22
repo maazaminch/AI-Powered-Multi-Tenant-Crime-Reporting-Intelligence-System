@@ -55,6 +55,36 @@ const PoliceDashboard = () => {
   const { stats, isLoading, error } = useDashboard()
   const navigate = useNavigate()
 
+  if (isLoading) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center min-h-screen"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading dashboard...</p>
+        </div>
+      </motion.div>
+    )
+  }
+
+  if(error) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center min-h-screen"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Error loading dashboard</p>
+        </div>
+      </motion.div>
+    )
+  }
+  
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -71,7 +101,7 @@ const PoliceDashboard = () => {
         <Card className="border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-slate-800">
-              Police Dashboard
+              {stats?.station?.name}
             </CardTitle>
             <CardDescription>
               Overview of your assigned cases and performance

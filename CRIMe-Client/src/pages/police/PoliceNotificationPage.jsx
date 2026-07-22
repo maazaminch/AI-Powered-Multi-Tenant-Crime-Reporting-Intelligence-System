@@ -124,9 +124,7 @@ const PoliceNotificationPage = () => {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="mt-6 flex items-center justify-end gap-2"
             >
-              <div className="text-sm text-slate-600 mr-4">
-                Page {pagination.currentPage} of {pagination.totalPages}
-              </div>
+              
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   variant="outline"
@@ -137,6 +135,9 @@ const PoliceNotificationPage = () => {
                   Previous
                 </Button>
               </motion.div>
+              <div className="text-sm text-slate-600 mr-4">
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   variant="outline"

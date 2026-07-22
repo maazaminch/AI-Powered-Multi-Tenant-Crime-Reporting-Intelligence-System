@@ -49,9 +49,9 @@ const CasesPage = () => {
   const getSeverityColor = (severity) => {
     switch (severity) {
       case 'CRITICAL': return 'destructive'
-      case 'HIGH': return 'destructive'
+      case 'HIGH': return 'pink'
       case 'MEDIUM': return 'warning'
-      case 'LOW': return 'secondary'
+      case 'LOW': return 'info'
       default: return 'secondary'
     }
   }
@@ -59,10 +59,10 @@ const CasesPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING': return 'warning'
-      case 'ASSIGNED': return 'default'
-      case 'UNDER_INVESTIGATION': return 'default'
+      case 'ASSIGNED': return 'purple'
+      case 'UNDER_INVESTIGATION': return 'pink'
       case 'RESOLVED': return 'success'
-      case 'CLOSED': return 'secondary'
+      case 'CLOSED': return 'info'
       default: return 'secondary'
     }
   }
@@ -103,7 +103,7 @@ const CasesPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <Card className="border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl">
               <FileText className="w-6 h-6" />
@@ -122,7 +122,7 @@ const CasesPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <Card className="border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-lg">
+        <Card>
           <CardContent className="p-6">
             <div className="space-y-4">
               {/* Search Bar */}
@@ -134,14 +134,13 @@ const CasesPage = () => {
                     placeholder="Search by case ID, reporter name, or description..."
                     value={filters.search}
                     onChange={(e) => handleFilterChange('search', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   />
                 </div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     onClick={() => setShowFilters(!showFilters)}
                     variant="outline"
-                    className="border-2"
                   >
                     <Filter className="w-4 h-4 mr-2" />
                     Filters
@@ -153,7 +152,6 @@ const CasesPage = () => {
                     <Button
                       onClick={clearFilters}
                       variant="outline"
-                      className="border-2 border-red-200 text-red-600 hover:bg-red-50"
                     >
                       <X className="w-4 h-4 mr-2" />
                       Clear
@@ -169,14 +167,14 @@ const CasesPage = () => {
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-slate-200"
+                    className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t"
                   >
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
                       <select
                         value={filters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                       >
                         <option value="">All Statuses</option>
                         {statuses.map(status => (
@@ -189,7 +187,7 @@ const CasesPage = () => {
                       <select
                         value={filters.crimeType}
                         onChange={(e) => handleFilterChange('crimeType', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                       >
                         <option value="">All Types</option>
                         {crimeTypes.map(type => (
@@ -202,7 +200,7 @@ const CasesPage = () => {
                       <select
                         value={filters.severity}
                         onChange={(e) => handleFilterChange('severity', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                       >
                         <option value="">All Severities</option>
                         {severities.map(severity => (
@@ -215,7 +213,7 @@ const CasesPage = () => {
                       <select
                         value={filters.sortBy}
                         onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                       >
                         <option value="createdAt">Date Created</option>
                         <option value="updatedAt">Last Updated</option>
@@ -236,7 +234,7 @@ const CasesPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
       >
-        <Card className="border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-lg">
+        <Card>
           <CardContent className="p-6">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
@@ -261,11 +259,11 @@ const CasesPage = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     whileHover={{ scale: 1.01, x: 4 }}
-                    onClick={() => handleCaseClick(caseItem._id)}
+                    onClick={() => handleCaseClick(caseItem.caseId)}
                     className="cursor-pointer"
                   >
-                    <div className="p-4 border-2 border-slate-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all bg-white">
-                      <div className="flex items-start justify-between">
+                    <div className="p-4 border rounded-lg hover:border-blue-400 transition-all bg-white">
+                      <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-semibold text-lg text-slate-800">
@@ -278,30 +276,31 @@ const CasesPage = () => {
                               {caseItem.severity}
                             </Badge>
                           </div>
-                          
-                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">
-                            {caseItem.description}
-                          </p>
 
-                          <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(caseItem.createdAt).toLocaleDateString()}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {caseItem.location?.address || 'Location not specified'}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              {caseItem.crimeType?.replace('_', ' ') || 'Unknown'}
-                            </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <MapPin className="w-4 h-4" />
+                            <span className="font-medium">Location:</span>
+                            <span>{caseItem.addressText || 'Location not specified'}</span>
                           </div>
                         </div>
-                        
-                        <motion.div whileHover={{ x: 4 }}>
-                          <ArrowRight className="w-5 h-5 text-slate-400" />
-                        </motion.div>
+
+                        <div className="flex items-center justify-between gap-8 sm:min-w-[150px]">
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="w-4 h-4 text-blue-500" />
+                            <div>
+                              <p className="font-medium">Assigned to you</p>
+                            </div>
+                          </div>
+
+                          <Button size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCaseClick(caseItem.caseId)
+                            }}
+                            >
+                            Case Details
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -311,7 +310,7 @@ const CasesPage = () => {
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-200">
+              <div className="flex items-center justify-between mt-6 pt-6 border-t">
                 <div className="text-sm text-slate-600">
                   Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
                 </div>
@@ -321,7 +320,6 @@ const CasesPage = () => {
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={pagination.page === 1}
                       variant="outline"
-                      className="border-2"
                     >
                       Previous
                     </Button>
@@ -331,7 +329,6 @@ const CasesPage = () => {
                       onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
                       disabled={pagination.page === pagination.totalPages}
                       variant="outline"
-                      className="border-2"
                     >
                       Next
                     </Button>

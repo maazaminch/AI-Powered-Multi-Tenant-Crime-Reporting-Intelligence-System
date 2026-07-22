@@ -28,7 +28,21 @@ const CaseDetailsPage = () => {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
 
-  const { caseDetails, updates, isLoading, error, refetchDetails, refetchUpdates, closeCase, isClosingCase, addUpdate, isAddingUpdate, assignCase, isAssigning, reassignCase, isReassigning } = useCaseDetails(caseId)
+  const { 
+    caseDetails, 
+    updates, 
+    isLoading, 
+    error, 
+    closeCase, 
+    isClosingCase, 
+    addUpdate, 
+    isAddingUpdate, 
+    assignCase, 
+    isAssigning, 
+    reassignCase, 
+    isReassigning 
+  } = useCaseDetails(caseId)
+
   const { cases: stationCases } = useStationCases({ status: 'PENDING' })
   const { police } = useStationPolice()
 
@@ -236,10 +250,10 @@ const CaseDetailsPage = () => {
                   <CardTitle className="text-2xl mb-3">{caseDetails.crimeType}</CardTitle>
                   <div className="flex gap-2 flex-wrap">
                     <Badge className={getStatusColor(caseDetails.status)}>
-                      {caseDetails.status.replace('_', ' ')}
+                      Status: {caseDetails.status.replace('_', ' ')}
                     </Badge>
                     <Badge className={getSeverityColor(caseDetails.severity)}>
-                      {caseDetails.severity}
+                      Severity: {caseDetails.severity}
                     </Badge>
                   </div>
                 </div>
@@ -493,6 +507,7 @@ const CaseDetailsPage = () => {
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-slate-400" />
                     No updates yet
                   </p>
                 )}

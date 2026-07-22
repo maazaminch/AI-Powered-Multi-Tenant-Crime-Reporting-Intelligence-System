@@ -24,9 +24,9 @@ export const useCaseDetails = (caseId) => {
   const closeCaseMutation = useMutation({
     mutationFn: ({ remarks }) => stationHeadService.closeCaseStatus(caseId, remarks),
     onSuccess: () => {
-      queryClient.invalidateQueries(['case-details', caseId])
-      queryClient.invalidateQueries(['case-updates', caseId])
-      queryClient.invalidateQueries(['station-cases'])
+      queryClient.invalidateQueries({ queryKey: ['case-details', caseId] })
+      queryClient.invalidateQueries({ queryKey: ['case-updates', caseId] })
+      queryClient.invalidateQueries({ queryKey: ['station-cases'] })
     },
   })
 
@@ -34,11 +34,11 @@ export const useCaseDetails = (caseId) => {
   const addCaseUpdateMutation = useMutation({
     mutationFn: (updateData) => stationHeadService.addCaseUpdate(caseId, updateData),
     onSuccess: (data) => {
-      queryClient.invalidateQueries(['case-updates', caseId])
-      queryClient.invalidateQueries(['case-details', caseId])
+      queryClient.invalidateQueries({ queryKey: ['case-updates', caseId] })
+      queryClient.invalidateQueries({ queryKey: ['case-details', caseId] })
       // Also refetch immediately to ensure fresh data
-      queryClient.refetchQueries(['case-updates', caseId])
-      queryClient.refetchQueries(['case-details', caseId])
+      queryClient.refetchQueries({ queryKey: ['case-updates', caseId] })
+      queryClient.refetchQueries({ queryKey: ['case-details', caseId] })
     },
   })
 
@@ -46,9 +46,9 @@ export const useCaseDetails = (caseId) => {
   const assignCaseMutation = useMutation({
     mutationFn: (policeId) => stationHeadService.assignCaseToPolice(caseId, policeId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['case-details', caseId])
-      queryClient.invalidateQueries(['case-updates', caseId])
-      queryClient.invalidateQueries(['station-cases'])
+      queryClient.invalidateQueries({ queryKey: ['case-details', caseId] })
+      queryClient.invalidateQueries({ queryKey: ['case-updates', caseId] })
+      queryClient.invalidateQueries({ queryKey: ['station-cases'] })
     },
   })
 
@@ -56,9 +56,9 @@ export const useCaseDetails = (caseId) => {
   const reassignMutation = useMutation({
     mutationFn: (policeId) => stationHeadService.reassignCase(caseId, policeId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['case-details', caseId])
-      queryClient.invalidateQueries(['case-updates', caseId])
-      queryClient.invalidateQueries(['station-cases'])
+      queryClient.invalidateQueries({ queryKey: ['case-details', caseId] })
+      queryClient.invalidateQueries({ queryKey: ['case-updates', caseId] })
+      queryClient.invalidateQueries({ queryKey: ['station-cases'] })
     },
   })
 

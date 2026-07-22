@@ -620,6 +620,7 @@ class StationHeadController {
 
         const filter = {
             caseId: caseId,
+            isArchived: false,
             ...req.tenantFilter,
             ...req.stationFilter
         }

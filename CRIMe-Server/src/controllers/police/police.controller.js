@@ -405,11 +405,9 @@ class PoliceController {
         };
 
         const caseDetails = await Case.findOne(filter)
-            .populate('assignedTo', 'fullName badgeNumber email')
-            .populate('assignedBy', 'fullName')
+            .populate('assignedTo', 'fullName badgeNumber email phone')
             .populate('reporter.citizenId', 'fullName email phone')
             .populate('policeStationId', 'name address')
-            .populate('evidenceFiles')
             .lean();
 
         if (!caseDetails) {
@@ -445,7 +443,7 @@ class PoliceController {
 
         const updates = await CaseUpdate.find({ caseId: caseDoc._id })
             .populate('updatedBy', 'fullName badgeNumber')
-            .populate('evidenceFiles')
+            // .populate('evidenceFiles')
             .sort({ createdAt: -1 });
 
         res.status(200).json(

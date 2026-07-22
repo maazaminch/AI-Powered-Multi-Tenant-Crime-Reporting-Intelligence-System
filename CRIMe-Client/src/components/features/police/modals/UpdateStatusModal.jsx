@@ -35,7 +35,7 @@ export const UpdateStatusModal = ({ open, onClose, onUpdateStatus, isUpdating, c
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-white">
         <DialogHeader>
           <DialogTitle>Update Case Status</DialogTitle>
         </DialogHeader>
