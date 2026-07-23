@@ -114,23 +114,30 @@ adminRoutes.post(
 
 
 
-// Case Management Routes
+// Case Monitoring Routes
 adminRoutes.get(
-    "/station-cases",
+    "/tenant-cases",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    AdminController.getStationCases
+    AdminController.tenantCases
 );
 
 adminRoutes.get(
-    "/pending-cases",
+    "/case-details/:caseId",
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    AdminController.getPendingCases
+    AdminController.caseDetails
 );
 
+adminRoutes.get(
+    "/case-updates/:caseId",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
+    AdminController.caseUpdates
+);
 // Analytics Dashboard Routes
 
 adminRoutes.get(

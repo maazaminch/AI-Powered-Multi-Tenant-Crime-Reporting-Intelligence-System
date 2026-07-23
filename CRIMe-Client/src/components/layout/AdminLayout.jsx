@@ -43,6 +43,7 @@ const AdminLayout = () => {
     { path: '/admin/police-stations', label: 'Police Stations' },
     { path: '/admin/police-management', label: 'Police Management' },
     { path: '/admin/pending-police', label: 'Pending Police' },
+    { path: '/admin/tenant-cases', label: 'Tenant Cases' },
     { path: '/admin/tenant-analytics', label: 'Tenant Analytics' },
     { path: '/admin/audit-logs', label: 'Audit Logs' },
     { path: '/admin/notifications', label: 'Notifications' }

@@ -69,6 +69,20 @@ export const adminService = {
         return response.data
       },
 
+      // Cases
+      tenantCases: async (params = {}) => {
+        const response = await api.get('/api/admin/tenant-cases', { params })
+        return response.data
+      },
+      caseDetails: async (caseId) => {
+        const response = await api.get(`/api/admin/case-details/${caseId}`)
+        return response.data
+      },
+      caseUpdates: async (caseId) => {
+        const response = await api.get(`/api/admin/case-updates/${caseId}`)
+        return response.data
+      },
+
 
       dashboardStats: async () => {
       const response = await api.get('/api/admin/dashboard-stats')

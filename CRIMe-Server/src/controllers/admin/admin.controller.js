@@ -5,6 +5,7 @@ import User from "../../models/user.model.js";
 import PoliceStation from "../../models/policeStation.model.js";
 import Case from "../../models/case.model.js";
 import Tenant from "../../models/tenant.model.js";
+import CaseUpdate from "../../models/caseUpdate.model.js";
 import NotificationService from "../../services/notification.service.js";
 import mongoose from "mongoose";
 import escapeRegex from "../../utils/escapeRegex.js";
@@ -508,48 +509,327 @@ class AdminController {
     });
 
     
-    // Case Management (Station Level)
-    // these controllers not updated
-    static getStationCases = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
+    // Case Monitoring
+    static tenantCases = wrapAsync(async (req, res) => {
 
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
+    const {
+
+        page = 1,
+        limit = 10,
+
+        search,
+
+        status,
+        crimeType,
+        severity,
+
+        policeStationId,
+        assignedTo,
+
+        reporterType,
+
+        startDate,
+        endDate,
+
+        sortBy = "createdAt",
+        sortOrder = "desc"
+
+    } = req.query;
+
+
+    const skip = (page - 1) * limit;
+
+
+    const filter = {
+
+        ...req.tenantFilter
+    };
+
+
+    // Status
+
+    if (status) {
+        filter.status = status;
+    }
+
+
+    // Crime Type
+
+    if (crimeType) {
+        filter.crimeType = crimeType;
+    }
+
+
+    // Severity
+
+    if (severity) {
+        filter.severity = severity;
+    }
+
+
+    // Police Station
+
+    if (policeStationId) {
+        filter.policeStationId = policeStationId;
+    }
+
+
+    // Assigned Police Officer
+
+    if (assignedTo) {
+        filter.assignedTo = assignedTo;
+    }
+
+
+    // Reporter Type
+
+    if (reporterType) {
+        filter["reporter.type"] = reporterType;
+    }
+
+
+    // Date Filters
+
+    if (startDate || endDate) {
+
+        filter.createdAt = {};
+
+        if (startDate) {
+            filter.createdAt.$gte = new Date(startDate);
         }
 
-        const filter = {
-            ...req.tenantFilter,
-        };
-
-        const cases = await Case.find(filter)
-            .populate('policeStationId', 'stationName')
-            .populate('assignedTo', 'fullName badgeNumber')
-            .sort({ createdAt: -1 });
-
-        res.status(200).json(
-            new apiResponse(200, cases, "Station cases fetched successfully")
-        );
-    });
-
-    static getPendingCases = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (currentUser.role !== "ADMIN") {
-            throw new apiError(403, "Access denied");
+        if (endDate) {
+            filter.createdAt.$lte = new Date(endDate);
         }
 
-        const pendingCases = await Case.find({
-            ...req.tenantFilter,
-            status: "PENDING"
-        })
-            .populate('citizenId', 'fullName email')
-            .sort({ createdAt: -1 });
+    }
 
-        res.status(200).json(
-            new apiResponse(200, pendingCases, "Pending cases fetched successfully")
-        );
+
+    // Search
+
+    if (search) {
+
+        filter.$or = [
+
+            {
+                caseId: {
+                    $regex: search,
+                    $options: "i"
+                }
+            },
+
+            {
+                "reporter.name": {
+                    $regex: search,
+                    $options: "i"
+                }
+            },
+
+            {
+                description: {
+                    $regex: search,
+                    $options: "i"
+                }
+            },
+
+            {
+                addressText: {
+                    $regex: search,
+                    $options: "i"
+                }
+            }
+
+        ];
+
+    }
+
+
+    // Sorting
+
+    const validSortFields = [
+
+        "createdAt",
+        "severity",
+        "status",
+        "crimeType",
+        "caseId"
+
+    ];
+
+
+    const sortField = validSortFields.includes(sortBy)
+        ? sortBy
+        : "createdAt";
+
+
+    const sortObject = {
+
+        [sortField]: sortOrder === "asc" ? 1 : -1
+
+    };
+
+
+    const cases = await Case.find(filter)
+
+        .select(
+            `
+            caseId
+            crimeType
+            severity
+            status
+            description
+            createdAt
+            reporter
+            assignedTo
+            policeStationId
+            `
+        )
+
+        .populate(
+            "assignedTo",
+            "fullName badgeNumber"
+        )
+
+        .populate(
+            "policeStationId",
+            "name"
+        )
+
+        .sort(sortObject)
+
+        .skip(skip)
+
+        .limit(parseInt(limit))
+
+        .lean();
+
+
+
+    const totalCases = await Case.countDocuments(filter);
+
+    const policeStations = await PoliceStation.find({}).select("name").lean();
+
+    // Summary Cards
+    // const [
+
+    //     pendingCases,
+    //     assignedCases,
+    //     underInvestigationCases,
+    //     resolvedCases,
+    //     closedCases
+
+    // ] = await Promise.all([
+
+    //     Case.countDocuments({
+    //         ...req.tenantFilter,
+    //         status: "PENDING"
+    //     }),
+
+    //     Case.countDocuments({
+    //         ...req.tenantFilter,
+    //         status: "ASSIGNED"
+    //     }),
+
+    //     Case.countDocuments({
+    //         ...req.tenantFilter,
+    //         status: "UNDER_INVESTIGATION"
+    //     }),
+
+    //     Case.countDocuments({
+    //         ...req.tenantFilter,
+    //         status: "RESOLVED"
+    //     }),
+
+    //     Case.countDocuments({
+    //         ...req.tenantFilter,
+    //         status: "CLOSED"
+    //     })
+
+    // ]);
+
+    res.status(200).json(
+        new apiResponse( 200,
+            {
+                cases,
+                policeStations,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil( totalCases / limit ),
+                    totalCases,
+                    hasNextPage: page * limit < totalCases,
+                    hasPrevPage: page > 1
+                }
+            },
+
+            "Tenant cases fetched successfully"
+
+        )
+
+    );
+
+
     });
 
+    static caseDetails = wrapAsync(async (req,res)=>{
+    const { caseId } = req.params;
+
+    const filter = {
+        caseId: caseId,
+        ...req.tenantFilter
+    };
+
+    const caseDetails = await Case.findOne(filter)
+        .populate(
+            "assignedTo",
+            "fullName email phone badgeNumber"
+        )
+        .populate(
+            "reporter.citizenId",
+            "fullName email phone"
+        )
+        .populate(
+            "policeStationId",
+            "name address city contactNumber"
+        )
+        // .populate("evidenceFiles")
+        .lean();
+
+
+    if (!caseDetails) {
+        throw new apiError(404, "Case not found");
+    }
+
+    res.status(200).json(
+        new apiResponse(
+            200, caseDetails, "Case details fetched successfully" ));
+    });
+
+    static caseUpdates = wrapAsync(async (req, res) => {
+            const { caseId } = req.params;
+            const currentUser = req.user;
+    
+            if (currentUser.role !== 'ADMIN' ) {
+                throw new apiError(403, "Only admins can access this endpoint");
+            }
+    
+            const filter = {
+                caseId: caseId,
+                ...req.tenantFilter
+            };
+            const caseDoc = await Case.findOne(filter).lean();
+            if (!caseDoc) {
+                throw new apiError(404, "Case not found");
+            }
+    
+            const updates = await CaseUpdate.find({ caseId: caseDoc._id })
+                .populate('updatedBy', 'fullName badgeNumber')
+                // .populate('evidenceFiles')
+                .sort({ createdAt: -1 });
+    
+            res.status(200).json(
+                new apiResponse(200, updates, "Case updates fetched successfully")
+            );
+    });
 
     // Analytics Dashboard
     static dashboardStats = wrapAsync(async (req, res) => {
