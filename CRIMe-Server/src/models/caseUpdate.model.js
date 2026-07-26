@@ -54,6 +54,12 @@ const CaseUpdateSchema = new mongoose.Schema({
     index: true
   },
 
+  visibility: {
+    type: String,
+    enum: ["PUBLIC", "INTERNAL"],
+    default: "INTERNAL",
+    required: true
+  },
   remarks: String,
 
   // 🔥 Investigation Data
@@ -87,6 +93,16 @@ const CaseUpdateSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+
+
 CaseUpdateSchema.index({ caseId: 1, createdAt: 1 });
+
+
+
+CaseUpdateSchema.pre("validate", function () {
+  if (this.updaterRole === "CITIZEN" || this.updaterRole === "GUEST") {
+    this.visibility = "PUBLIC"; // always visible to whoever submitted it
+  }
+});
 
 export default mongoose.model('CaseUpdate', CaseUpdateSchema)

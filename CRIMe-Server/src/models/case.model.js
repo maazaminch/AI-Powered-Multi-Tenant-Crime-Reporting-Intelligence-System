@@ -96,7 +96,7 @@ const CaseSchema = new mongoose.Schema({
   default: "PENDING",
   index: true
 },
-
+  allowCitizenUpdates: { type: Boolean, default: true },
 
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true }, 
   assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true }, // SHO
