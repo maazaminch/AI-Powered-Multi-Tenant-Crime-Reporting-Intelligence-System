@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import stationHeadService from '../../services/stationHeadService'
+import { stationHeadService } from '../../services/stationHeadService'
 
 export const useCaseDetails = (caseId) => {
   const queryClient = useQueryClient()

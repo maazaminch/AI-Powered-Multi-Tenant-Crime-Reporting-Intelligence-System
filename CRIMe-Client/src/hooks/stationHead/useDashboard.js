@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import stationHeadService from '../../services/stationHeadService'
+import { stationHeadService } from '../../services/stationHeadService'
 
 export const useDashboard = () => {
   const { data, isLoading, error } = useQuery({

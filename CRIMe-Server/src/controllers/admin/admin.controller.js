@@ -1071,10 +1071,9 @@ class AdminController {
 
         const { name, location, address, city, sector, contactNumber, email, locationLabel } = req.body;
 
-        const coords = location.coordinates;
-
-        if (!coords || coords.length !== 2) {
-        throw new apiError(400, "Location required");
+        // In admin.controller.js line 1076
+        if (!location || !location.coordinates || location.coordinates.length !== 2) {
+            throw new apiError(400, "Location with valid coordinates is required");
         }
 
         if (!name || !address || !city || !contactNumber) {
@@ -1086,7 +1085,7 @@ class AdminController {
             name,
             location: {
                 type: "Point",
-                coordinates: [coords[0], coords[1]]
+                coordinates: [location.coordinates[0], location.coordinates[1]]
             },
             address,
             locationLabel: locationLabel || null,

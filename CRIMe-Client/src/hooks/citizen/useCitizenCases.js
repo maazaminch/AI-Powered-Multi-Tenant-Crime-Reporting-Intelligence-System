@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
-import { policeService } from "../../services/policeService"
+import { citizenService } from "../../services/citizenService"
 
-export const usePoliceCases = (filters = {}) => {
+export const useCitizenCases = (filters = {}) => {
     const { data, isLoading, error, refetch } = useQuery({
-        queryKey: ['police-cases', filters],
-        queryFn: () => policeService.getMyCases(filters),
+        queryKey: ['citizen-cases', filters],
+        queryFn: () => citizenService.citizenCases(filters),
         staleTime: 1000 * 60 * 2, // 2 minutes
     })
 

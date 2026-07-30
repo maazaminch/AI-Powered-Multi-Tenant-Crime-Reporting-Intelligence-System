@@ -573,7 +573,7 @@ class authController {
         title: "Welcome to Crime Reporting System",
         message: `Hi ${fullName}, your account is active!`,
         channels: ["inapp", 
-            //"email"
+            "email"
         ]
     });
 

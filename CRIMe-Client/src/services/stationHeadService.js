@@ -68,4 +68,3 @@ export const stationHeadService = {
   
 }
 
-export default stationHeadService

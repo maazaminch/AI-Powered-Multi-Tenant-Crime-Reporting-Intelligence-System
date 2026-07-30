@@ -38,7 +38,7 @@ const CaseSchema = new mongoose.Schema({
       ref: "User",
       //required: function() { return this.type === "CITIZEN" }
     },
-    name: { 
+    fullName: { 
       type: String, 
       required: true 
     },
@@ -81,7 +81,8 @@ const CaseSchema = new mongoose.Schema({
     type: { type: String, enum: ["Point"], default: "Point" },
     coordinates: { type: [Number], required: true }
   },
-  addressText: { type: String },
+  locationLabel: { type: String, required: true },
+  address: { type: String },
 
   // ───── Workflow & Assignment ─────
   status: {

@@ -25,5 +25,3 @@ export const tenantsService = {
     return response
   }
 }
-
-export default tenantsService

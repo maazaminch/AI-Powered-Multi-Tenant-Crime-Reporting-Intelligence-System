@@ -27,4 +27,3 @@ export const notificationsService = {
   
 }
 
-export default notificationsService

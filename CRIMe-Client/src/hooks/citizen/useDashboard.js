@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
-import { policeService } from "../../services/policeService"
+import {citizenService} from "../../services/citizenService"
 
 export const useDashboard = () => {
     const {data, isLoading, error} = useQuery({
-        queryKey: ["police-dashboard"],
-        queryFn: () => policeService.dashboardStats(),
+        queryKey: ["citizen-dashboard"],
+        queryFn: () => citizenService.dashboardStats(),
         staleTime: 1000 * 60,
     })
     return {

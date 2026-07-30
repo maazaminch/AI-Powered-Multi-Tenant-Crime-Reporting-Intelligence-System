@@ -7,7 +7,7 @@ import SuperAdminLayout from '../components/layout/SuperAdminLayout'
 import AdminLayout from '../components/layout/AdminLayout'
 import StationHeadLayout from '../components/layout/StationHeadLayout'
 import PoliceLayout from '../components/layout/PoliceLayout'
-// import CitizenLayout from '../components/layout/CitizenLayout'
+import CitizenLayout from '../components/layout/CitizenLayout'
 
 // Importing public pages
 import HomePage from '../pages/public/HomePage'
@@ -50,8 +50,14 @@ import PoliceCasesPage from '../pages/police/CasesPage'
 import PoliceCaseDetailsPage from '../pages/police/CaseDetailsPage'
 import PoliceNotificationPage from '../pages/police/PoliceNotificationPage'
 
-// // Importing Citizen pages
-// import CitizenDashboard from '../pages/citizen/DashboardPage'
+// Importing Citizen pages
+import CitizenDashboard from '../pages/citizen/DashboardPage'
+import CitizenCasesPage from '../pages/citizen/CitizenCasesPage'
+import CitizenCaseDetailsPage from '../pages/citizen/CaseDetailsPage'
+import CitizenNotificationsPage from '../pages/citizen/CitizenNotificationPage'
+import ReportCasePage from '../pages/citizen/ReportCasePage'
+
+
 
 // // Importing Unauthorized page
 // import Unauthorized from '../pages/UnauthorizedPage'
@@ -62,20 +68,6 @@ import PoliceNotificationPage from '../pages/police/PoliceNotificationPage'
 
 
 // Placeholder pages for now
-const CitizenDashboard = () => (
-  <div className="min-h-screen bg-background p-8">
-    <h1 className="text-2xl font-bold">Citizen Dashboard</h1>
-    <p className="text-gray-600 mt-2">Welcome, Citizen!</p>
-  </div>
-)
-
-const PoliceCases = () => (
-  <div className="min-h-screen bg-background p-8">
-    <h1 className="text-2xl font-bold">Police Assigned Cases</h1>
-    <p className="text-gray-600 mt-2">No cases assigned yet.</p>
-  </div>
-)
-
 const Unauthorized = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
@@ -85,12 +77,7 @@ const Unauthorized = () => (
   </div>
 )
 
-// const AdminDashboard = () => (
-//   <div className="min-h-screen bg-background p-8">
-//     <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-//     <p className="text-gray-600 mt-2">Admin panel working</p>
-//   </div>
-// )
+
 
 
 export const router = createBrowserRouter([
@@ -264,13 +251,29 @@ export const router = createBrowserRouter([
     path: '/citizen/*',
     element: (
       <ProtectedRoute allowedRoles={['CITIZEN']}>
-        <div className="min-h-screen bg-background">Citizen Layout</div>
+        <CitizenLayout />
       </ProtectedRoute>
     ),
     children: [
       {
         path: 'dashboard',
         element: <CitizenDashboard />
+      },
+      {
+        path: 'cases',
+        element: <CitizenCasesPage />
+      },
+      {
+        path: 'report-case',
+        element: <ReportCasePage />
+      },
+      {
+        path: 'case-details/:caseId',
+        element: <CitizenCaseDetailsPage />
+      },
+      {
+        path: 'notifications',
+        element: <CitizenNotificationsPage />
       }
     ]
   },

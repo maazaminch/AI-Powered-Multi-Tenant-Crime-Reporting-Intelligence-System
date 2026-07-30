@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import policeService from "../../services/policeService"
+import { policeService } from "../../services/policeService"
 import { toast } from "sonner"
 
 export const useCaseDetails = (caseId) => {

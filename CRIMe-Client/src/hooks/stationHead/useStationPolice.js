@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
-import stationHeadService from '../../services/stationHeadService'
+import { stationHeadService } from '../../services/stationHeadService'
 import { toast } from 'sonner'
 
 export const useStationPolice = (

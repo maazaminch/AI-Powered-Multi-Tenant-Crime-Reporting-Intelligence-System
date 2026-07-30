@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { locationService } from '../../services/locationService'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -22,6 +23,15 @@ function MapMover({ position }) {
   return null
 }
 
+function MapClickHandler({ onMapClick }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng)
+    }
+  })
+  return null
+}
+
 export default function LocationPicker({
   value = null,
   onChange,
@@ -31,6 +41,8 @@ export default function LocationPicker({
   const [position, setPosition] = useState(value)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
+  const [isReverseGeocoding, setIsReverseGeocoding] = useState(false)
+  const [error, setError] = useState(null)
 
   // sync external value
   useEffect(() => {
@@ -53,6 +65,31 @@ export default function LocationPicker({
     setResults(data)
   }
 
+  // REVERSE GEOCODING (get address from coordinates) - Using Backend API
+  const reverseGeocode = async (lat, lng) => {
+    setIsReverseGeocoding(true)
+    setError(null)
+    try {
+      const data = await locationService.reverseGeocode(lat, lng)
+      
+      if (data.success && data.data) {
+        setQuery(data.data.address || data.data.formattedAddress)
+        return data.data.address || data.data.formattedAddress
+      } else {
+        throw new Error(data.message || 'Failed to get address')
+      }
+    } catch (error) {
+      console.error('Reverse geocoding failed:', error)
+      setError('Failed to get address. Please try again.')
+      // Fallback to coordinates
+      const fallbackAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+      setQuery(fallbackAddress)
+      return fallbackAddress
+    } finally {
+      setIsReverseGeocoding(false)
+    }
+  }
+
   const selectLocation = (item) => {
     const lat = parseFloat(item.lat)
     const lng = parseFloat(item.lon)
@@ -70,13 +107,31 @@ export default function LocationPicker({
     })
   }
 
+  const handleMapClick = async (latlng) => {
+    const lat = latlng.lat
+    const lng = latlng.lng
+
+    const newPos = [lat, lng]
+    setPosition(newPos)
+    setResults([])
+
+    // Reverse geocode to get address
+    const address = await reverseGeocode(lat, lng)
+
+    onChange?.({
+      type: 'Point',
+      coordinates: [lng, lat],
+      display_name: address || `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+    })
+  }
+
   return (
     <div>
       {/* SEARCH BOX */}
       <input
         value={query}
         onChange={(e) => searchAddress(e.target.value)}
-        placeholder="Search address..."
+        placeholder="Search address or click on map..."
         className="w-full p-2 border rounded"
       />
 
@@ -104,9 +159,18 @@ export default function LocationPicker({
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         <MapMover position={position} />
+        <MapClickHandler onMapClick={handleMapClick} />
 
         {position && <Marker position={position} />}
       </MapContainer>
+
+      {isReverseGeocoding && (
+        <p className="text-sm text-muted-foreground mt-2">Getting address...</p>
+      )}
+      
+      {error && (
+        <p className="text-sm text-red-500 mt-2">{error}</p>
+      )}
     </div>
   )
 }

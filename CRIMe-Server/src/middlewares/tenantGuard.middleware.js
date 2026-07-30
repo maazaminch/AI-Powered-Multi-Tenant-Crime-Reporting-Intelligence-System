@@ -15,6 +15,13 @@ const tenantGuard = wrapAsync(async (req, res, next) => {
         return next();
     }
 
+    // Citizens bypass (they are global users without tenant context)
+    if (req.user.role === Roles.CITIZEN) {
+        req.tenantFilter = {};
+        req.stationFilter = {};
+        return next();
+    }
+
     // User must belong to a tenant
     if (!req.user.tenantId) {
         return next(new apiError(403, "Tenant context missing."));

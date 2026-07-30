@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import superAdminService from '../../services/superAdminService'
+import { superAdminService } from '../../services/superAdminService'
 
 export const useDashboardStats = () => {
   

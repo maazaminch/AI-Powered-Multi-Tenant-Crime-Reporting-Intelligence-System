@@ -1,73 +1,121 @@
+import { GoogleGenAI } from "@google/genai";
 
-import axios from "axios";
-
-
-
-class  geminiAIService {
-
-    static async callGemini(prompt){
-        try {
-            const res = await axios.post(
-                `${process.env.GEMINI_API_URL}?key=${process.env.GEMINI_API_KEY}`, 
-                {
-                    contents: [
-                        {
-                            parts: [{text: prompt}]
-                        }
-                    ]
-                }
-            )
-            return res.data?.coordinates?.[0]?.content?.parts?.[0]?.text
-        } catch (err) {
-            console.error('Gemini API Error', err.response?.data || err.message)
-            throw err;
-        }
+let ai;
+function getClient() {
+    if (!ai) {
+        ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     }
+    return ai;
+}
 
+class geminiAIService {
 
-    static async generateDescription(data){
+    static async callGemini(prompt) {
+
+        const models = [
+            process.env.GEMINI_MODEL || "gemini-flash-latest",
+            "gemini-flash-lite-latest"
+        ];
+
+        for (const model of models) {
+            try {
+                const response = await getClient().models.generateContent({
+                    model,
+                    contents: prompt
+                });
+
+                const text = response.text;
+                if (!text) throw new Error("Empty response from model");
+                return text;
+
+            } catch (error) {
+                console.log(`Failed with model ${model}:`, error?.message || error);
+            }
+        }
+
+        throw new Error("All Gemini models failed");
+    }
+    static async generateCrimeAnalysis(description, crimeType, locationLabel = "") {
+
         try {
-            const prompt = `Generate a detailed crime report description based on the following data: ${JSON.stringify(data)}`
-            return await this.callGemini(prompt)
+
+            const prompt = `
+You are an AI assistant for a Crime Reporting System.
+
+Analyze the crime report below.
+
+Description:
+${description}
+
+Crime Type:
+${crimeType}
+
+Location:
+${locationLabel}
+
+Instructions:
+
+1. Generate a concise professional summary.
+2. Determine the severity level.
+3. Severity MUST ONLY be one of:
+   - LOW
+   - MEDIUM
+   - HIGH
+   - CRITICAL
+
+Return ONLY valid JSON.
+
+{
+    "summary":"",
+    "severity":""
+}
+
+Do not return markdown.
+Do not return explanations.
+`;
+
+            const result = await this.callGemini(prompt);
+
+            const cleanedResult = result
+                ?.replace(/```json/g, "")
+                ?.replace(/```/g, "")
+                ?.trim();
+
+            const parsedResult = JSON.parse(cleanedResult);
+
+            const validSeverity = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+
+            return {
+                summary:
+                    parsedResult.summary?.trim() ||
+                    description.slice(0, 150),
+
+                severity:
+                    validSeverity.includes(
+                        parsedResult.severity?.trim()?.toUpperCase()
+                    )
+                        ? parsedResult.severity.trim().toUpperCase()
+                        : "MEDIUM"
+            };
+
         } catch (error) {
-            console.error('Failed to generate description', error.response?.data || error.message)
-            throw error;
-        }
-        
-    }
 
-    static async generateSeverity(description){
-        try {
-            const prompt = `Generate a severity level for the following crime report description: ${description}`
-            const result = await this.callGemini(prompt)
-            const severity = result?.trim().toUpperCase();
-            
-            return ["LOW","MEDIUM","HIGH","CRITICAL"].includes(severity)
-                ? severity
-                : "MEDIUM";
+            console.error(
+                "Gemini AI Error:",
+                error.response?.data || error.message
+            );
 
-        } catch {
-            return "MEDIUM";
+            // FALLBACK RESPONSE
+            return {
+                summary:
+                    description.length > 150
+                        ? `${description.slice(0, 150)}...`
+                        : description,
+
+                severity: "MEDIUM"
+            };
         }
     }
-
-    static async generateSummary(description, crimeType, location){
-        try {
-            const prompt = `Generate a summary for the following crime report description: 
-            Description: ${description}
-            Crime Type: ${crimeType}
-            Location: ${location}
-            Return a concise structured summary.`
-
-            const result = await this.callGemini(prompt)
-            return result
-        } catch (error) {
-            console.error('Gemini API Error', error.response?.data || error.message)
-            return description.slice(0, 100)
-        }
-    }
-
-
 }
 
 export default geminiAIService;

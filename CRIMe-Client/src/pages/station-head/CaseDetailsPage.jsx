@@ -323,7 +323,7 @@ const CaseDetailsPage = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground font-medium">Name</p>
-                  <p className="font-medium text-base">{caseDetails.reporter?.name}</p>
+                  <p className="font-medium text-base">{caseDetails.reporter?.fullName}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground font-medium">Type</p>

@@ -10,12 +10,13 @@ import cookieParser from 'cookie-parser'
 import superAdminRoutes from "./src/routes/superAdmin.route.js";
 import authRoutes from "./src/routes/auth.route.js";
 import userRoutes from "./src/routes/user.route.js";
-import caseRoutes from "./src/routes/case.route.js";
 import adminRoutes from "./src/routes/admin.route.js";
 import stationHeadRoutes from "./src/routes/stationHead.route.js";
 import policeRoutes from "./src/routes/police.route.js";  
 import uploadRoutes from "./src/routes/upload.route.js";
 import notificationRoutes from "./src/routes/notification.route.js";
+import citizenRoutes from "./src/routes/citizen.route.js";
+import locationRoutes from "./src/routes/location.route.js";
 
 
 
@@ -48,12 +49,13 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/superAdmin", superAdminRoutes);
 // app.use("/api/maps", mapRoutes);
-app.use("/api/cases", caseRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/station-head", stationHeadRoutes);
 app.use("/api/police", policeRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/citizen", citizenRoutes);
+app.use("/api/v1/location", locationRoutes);
 
 //GLOBAL ERROR HANDLER (must be **after** all routes)
 app.use(errorHandler);

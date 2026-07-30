@@ -33,5 +33,3 @@ export const policeService = {
     }
 
 }
-
-export default policeService

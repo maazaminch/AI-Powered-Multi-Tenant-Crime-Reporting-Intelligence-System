@@ -80,4 +80,3 @@ export const superAdminService = {
 //   }
 }
 
-export default superAdminService

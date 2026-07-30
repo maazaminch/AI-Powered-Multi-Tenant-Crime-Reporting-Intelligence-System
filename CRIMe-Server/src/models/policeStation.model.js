@@ -30,13 +30,15 @@ const PoliceStationSchema = new mongoose.Schema({
     type: { type: String, enum: ["Point"], default: "Point" },
     coordinates: { type: [Number], required: true }
   },
-  address: {
-    type: String,
-    required: true
-  },
   // Human-readable label chosen from the map search (e.g. Nominatim display_name)
   locationLabel: {
     type: String,
+    required: true
+  },
+  
+  address: {
+    type: String,
+    trim: true
   },
 
   city: {

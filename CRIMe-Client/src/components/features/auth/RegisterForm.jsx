@@ -5,7 +5,7 @@ import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/Card'
 import { useAuth } from '../../../hooks/auth/useAuth'
-import uploadService from '../../../services/uploadService'
+import { uploadService } from '../../../services/uploadService'
 
 const RegisterForm = () => {
   const navigate = useNavigate()
