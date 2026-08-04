@@ -714,7 +714,7 @@ class StationHeadController {
 
 
 
-        const afterResponse = async () => {
+        setImmediate( async () => {
 
             const tasks = [];
             // Create case update
@@ -786,15 +786,15 @@ class StationHeadController {
                 channels: ["inapp"]
             }));
         });
+        });
 
-        
-        await Promise.all(tasks);
-        };
-
-        afterResponse().catch(err =>
-            logger.error(`assignCaseToPolice background error [${updatedCase.caseId}]:`, err)
-        );
-    });
+         const results = await Promise.allSettled(tasks);
+            results.forEach((r, i) => {
+            if (r.status === "rejected") {
+                console.error(`assignCaseToPolice background task ${i} failed:`, r.reason);
+            }
+        });
+    })
 
     static reassignCase = wrapAsync(async (req, res) => {
         const { caseId } = req.params;

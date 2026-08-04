@@ -154,7 +154,7 @@ export default function LocationPicker({
       <MapContainer
         center={position || center}
         zoom={zoom}
-        style={{ height: 360, width: '100%', marginTop: 10 }}
+        style={{ height: 360, width: '100%', marginTop: 10, zIndex: 1 }}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 

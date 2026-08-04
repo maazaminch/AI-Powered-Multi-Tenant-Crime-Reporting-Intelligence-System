@@ -56,42 +56,83 @@ class AdminController {
     });
 
     static getAllPolice = wrapAsync(async (req, res) => {
-        const status = req.query.status;
-        const q = req.query.q;
-        const stationId = req.query.stationId;
+        // const status = req.query.status;
+        // const q = req.query.q;
+        // const stationId = req.query.stationId;
+
+        // const filter = { 
+        //     role: "POLICE",
+        //     ...req.tenantFilter
+        //  };
+        // const validStatuses = ["APPROVED", "BLOCKED"];
+        // if (status) {
+        //     if (!validStatuses.includes(status)) {
+        //         throw new apiError(400, "Invalid status");
+        //     }
+        //     filter.status = status;
+        // }
+
+        // if (q && q.trim().length > 0) {
+        //     const safe = escapeRegex(q.trim());
+        //     filter.$or = [
+        //         { fullName: { $regex: safe, $options: 'i' } },
+        //         { email: { $regex: safe, $options: 'i' } },
+        //         { badgeNumber: { $regex: safe, $options: 'i' } }
+        //     ];
+        // }
+
+        const {
+            page = 1,
+            limit = 10,
+
+            search,
+            status,
+            policeStationId
+        } = req.query;
+
+        const skip = (page - 1) * limit;
 
         const filter = { 
             role: "POLICE",
             ...req.tenantFilter
-         };
-        const validStatuses = ["APPROVED", "BLOCKED"];
-        if (status) {
-            if (!validStatuses.includes(status)) {
-                throw new apiError(400, "Invalid status");
-            }
+        };
+
+        if(status) {
             filter.status = status;
         }
-
-        if (q && q.trim().length > 0) {
-            const safe = escapeRegex(q.trim());
-            filter.$or = [
-                { fullName: { $regex: safe, $options: 'i' } },
-                { email: { $regex: safe, $options: 'i' } },
-                { badgeNumber: { $regex: safe, $options: 'i' } }
-            ];
+        if(policeStationId) {
+            filter.policeStationId = policeStationId;
         }
 
-        if (stationId) {
-            if (stationId === 'UNASSIGNED') {
-                filter.policeStationId = null; // matches null or missing
-            } else {
-                filter.policeStationId = stationId;
+        if (search) {
+        filter.$or = [
+            {
+                fullName: {
+                    $regex: search,
+                    $options: "i"
+                }
+            },
+            {
+                badgeNumber: {
+                    $regex: search,
+                    $options: "i"
+                }
             }
-        }
+        ];
+    }
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+
+        // if (policeStationId) {
+        //     if (policeStationId === 'UNASSIGNED') {
+        //         filter.policeStationId = null; // matches null or missing
+        //     } else {
+        //         filter.policeStationId = policeStationId;
+        //     }
+        // }
+
+        // const page = parseInt(req.query.page) || 1;
+        // const limit = parseInt(req.query.limit) || 10;
+        
 
         const police = await User.find(filter)
             .select("-password")
@@ -101,9 +142,6 @@ class AdminController {
             .limit(limit)
             .lean();
 
-        // if (police.length === 0) {
-        //     throw new apiError(404, "No police found");
-        // }
         
         const totalPolice = await User.countDocuments(filter);
         const totalPages = Math.ceil(totalPolice / limit);

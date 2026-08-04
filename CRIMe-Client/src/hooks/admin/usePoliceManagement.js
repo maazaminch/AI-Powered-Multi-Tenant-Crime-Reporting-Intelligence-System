@@ -6,16 +6,13 @@ import { formatError } from '../../lib/utils'
 
 
 export const usePoliceManagement = (
-  page,
-  status, 
-  q, 
-  stationId,
+  filters = {},
   selectPoliceId) => {
   const queryClient = useQueryClient()
 
   const { data: police, isLoading, error } = useQuery({
-    queryKey: ['police-management', page, status, q, stationId],
-    queryFn: () => adminService.getAllPolice(page, status, q, stationId),
+    queryKey: ['police-management', filters],
+    queryFn: () => adminService.getAllPolice(filters),
   })
 
   const { data: policeDetails, isLoading: isPoliceDetailsLoading } = useQuery({

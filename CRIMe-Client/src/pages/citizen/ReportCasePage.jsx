@@ -51,7 +51,7 @@ const ReportCasePage = () => {
       ...prev,
       coordinates: location.coordinates,
       locationLabel: location.display_name || location.label || '',
-      address: location.address || location.display_name || ''
+      address: '' // Auto-fill address with location label
     }))
 
     // Fetch nearest stations when location is selected
@@ -141,10 +141,6 @@ const ReportCasePage = () => {
     }
     if (!formData.coordinates) {
       toast.error('Please select a location on the map')
-      return
-    }
-    if (!formData.policeStationId) {
-      toast.error('Please select a police station')
       return
     }
 
@@ -257,14 +253,14 @@ const ReportCasePage = () => {
                 </div>
               </div>
 
-              {/* Address (Optional) */}
+              {/* Address (Optional - for specific details like street/house number) */}
               <div>
                 <label className="block text-sm font-medium mb-2">Address (Optional)</label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Enter specific address details..."
+                  placeholder="Enter specific address details (street, house number, etc.)"
                   className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -344,12 +340,7 @@ const ReportCasePage = () => {
                   className="flex-1"
                   disabled={reportCase.isPending || isUploading}
                 >
-                  {reportCase.isPending ? (
-                    <>
-                      <Loader className="w-4 h-4 mr-2" />
-                      Submitting...
-                    </>
-                  ) : (
+                  {reportCase.isPending ? 'Submitting...' : (
                     <>
                       <AlertTriangle className="w-4 h-4 mr-2" />
                       Submit Report

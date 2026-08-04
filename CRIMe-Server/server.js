@@ -1,22 +1,5 @@
-import "./src/config/env.js"; 
-// import dotenv from "dotenv";
-// // dotenv.config();
-// import path from "path";
-// import { fileURLToPath } from 'url';
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
-// // Configure dotenv with explicit path
-// const envPath = path.join(__dirname, '.env');
-// console.log('Debug: .env path =', envPath);
-
-// const result = dotenv.config({ path: envPath });
-// console.log('Debug: dotenv result =', result);
-
-// console.log('Debug: MONGO_URI =', process.env.MONGO_URI);
-// console.log('Debug: EMAIL_USER =', process.env.EMAIL_USER);
-// console.log('Debug: All env vars:', Object.keys(process.env).filter(key => key.includes('MONGO') || key.includes('EMAIL')));
+import "./src/config/env.js";
+import "./src/config/redis.js";
 
 import app from "./app.js";
 import connectDB from "./src/config/db.js";

@@ -65,23 +65,9 @@ const PoliceStationForm = ({
             />
           </div>
 
-            {/* Address */}
+            {/* Location (map) */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Address
-            </label>
-            <Input
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Enter address"
-              required
-            />
-          </div>
-
-          {/* Location (map) */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Location</label>
+            <label className="block text-sm font-medium mb-1">Location *</label>
             <LocationPicker
               value={
                 formData.location
@@ -92,12 +78,25 @@ const PoliceStationForm = ({
                 setFormData((prev) => ({
                   ...prev,
                   location,
-                  // always capture the picker suggestion separately
+                  // locationLabel comes from map (reverse geocoding)
                   locationLabel: location?.display_name || prev.locationLabel,
-                  // keep user-entered address unless it's empty
-                  address: prev.address || location?.display_name || prev.address,
+                  // Auto-fill address with location label
+                  address: '',
                 }))
               }}
+            />
+          </div>
+
+          {/* Address (Optional - for specific details like street/house number) */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Address (Optional)
+            </label>
+            <Input
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Enter specific address details (street, house number, etc.)"
             />
           </div>
           

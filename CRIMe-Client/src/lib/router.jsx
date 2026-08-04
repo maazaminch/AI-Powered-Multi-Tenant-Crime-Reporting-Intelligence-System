@@ -14,8 +14,12 @@ import HomePage from '../pages/public/HomePage'
 import LoginPage from '../pages/public/LoginPage'
 import RegisterPage from '../pages/public/RegisterPage'
 import InviteRegisterPage from '../pages/public/InviteRegisterPage'
-import GuestReportPage from '../pages/public/GuestReportPage'
 
+// Importing public guest pages
+import PublicReportPage from '../pages/public-content/PublicReportPage'
+import PublicSuccessPage from '../pages/public-content/PublicSuccessPage'
+import PublicTrackPage from '../pages/public-content/PublicTrackPage'
+import PublicCaseDetailsPage from '../pages/public-content/PublicCaseDetailsPage'
 
 // Importing SuperAdmin pages
 import SuperAdminDashboard from '../pages/superadmin/DashboardPage'
@@ -103,7 +107,23 @@ export const router = createBrowserRouter([
       },
       {
         path: 'report',
-        element: <GuestReportPage />
+        element: <PublicReportPage />
+      },
+      {
+        path: 'public/report',
+        element: <PublicReportPage />
+      },
+      {
+        path: 'public/success',
+        element: <PublicSuccessPage />
+      },
+      {
+        path: 'public/track',
+        element: <PublicTrackPage />
+      },
+      {
+        path: 'public/case-details/:caseId',
+        element: <PublicCaseDetailsPage />
       }
     ]
   },

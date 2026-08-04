@@ -9,7 +9,7 @@ import {
     validateLocationSchema,
     distanceCalculationSchema,
     jurisdictionCheckSchema
-} from "../validation/location/location.validation.js";
+} from "../validation/location/location.schema.js";
 
 const router = express.Router();
 

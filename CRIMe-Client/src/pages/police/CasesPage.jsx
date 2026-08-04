@@ -252,6 +252,11 @@ const CasesPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                <div className="flex items-center justify-end">
+                  <Badge variant="success" className="ml-2">
+                    Total Cases: {totalCases}
+                  </Badge>
+                </div>
                 {cases.map((caseItem, index) => (
                   <motion.div
                     key={caseItem._id}

@@ -36,19 +36,8 @@ export const adminService = {
 
 
       // Police Management
-      getAllPolice: async (page, status, q, stationId) => {
-        const params = new URLSearchParams({
-          page: page || 1,
-          limit: 10,
-          status: status || ''
-        })
-        if (q) {
-          params.append('q', q)
-        }
-        if (stationId) {
-          params.append('stationId', stationId)
-        }
-        const response = await api.get(`/api/admin/get-all-police?${params}`)
+      getAllPolice: async (params = {}) => {
+        const response = await api.get('/api/admin/get-all-police', { params })
         return response.data
       },
       getPoliceDetails: async (policeId) => {

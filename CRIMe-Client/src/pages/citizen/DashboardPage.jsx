@@ -121,7 +121,7 @@ const CitizenDashboard = () => {
                 value={stats?.underInvestigationCases ?? '...'}
                 color="text-orange-600"
                 bg="bg-orange-50 hover:bg-orange-100"
-                path="/citizen/cases?status=UNDER_INVESTIGATION"
+                path="/citizen/cases"
                 icon={Clock}
               />
 
@@ -130,7 +130,7 @@ const CitizenDashboard = () => {
                 value={stats?.resolvedCases ?? '...'}
                 color="text-green-600"
                 bg="bg-green-50 hover:bg-green-100"
-                path="/citizen/cases?status=RESOLVED"
+                path="/citizen/cases"
                 icon={CheckCircle}
               />
 

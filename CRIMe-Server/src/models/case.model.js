@@ -33,24 +33,36 @@ const CaseSchema = new mongoose.Schema({
       enum: ["CITIZEN", "GUEST"],
       required: true
     },
-    citizenId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User",
-      //required: function() { return this.type === "CITIZEN" }
+    citizenId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
     },
-    fullName: { 
-      type: String, 
-      required: true 
+    fullName: {
+      type: String,
+      required: true
     },
-    email: { 
-      type: String, 
-      required: true 
+    email: {
+      type: String,
+      required: true
     },
-    phone: { 
-      type: String, 
-      required: true 
-    }
+    phone: {
+      type: String,
+      required: true
+    },
+    // For GUEST only
+    isVerified: {
+    type: Boolean,
+    default: false
+  }
   },
+
+  // For tracking guest case
+  trackingToken: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },   
 
   // ───── Crime Classification (CRITICAL) ─────
   crimeType: {

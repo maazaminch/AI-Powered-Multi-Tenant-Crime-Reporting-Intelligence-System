@@ -44,7 +44,7 @@ const TenantCasesPage = () => {
   const [showFilters, setShowFilters] = useState(false)
 
   const { cases, pagination, isLoading, error } = useTenantCases({
-    // page,
+    page,
     ...filters
   })
   const { stations } = usePoliceStationManagement()
@@ -289,6 +289,11 @@ const TenantCasesPage = () => {
             </div>
           ) : (
             <div className="space-y-3">
+              <div className="flex items-center justify-end">
+                <Badge variant="success" className="ml-2">
+                  Total Cases: {pagination.totalCases}
+                </Badge>
+              </div>
               {cases.map((caseItem) => (
                 <div 
                   key={caseItem._id} 
@@ -384,7 +389,7 @@ const TenantCasesPage = () => {
             </div>
             <Button 
               variant="outline" 
-              disabled={!pagination?.hasNext} 
+              disabled={!pagination?.hasNextPage} 
               onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
             >
               Next

@@ -10,6 +10,7 @@ export const useCitizenCases = (filters = {}) => {
 
     return {
         cases: data?.cases ?? [],
+        totalCases: data?.totalCases ?? 0,
         pagination: data?.pagination,
         isLoading,
         error,

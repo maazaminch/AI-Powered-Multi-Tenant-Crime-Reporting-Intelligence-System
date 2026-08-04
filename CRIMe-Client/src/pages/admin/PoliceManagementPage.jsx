@@ -3,17 +3,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { usePoliceManagement } from '../../hooks/admin/usePoliceManagement'
+import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
+
 import InvitePoliceModal from '../../components/features/police/modals/InvitePoliceModal'
 import AssignOrTransferStationModal from '../../components/features/police/modals/AssignOrTransferStationModal'
 import PoliceDetailsModal from '../../components/features/police/modals/PoliceDetailsModal'
 import DeleteConfirmationModal from '../../components/features/DeleteConfirmationModal'
-import { formatError } from '../../lib/utils'
+
+import { 
+  Search, 
+  Filter, 
+  ChevronDown
+} from 'lucide-react'
+
+import Loader from '../../components/ui/feedback/Loader'
+import ErrorState from '../../components/ui/feedback/ErrorState'
+import NoData from '../../components/ui/feedback/NoData'
 
 const PoliceManagementPage = () => {
-  const [activeTab, setActiveTab] = useState('APPROVED')
   const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedStation, setSelectedStation] = useState('')
+
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    policeStationId: ''
+  })
+
+  const [showFilters, setShowFilters] = useState(false)
+
 
   const [selectedPoliceId, setSelectedPoliceId] = useState(null)
   const [policeToDelete, setPoliceToDelete] = useState(null)
@@ -38,7 +55,18 @@ const PoliceManagementPage = () => {
     invitePolice,
     policeDetails,
     isPoliceDetailsLoading,
-  } = usePoliceManagement(page, activeTab, searchQuery, selectedStation, selectedPoliceId)
+  } = usePoliceManagement({
+    page, 
+    ...filters, 
+    selectedPoliceId})
+  
+  const { stations } = usePoliceStationManagement()
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+    setPage(1)
+  }
+
 
 
   const onUpdateStatus = (userId, newStatus) => {
@@ -105,113 +133,118 @@ const PoliceManagementPage = () => {
   }
 
 
+
+  const statuses = ['APPROVED', 'BLOCKED', 'PENDING']
   return (
     <div className="space-y-6">
-      <PoliceDetailsModal
-        open={!!selectedPoliceId}
-        onClose={() => setSelectedPoliceId(null)}
-        policeDetails={policeDetails}
-        isLoading={isPoliceDetailsLoading}
-      />
-      {/* Delete Confirmation */}
-      <DeleteConfirmationModal
-        open={!!policeToDelete}
-        onClose={() => setPoliceToDelete(null)}
-        onConfirm={handleConfirmDelete}
-        isDeleting={deletePolice.isPending}
-        entityName='Police Officer'
-      />
-
-      <InvitePoliceModal
-        open={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
-        onSubmit={handleInviteSubmit}
-        isSubmitting={invitePolice.isPending}
-        formData={inviteForm}
-        onChange={handleInviteInputChange}
-      />
-
-      <AssignOrTransferStationModal
-        open={isStationModalOpen}
-        onClose={handleCancelStationModal}
-        onSubmit={handleAssignOrTransferSubmit}
-        isSubmitting={assignPolice.isPending || transferPolice.isPending}
-        formData={stationForm}
-        onChange={handleStationInputChange}
-        policeName={selectedPoliceForStation?.fullName}
-        stations={policeStations}
-        isTransfer={!!selectedPoliceForStation?.policeStationId}
-      />
-
       <Card>
         <CardHeader>
           <CardTitle>Police Management</CardTitle>
           <CardDescription>Manage police officers for your tenant.</CardDescription>
-
-          <div className='mt-4 flex flex-wrap items-center gap-2'>
-            <input
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setPage(1) }}
-              placeholder="Search by name or email"
-              className="h-10 px-3 rounded-md border"
-            />
-
-            <select value={selectedStation} onChange={(e) => { setSelectedStation(e.target.value); setPage(1) }} className="h-10 rounded-md border px-2">
-              <option value="">All Stations</option>
-              <option value="UNASSIGNED">Unassigned</option>
-              {policeStations?.map((s) => (
-                <option key={s._id} value={s._id}>{s.name}</option>
-              ))}
-            </select>
-
-            <div className='w-full mt-4 flex gap-2 justify-start'>
-            <Button
-            variant={activeTab === 'APPROVED' ? 'default' : 'outline'}
-            onClick={() => {
-              setActiveTab('APPROVED')
-              setPage(1)
-            }}
-            >
-              Approved Police
-            </Button>
-            <Button
-            variant={activeTab === 'BLOCKED' ? 'default' : 'outline'}
-            onClick={() => {
-              setActiveTab('BLOCKED')
-              setPage(1)
-            }}
-            >
-              Blocked Police
-            </Button>
-          </div>
-
-            <div className="ml-auto">
-              <Button variant='default' onClick={() => setIsInviteModalOpen(true)}>Invite Police</Button>
-            </div>
-          </div>
         </CardHeader>
+      </Card>
+
+      {/* Filters */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Search Bar */}
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search by case ID, reporter name, or description..."
+                        value={filters.search}
+                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="flex items-center gap-2"
+                    >
+                      <Filter className="w-4 h-4" />
+                      Filters
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </div>
+      
+                  {/* Expandable Filters */}
+                  {showFilters && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+      
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Status</label>
+                        <select
+                          value={filters.status}
+                          onChange={(e) => handleFilterChange('status', e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">All Statuses</option>
+                          {statuses.map(status => (
+                            <option key={status} value={status}>{status.replace('_', ' ')}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Police Stations</label>
+                        <select
+                          value={filters.policeStationId}
+                          onChange={(e) => handleFilterChange('policeStationId', e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">All</option>
+                          {stations?.map(station => (
+                            <option key={station._id} value={station._id}>{station.name}</option>
+                          ))}
+                        </select>
+                      </div>    
+      
+                      <div className="flex items-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => setFilters({
+                            status: '',
+                            policeStationId: ''
+                          })}
+                          className="w-full"
+                        >
+                          Clear Filters
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+
+
+          
+      <Card>
         <CardContent className="space-y-6">
-
-
-
           {isLoading ? (
-            <div className="space-y-3">{[1,2,3].map(i => (<div key={i} className="h-20 animate-pulse rounded-lg border bg-muted/40"/>))}</div>
+              <Loader
+                text='Loading Police Officers...'
+              />  
           ) : error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{formatError(error)}</div>
+            <ErrorState 
+              title='Failed to load police officers.'
+            />
+          ) : police.length === 0 ? (
+            <NoData 
+              title="No Police Officers Found"
+              description="There are currently no police officers."
+            />
           ) : (
             <div className="space-y-8">
               <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">{activeTab} Police</h2>
-                    <p className="text-sm text-muted-foreground">Police officers in your tenant.</p>
-                  </div>
-                  <Badge variant="success">{pagination?.totalPolice ?? police.length}</Badge>
+                <div className="flex items-center justify-end">
+                  <Badge variant="success">Total Police Officers: {pagination?.totalPolice}</Badge>
                 </div>
-
-                {police.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">No {activeTab.toLowerCase()} police found.</div>
-                ) : (
                   <div className="space-y-3">
                     {police.map((police) => (
                       <div key={police._id} className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between">
@@ -266,22 +299,57 @@ const PoliceManagementPage = () => {
                       </div>
                     ))}
                   </div>
-                )}
               </section>
-              {pagination && (
+              
+            </div>
+          )}
+        </CardContent>
+      </Card> 
+
+      {pagination && (
                 <div className="mt-6 flex items-center justify-end gap-2">
                   <div className="text-sm text-muted-foreground mr-4">Page {pagination.currentPage} of {pagination.totalPages}</div>
                   <Button variant="outline" disabled={!pagination?.hasPrevPage} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>Previous</Button>
                   <Button variant="outline" disabled={!pagination?.hasNextPage} onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}>Next</Button>
                 </div>
-              )}
-            </div>
-          )}
+              )}   
 
-                               
-          
-        </CardContent>
-      </Card>
+      <PoliceDetailsModal
+        open={!!selectedPoliceId}
+        onClose={() => setSelectedPoliceId(null)}
+        policeDetails={policeDetails}
+        isLoading={isPoliceDetailsLoading}
+      />
+      {/* Delete Confirmation */}
+      <DeleteConfirmationModal
+        open={!!policeToDelete}
+        onClose={() => setPoliceToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={deletePolice.isPending}
+        entityName='Police Officer'
+      />
+
+      <InvitePoliceModal
+        open={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onSubmit={handleInviteSubmit}
+        isSubmitting={invitePolice.isPending}
+        formData={inviteForm}
+        onChange={handleInviteInputChange}
+      />
+
+      <AssignOrTransferStationModal
+        open={isStationModalOpen}
+        onClose={handleCancelStationModal}
+        onSubmit={handleAssignOrTransferSubmit}
+        isSubmitting={assignPolice.isPending || transferPolice.isPending}
+        formData={stationForm}
+        onChange={handleStationInputChange}
+        policeName={selectedPoliceForStation?.fullName}
+        stations={policeStations}
+        isTransfer={!!selectedPoliceForStation?.policeStationId}
+      />
+
     </div>
   )
 }

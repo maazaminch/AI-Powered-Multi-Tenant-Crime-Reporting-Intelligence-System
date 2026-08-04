@@ -55,7 +55,6 @@ class CitizenController {
         );
     });
 
-
     // POST /citizen/citizen-report-crime - Submit crime report as authenticated citizen
     static reportCase = wrapAsync(async (req, res) => {
         
@@ -100,7 +99,8 @@ class CitizenController {
             citizenId: currentUser._id,
             fullName: currentUser.fullName,
             email: currentUser.email,
-            phone: currentUser.phone
+            phone: currentUser.phone,
+            isVerified: true
         };
 
         // ───── 4. Validate evidence ownership (if attached at submit time) ─────
@@ -147,7 +147,7 @@ class CitizenController {
                 userId: station.stationHead,
                 type: "new_case_reported",
                 title: "New Case Reported",
-                message: `A new case (${newCase.caseId}) has been reported at ${station.name}`,
+                message: `A new case (${newCase.caseId}) has been reported at ${station.name} by ${reporter.fullName}`,
                 channels: ["inapp"]
             });
         }
@@ -250,10 +250,11 @@ class CitizenController {
         res.status(200).json(
             new apiResponse(200, {
                 cases,
+                totalCases,
                 pagination: {
                     page: parseInt(page),
                     limit: parseInt(limit),
-                    totalCases,
+                    currentPage: page,
                     totalPages,
                     hasNextPage: page < totalPages,
                     hasPrevPage: page > 1

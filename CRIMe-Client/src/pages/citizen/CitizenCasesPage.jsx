@@ -32,7 +32,7 @@ const CitizenCasesPage = () => {
   })
   const [showFilters, setShowFilters] = useState(false)
 
-  const { cases, pagination, isLoading, error, refetch } = useCitizenCases({
+  const { cases, totalCases, pagination, isLoading, error, refetch } = useCitizenCases({
     page,
     ...filters
   })
@@ -67,14 +67,7 @@ const CitizenCasesPage = () => {
     }
   }
 
-  const crimeTypes = [
-    'THEFT', 'ROBBERY', 'ASSAULT', 'MURDER', 'DOMESTIC_VIOLENCE',
-    'CYBER_CRIME', 'KIDNAPPING', 'FRAUD', 'DRUG_OFFENSE',
-    'HARASSMENT', 'TRAFFIC_VIOLATION', 'OTHER'
-  ]
-
   const statuses = ['PENDING', 'ASSIGNED', 'UNDER_INVESTIGATION', 'RESOLVED', 'CLOSED']
-  const severities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
   const clearFilters = () => {
     setFilters({
@@ -203,7 +196,10 @@ const CitizenCasesPage = () => {
         <Card>
           <CardContent className="p-6">
             {isLoading ? (
-              <Loader text="Loading cases..." />
+              <Loader 
+                text="Loading cases..."
+                fullScreen
+                />
             ) : error ? (
               <ErrorState 
                 title="Failed to load cases"
@@ -217,6 +213,11 @@ const CitizenCasesPage = () => {
               />
             ) : (
               <div className="space-y-4">
+                <div className="flex items-center justify-end">
+                  <Badge variant="success" className="ml-2">
+                    Total Cases: {totalCases}
+                  </Badge>
+                </div>
                 {cases.map((caseItem, index) => (
                   <motion.div
                     key={caseItem._id}
@@ -261,7 +262,7 @@ const CitizenCasesPage = () => {
                               handleCaseClick(caseItem.caseId)
                             }}
                           >
-                            View Details
+                            Case Details
                           </Button>
                         </div>
                       </div>
@@ -272,10 +273,43 @@ const CitizenCasesPage = () => {
             )}
 
             {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
+
+            {pagination && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.2 }}
+                          className="mt-6 flex items-center justify-end gap-2"
+                        >
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              variant="outline"
+                              className="border-2"
+                              disabled={!pagination?.hasPrevPage}
+                              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                            >
+                              Previous
+                            </Button>
+                          </motion.div>
+                          <div className="text-sm text-slate-600 mr-4">
+                            Page {pagination.currentPage} of {pagination.totalPages}
+                          </div>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              variant="outline"
+                              className="border-2"
+                              disabled={!pagination?.hasNextPage}
+                              onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
+                            >
+                              Next
+                            </Button>
+                          </motion.div>
+                        </motion.div>
+                      )}
+            {/* {pagination && (
               <div className="flex items-center justify-between mt-6 pt-6 border-t">
                 <div className="text-sm text-slate-600">
-                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.totalCases} total)
                 </div>
                 <div className="flex gap-2">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -298,7 +332,7 @@ const CitizenCasesPage = () => {
                   </motion.div>
                 </div>
               </div>
-            )}
+            )} */}
           </CardContent>
         </Card>
       </motion.div>
