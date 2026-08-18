@@ -1,4 +1,4 @@
-//AWS S3
+// Multi-Storage Support (S3, Cloudinary, etc.)
 import mongoose from "mongoose";
 
 const EvidenceSchema = new mongoose.Schema({
@@ -25,7 +25,15 @@ const EvidenceSchema = new mongoose.Schema({
     ref: "User"
   },
 
-  // S3 object key
+  // Storage provider (s3, cloudinary, etc.)
+  provider: {
+    type: String,
+    required: true,
+    enum: ['s3', 'cloudinary'],
+    default: 's3'
+  },
+
+  // Storage key (S3 key or Cloudinary public ID)
   storageKey: {
     type: String,
     required: true,
@@ -38,16 +46,31 @@ const EvidenceSchema = new mongoose.Schema({
     required: true
   },
 
-  // Bucket name
+  // S3 specific fields (optional, for backward compatibility)
   bucketName: {
-    type: String,
-    required: true
+    type: String
   },
 
-  // AWS region
   region: {
+    type: String
+  },
+
+  storageClass: {
     type: String,
-    required: true
+    default: "STANDARD"
+  },
+
+  // Cloudinary specific fields (optional)
+  publicId: {
+    type: String
+  },
+
+  folder: {
+    type: String
+  },
+
+  resourceType: {
+    type: String
   },
 
   // File details
@@ -77,6 +100,10 @@ const EvidenceSchema = new mongoose.Schema({
     type: String
   },
 
+  uploadIp: {
+    type: String
+  },
+
   uploadedAt: {
     type: Date,
     default: Date.now
@@ -88,131 +115,6 @@ const EvidenceSchema = new mongoose.Schema({
 // Indexes
 EvidenceSchema.index({ tenantId: 1 });
 EvidenceSchema.index({ caseId: 1 });
+EvidenceSchema.index({ provider: 1 });
 
 export default mongoose.model("Evidence", EvidenceSchema);
-
-// AWS S3 Upload Flow
-
-// Frontend
-// → Requests presigned URL
-// → Backend validates file
-// → Backend generates S3 key + presigned URL
-// → Frontend uploads directly to S3
-// → Frontend sends metadata to backend
-// → Backend stores metadata in MongoDB
-
-// What Gets Stored
-// {
-//   "storageKey": "tenant-1/cases/case123/evidence/file.jpg",
-//   "bucketName": "crime-saas-evidence",
-//   "region": "ap-south-1",
-//   "fileUrl": "https://bucket.s3.amazonaws.com/..."
-// }
-
-
-
-
-
-// //Cloudinary
-// import mongoose from "mongoose";
-
-// const EvidenceSchema = new mongoose.Schema({
-
-//   // Tenant isolation
-//   tenantId: {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: "Tenant",
-//     required: true,
-//     index: true
-//   },
-
-//   // Related case
-//   caseId: {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: "Case",
-//     required: true,
-//     index: true
-//   },
-
-//   // Uploaded by user
-//   uploadedBy: {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: "User"
-//   },
-
-//   // Cloudinary public ID
-//   publicId: {
-//     type: String,
-//     required: true
-//   },
-
-//   // File URL
-//   fileUrl: {
-//     type: String,
-//     required: true
-//   },
-
-//   // Original file details
-//   originalFileName: {
-//     type: String,
-//     required: true
-//   },
-
-//   mimeType: {
-//     type: String,
-//     required: true
-//   },
-
-//   fileType: {
-//     type: String,
-//     enum: ["IMAGE", "VIDEO", "AUDIO", "PDF", "DOCUMENT"],
-//     required: true
-//   },
-
-//   fileSize: {
-//     type: Number,
-//     required: true
-//   },
-
-//   uploadedAt: {
-//     type: Date,
-//     default: Date.now
-//   }
-
-// }, { timestamps: true });
-
-
-// // Indexes
-// EvidenceSchema.index({ tenantId: 1 });
-// EvidenceSchema.index({ caseId: 1 });
-
-// export default mongoose.model("Evidence", EvidenceSchema);
-
-// Cloudinary Upload Flow
-
-// Frontend
-// → Select file
-// → Send to backend
-// → Backend uploads to Cloudinary
-// → Cloudinary returns:
-
-// secure_url
-// public_id
-
-// → Backend stores metadata in MongoDB
-
-// What Gets Stored
-// {
-//   "publicId": "crime_saas/evidence/abc123",
-//   "fileUrl": "https://res.cloudinary.com/...",
-//   "fileType": "IMAGE"
-// }
-
-
-
-
-
-
-
-
-

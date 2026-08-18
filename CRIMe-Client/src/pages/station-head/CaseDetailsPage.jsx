@@ -30,9 +30,11 @@ const CaseDetailsPage = () => {
 
   const { 
     caseDetails, 
-    updates, 
     isLoading, 
     error, 
+    updates, 
+    updatesLoading,
+    updatesError,
     closeCase, 
     isClosingCase, 
     addUpdate, 
@@ -427,93 +429,174 @@ const CaseDetailsPage = () => {
           )}
 
           
-          <Card className="border border-slate-400">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">Case Timeline</CardTitle>
-                {canAddUpdates && (
-                  <Button size="sm" variant="outline" onClick={() => setShowNoteModal(true)}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Note
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="max-h-[500px] overflow-y-auto pr-2">
-                {updates && updates.length > 0 ? (
-                  Object.entries(groupUpdatesByDate(updates)).map(([date, dateUpdates]) => (
-                    <div key={date} className="mb-6">
-                      <div className="sticky top-0 bg-white z-20 py-3 border-b mb-4 shadow-sm">
-                        <p className="text-sm font-semibold text-muted-foreground">{date}</p>
-                      </div>
-                      <div className="space-y-4">
-                        {dateUpdates.map((update, index) => (
-                          <div key={index} className="relative pl-6 pb-4 border-l-2 border-muted last:border-0">
-                            <div className={`absolute left-0 top-0 w-8 h-8 rounded-full flex items-center justify-center ${getUpdateTypeColor(update.updateType)}`}>
-                              {getUpdateTypeIcon(update.updateType)}
-                            </div>
-                            <div className="mb-1">
-                              <Badge variant="outline" className="text-xs">
-                                {update.updateType.replace('_', ' ')}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground ml-2">
-                                {new Date(update.createdAt).toLocaleTimeString()}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium">
-                              {update.updatedBy?.fullName || 'System'}
-                            </p>
-                            {update.remarks && (
-                              <p className="text-sm text-muted-foreground mt-1">{update.remarks}</p>
-                            )}
-                            {update.note && (
-                              <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-                                <p className="font-medium text-blue-900">Note:</p>
-                                <p className="text-blue-800">{update.note}</p>
+        {/* Timeline Sidebar */}
+        <div className="lg:col-span-1">
+          {updatesLoading ? (
+            <Card className="border border-slate-400">
+              <CardContent className="pt-6">
+                <Loader
+                  size="md"
+                  text="Loading updates..."
+                />
+              </CardContent>
+            </Card>
+          ) : updatesError ? (
+            <ErrorState
+              title="Failed to load updates"
+              description="Please try again later"
+            />
+          ) : updates.length === 0 ? (
+            <NoData
+              title="No Updates"
+              description="No updates available for this case"
+            />
+          ) : (
+            <Card className="border border-slate-400">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl">
+                    Case Timeline
+                  </CardTitle>
+
+                  {canAddUpdates && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowNoteModal(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Note
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-4">
+                <div className="max-h-[350px] overflow-y-auto pr-2">
+                  {Object.entries(groupUpdatesByDate(updates)).map(
+                    ([date, dateUpdates]) => (
+                      <div key={date} className="mb-6">
+
+                        <div className="sticky top-0 bg-white z-20 py-3 border-b mb-4 shadow-sm">
+                          <p className="text-sm font-semibold text-muted-foreground">
+                            {date}
+                          </p>
+                        </div>
+
+                        <div className="space-y-4">
+                          {dateUpdates.map((update, index) => (
+                            <div
+                              key={index}
+                              className="relative pl-6 pb-4 border-l-2 border-muted last:border-0"
+                            >
+                              <div
+                                className={`absolute left-0 top-0 w-8 h-8 rounded-full flex items-center justify-center ${getUpdateTypeColor(
+                                  update.updateType
+                                )}`}
+                              >
+                                {getUpdateTypeIcon(update.updateType)}
                               </div>
-                            )}
-                            {update.statement && (
-                              <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
-                                <p className="font-medium text-purple-900">Statement:</p>
-                                <p className="text-purple-800">{update.statement}</p>
-                                {update.witnessName && (
-                                  <p className="text-xs text-purple-600 mt-1">Witness: {update.witnessName}</p>
+
+                              <div className="mb-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {update.updateType.replace("_", " ")}
+                                </Badge>
+
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  {new Date(
+                                    update.createdAt
+                                  ).toLocaleTimeString()}
+                                </span>
+                              </div>
+
+                              <p className="text-sm font-medium">
+                                {update.updatedBy?.fullName || "System"}
+                              </p>
+
+                              {update.remarks && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {update.remarks}
+                                </p>
+                              )}
+
+                              {update.note && (
+                                <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
+                                  <p className="font-medium text-blue-900">
+                                    Note:
+                                  </p>
+                                  <p className="text-blue-800">
+                                    {update.note}
+                                  </p>
+                                </div>
+                              )}
+
+                              {update.statement && (
+                                <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
+                                  <p className="font-medium text-purple-900">
+                                    Statement:
+                                  </p>
+
+                                  <p className="text-purple-800">
+                                    {update.statement}
+                                  </p>
+
+                                  {update.witnessName && (
+                                    <p className="text-xs text-purple-600 mt-1">
+                                      Witness: {update.witnessName}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {update.arrest && (
+                                <div className="mt-2 p-2 bg-red-50 rounded text-sm">
+                                  <p className="font-medium text-red-900">
+                                    Arrest:
+                                  </p>
+
+                                  <p className="text-red-800">
+                                    {update.arrest.arrestedPersonName}
+                                  </p>
+
+                                  <p className="text-xs text-red-600 mt-1">
+                                    Reason: {update.arrest.arrestReason}
+                                  </p>
+                                </div>
+                              )}
+
+                              {update.previousStatus &&
+                                update.newStatus && (
+                                  <div className="mt-2 flex items-center gap-2 text-sm">
+                                    <Badge
+                                      className={getStatusColor(
+                                        update.previousStatus
+                                      )}
+                                    >
+                                      {update.previousStatus}
+                                    </Badge>
+
+                                    <span>→</span>
+
+                                    <Badge
+                                      className={getStatusColor(
+                                        update.newStatus
+                                      )}
+                                    >
+                                      {update.newStatus}
+                                    </Badge>
+                                  </div>
                                 )}
-                              </div>
-                            )}
-                            {update.arrest && (
-                              <div className="mt-2 p-2 bg-red-50 rounded text-sm">
-                                <p className="font-medium text-red-900">Arrest:</p>
-                                <p className="text-red-800">{update.arrest.arrestedPersonName}</p>
-                                <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.arrestReason}</p>
-                              </div>
-                            )}
-                            {update.previousStatus && update.newStatus && (
-                              <div className="mt-2 flex items-center gap-2 text-sm">
-                                <Badge className={getStatusColor(update.previousStatus)}>
-                                  {update.previousStatus}
-                                </Badge>
-                                <span>→</span>
-                                <Badge className={getStatusColor(update.newStatus)}>
-                                  {update.newStatus}
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    <Clock className="w-12 h-12 mx-auto mb-4 text-slate-400" />
-                    No updates yet
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    )
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
           
         </div>

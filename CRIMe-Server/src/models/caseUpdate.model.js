@@ -18,7 +18,7 @@ const CaseUpdateSchema = new mongoose.Schema({
 
   updaterRole: {
     type: String,
-    enum: ["CITIZEN", "POLICE", "ADMIN"],
+    enum: ["CITIZEN", "POLICE", "ADMIN", "GUEST"],
     required: true,
     index: true
   },

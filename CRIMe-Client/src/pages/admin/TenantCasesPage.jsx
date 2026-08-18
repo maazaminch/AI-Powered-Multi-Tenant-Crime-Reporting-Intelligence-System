@@ -20,12 +20,13 @@ import {
 
 const TenantCasesPage = () => {
   const navigate = useNavigate()
-  const [page, setPage] = useState(1)
 
 
   const [filters, setFilters] = useState({
-    search: '',
+    page: 1,
+    limit: 10,
 
+    search: '',
     status: '',
     crimeType: '',
     severity: '',
@@ -43,15 +44,15 @@ const TenantCasesPage = () => {
   })
   const [showFilters, setShowFilters] = useState(false)
 
-  const { cases, pagination, isLoading, error } = useTenantCases({
-    page,
-    ...filters
-  })
+  const { cases, pagination, isLoading, error } = useTenantCases(filters)
   const { stations } = usePoliceStationManagement()
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
-    setPage(1) // Reset to page 1 when filters change
+    setFilters(prev => ({ 
+      ...prev,
+      [key]: value,
+      page: 1
+    }))
   }
 
   const handleCaseClick = (caseId) => {
@@ -246,6 +247,7 @@ const TenantCasesPage = () => {
                   <Button
                     variant="outline"
                     onClick={() => setFilters({
+                      page: 1,
                       status: '',
                       crimeType: '',
                       severity: '',
@@ -372,15 +374,18 @@ const TenantCasesPage = () => {
 
       {/* Pagination */}
       {pagination && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-end">
+          {/* <div className="text-sm text-muted-foreground">
             Showing {((pagination.currentPage - 1) * 10) + 1} to {Math.min(pagination.currentPage * 10, pagination.totalCases)} of {pagination.totalCases} cases
-          </div>
+          </div> */}
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               disabled={!pagination?.hasPrevPage} 
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => setFilters(prev => ({
+                 ...prev,
+                 page: Math.max(1, prev.page - 1)
+              }))}
             >
               Previous
             </Button>
@@ -390,7 +395,10 @@ const TenantCasesPage = () => {
             <Button 
               variant="outline" 
               disabled={!pagination?.hasNextPage} 
-              onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
+              onClick={() => setFilters(prev => ({
+                ...prev,
+                page: Math.min(pagination.totalPages, prev.page + 1)
+              }))}
             >
               Next
             </Button>

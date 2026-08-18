@@ -20,6 +20,11 @@ router.post(
     "/profile-url-public",
     UploadController.getPublicProfileUploadUrl);
 
+// Public evidence upload for guests and citizens (no auth required)
+router.post(
+    "/evidence-url-public",
+    UploadController.getPublicEvidenceUploadUrl);
+
 router.post(
     "/profile-url",
     verifyJWT, 

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { adminService } from '../../services/adminService'
 
-export const useTenantCases = (filters = {}) => {
+export const useTenantCases = (filters) => {
     const {data, isLoading, error} = useQuery({
         queryKey: ['tenant-cases', filters],
         queryFn: () => adminService.tenantCases(filters),

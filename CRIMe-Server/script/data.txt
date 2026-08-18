@@ -1,0 +1,56 @@
+Admin Emails (2 per tenant - Total 10)
+admin1.lahore@gmail.com
+admin2.lahore@gmail.com
+admin1.karachi@gmail.com
+admin2.karachi@gmail.com
+admin1.islamabad@gmail.com
+admin2.islamabad@gmail.com
+admin1.peshawar@gmail.com
+admin2.peshawar@gmail.com
+admin1.quetta@gmail.com
+admin2.quetta@gmail.com
+SHO Emails (1 per station - Total 25)
+Lahore:
+
+sho.johartown.lahore@gmail.com
+sho.modeltown.lahore@gmail.com
+sho.shalimar.lahore@gmail.com
+sho.cantt.lahore@gmail.com
+sho.iqbaltown.lahore@gmail.com
+Karachi:
+
+sho.clifton.karachi@gmail.com
+sho.defence.karachi@gmail.com
+sho.saddar.karachi@gmail.com
+sho.nazimabad.karachi@gmail.com
+sho.gulshaneiqbal.karachi@gmail.com
+Islamabad:
+
+sho.margalla.islamabad@gmail.com
+sho.golra.islamabad@gmail.com
+sho.industrialarea.islamabad@gmail.com
+sho.ramna.islamabad@gmail.com
+sho.sabzimandi.islamabad@gmail.com
+Peshawar:
+
+sho.hayatabad.peshawar@gmail.com
+sho.town.peshawar@gmail.com
+sho.faqirabad.peshawar@gmail.com
+sho.warsak.peshawar@gmail.com
+sho.kohatroad.peshawar@gmail.com
+Quetta:
+
+sho.sariab.quetta@gmail.com
+sho.cantt.quetta@gmail.com
+sho.civillines.quetta@gmail.com
+sho.satellitetown.quetta@gmail.com
+sho.brewery.quetta@gmail.com
+Police Officer Emails (4 per station - Total 100)
+Pattern: police{2-5}.{station}.{city}@gmail.com
+
+Example for Lahore Johar Town:
+
+police2.johartown.lahore@gmail.com
+police3.johartown.lahore@gmail.com
+police4.johartown.lahore@gmail.com
+police5.johartown.lahore@gmail.com

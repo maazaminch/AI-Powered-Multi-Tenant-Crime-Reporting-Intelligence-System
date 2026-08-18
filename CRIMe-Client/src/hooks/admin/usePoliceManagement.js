@@ -6,13 +6,18 @@ import { formatError } from '../../lib/utils'
 
 
 export const usePoliceManagement = (
-  filters = {},
+  filters,
   selectPoliceId) => {
   const queryClient = useQueryClient()
 
   const { data: police, isLoading, error } = useQuery({
     queryKey: ['police-management', filters],
     queryFn: () => adminService.getAllPolice(filters),
+  })
+  //its for dropdown 
+  const { data: stations } = useQuery({
+    queryKey: ['stations-dropdown'],
+    queryFn: () => adminService.stationsDropdown(),
   })
 
   const { data: policeDetails, isLoading: isPoliceDetailsLoading } = useQuery({
@@ -77,17 +82,11 @@ export const usePoliceManagement = (
     },
   })
 
-  const { data: stations } = useQuery({
-    queryKey: ['police-stations'],
-    queryFn: () => adminService.getStations(),
-  })
-
-  const policeStations = stations?.stations?.filter((station) => station.isActive) ?? []
   return {
     isLoading,
     error,
     police: police?.police ?? [],
-    policeStations,
+    policeStations: stations ?? [],
     pagination: police?.pagination ?? {},
     policeDetails,
     isPoliceDetailsLoading,

@@ -56,30 +56,6 @@ class AdminController {
     });
 
     static getAllPolice = wrapAsync(async (req, res) => {
-        // const status = req.query.status;
-        // const q = req.query.q;
-        // const stationId = req.query.stationId;
-
-        // const filter = { 
-        //     role: "POLICE",
-        //     ...req.tenantFilter
-        //  };
-        // const validStatuses = ["APPROVED", "BLOCKED"];
-        // if (status) {
-        //     if (!validStatuses.includes(status)) {
-        //         throw new apiError(400, "Invalid status");
-        //     }
-        //     filter.status = status;
-        // }
-
-        // if (q && q.trim().length > 0) {
-        //     const safe = escapeRegex(q.trim());
-        //     filter.$or = [
-        //         { fullName: { $regex: safe, $options: 'i' } },
-        //         { email: { $regex: safe, $options: 'i' } },
-        //         { badgeNumber: { $regex: safe, $options: 'i' } }
-        //     ];
-        // }
 
         const {
             page = 1,
@@ -100,9 +76,12 @@ class AdminController {
         if(status) {
             filter.status = status;
         }
-        if(policeStationId) {
+        if(policeStationId === 'UNASSIGNED') {
+            filter.tenantId = null
+        } else if (policeStationId) {
             filter.policeStationId = policeStationId;
         }
+        
 
         if (search) {
         filter.$or = [
@@ -121,18 +100,6 @@ class AdminController {
         ];
     }
 
-
-        // if (policeStationId) {
-        //     if (policeStationId === 'UNASSIGNED') {
-        //         filter.policeStationId = null; // matches null or missing
-        //     } else {
-        //         filter.policeStationId = policeStationId;
-        //     }
-        // }
-
-        // const page = parseInt(req.query.page) || 1;
-        // const limit = parseInt(req.query.limit) || 10;
-        
 
         const police = await User.find(filter)
             .select("-password")
@@ -161,6 +128,20 @@ class AdminController {
                 "Police fetched successfully")
         );
     });
+
+    static stationsDropdown = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        const stations = await PoliceStation.find({
+            ...req.tenantFilter
+        })
+        .select('name')
+        .lean();
+
+        res.status(200).json(
+            new apiResponse(200, stations, "Stations fetched successfully")
+        );
+    })
 
     static getPoliceDetails = wrapAsync(async (req, res) => {
         const { policeId } = req.params;
@@ -1193,30 +1174,46 @@ class AdminController {
     });
 
     static getStations = wrapAsync(async (req, res) => {
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
+        
+        const {
+            page = 1,
+            limit = 10,
+
+            search,
+            isActive
+        } = req.query;
         const skip = (page - 1) * limit;
 
-        const totalStations = await PoliceStation.countDocuments({ ...req.tenantFilter });
-
-        const stations = await PoliceStation.find({
+        const filter = {
             ...req.tenantFilter
-        })
+        } 
+        if (isActive !== undefined && isActive !== "") {
+            filter.isActive = isActive === "true";
+        }
+        if (search) {
+            filter.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { code: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const stations = await PoliceStation.find(filter)
             .populate('stationHead', 'fullName email badgeNumber')
             .skip(skip)
             .limit(limit)
             .sort({ name: 1 })
             .lean();
 
+        const totalStations = await PoliceStation.countDocuments(filter);    
         const totalPages = Math.ceil(totalStations / limit);         
 
         res.status(200).json(
             new apiResponse(200, { 
                 stations,
+                totalStations,
                 pagination: {
                     totalPages,
                     currentPage: page,
-                    totalStations,
                     hasNextPage: page < totalPages,
                     hasPrevPage: page > 1
                 }

@@ -4,28 +4,45 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useTenantManagement } from '../../hooks/superadmin/useTenantManagement'
-import TenantForm from '../../components/features/tenant/TenantForm'
-import { formatError } from '../../lib/utils'
+import TenantForm from '../../components/features/tenant/forms/TenantForm'
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
+import TenantDetailsModal from '../../components/features/tenant/modals/TenantDetailsModal';
 
-import DeleteConfirmationModal from '../../components/features/DeleteConfirmationModal';
+import Loader from '../../components/ui/feedback/Loader';
+import ErrorState from '../../components/ui/feedback/ErrorState';
+import NoData from '../../components/ui/feedback/NoData';
+
+import { 
+  FileText, 
+  Search, 
+  Filter, 
+  ChevronDown,
+} from 'lucide-react'
 
 const TenantsPage = () => {
 
-
-  const [page, setPage] = useState(1)
   const [selectedTenantId, setSelectedTenantId] = useState(null)
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 10,
+
+    search: '',
+    type: '',
+    isActive: undefined
+  })
+
+  const [showFilters, setShowFilters] = useState(false)
 
   const {
     tenants,
+    totalTenants,
     pagination,
     isLoading,
     error,
     createTenant,
     deleteTenant,
     toggleTenant,
-    tenantDetails,
-    isTenantDetailsLoading,
-  } = useTenantManagement(page, selectedTenantId)
+  } = useTenantManagement(filters)
 
   //its only for dashboard page because without using location i cannot go to the tenant form directly
   const location = useLocation()
@@ -37,6 +54,15 @@ const TenantsPage = () => {
   const [tenantToDelete, setTenantToDelete] = useState(null)
 
   // const tenantList = tenants?.tenants ?? []
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      page: 1
+    }))
+  }
+
 
   const handleInputChange = (e) => {
     setFormData((prev) => ({
@@ -74,180 +100,133 @@ const TenantsPage = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Tenant Management</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-6 h-6"/>
+            Tenant Management
+          </CardTitle>
           <CardDescription>
             Manage all tenants. Use the action buttons to view details, activate, deactivate, or delete.
           </CardDescription>
-        </CardHeader>
 
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">All Tenants</h3>
-
-            <Button
+          <Button
+              className='ml-auto justify-end'
               variant="success"
               onClick={() => setIsCreateModalOpen(true)}>
               Create New Tenant
             </Button>
+        </CardHeader>
+      </Card>  
+
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search by name"
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              </Button>
+            </div>
+
+            {/* Expandable Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+                
+               
+
+                <div>
+                  <select
+                    value={filters.type}
+                    onChange={(e) => handleFilterChange('type', e.target.value)}
+                    className="w-full px-3 py-2 h-10 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Types</option>
+                    <option value="CITY">City</option>
+                    <option value="DEPARTMENT">Department</option>
+                  </select>
+                </div>
+
+                <div>
+                  <select
+                    value={filters.isActive}
+                    onChange={(e) => handleFilterChange('isActive', e.target.value)}
+                    className="w-full px-3 py-2 h-10 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setFilters({
+                      page: 1,
+                      search: '',
+                      type: '',
+                      isActive: ''
+                    })}
+                    className="w-full"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">All Tenants</h3>
+
+            
+
+            <Badge variant="success">Total Tenants: {totalTenants}</Badge>
+            
           </div>
 
-          {isCreateModalOpen && (
-            <TenantForm
-              formData={formData}
-              onChange={handleInputChange}
-              onSubmit={handleCreateSubmit}
-              isSubmitting={createTenant.isPending}
-              onCancel={() => setIsCreateModalOpen(false)}
-            />
-          )}
-
-          {selectedTenantId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-md rounded-lg border bg-white bg-card p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Tenant Details</h3>
-                  <button
-                    onClick={() => setSelectedTenantId(null)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    ✕
-                  </button>
-                </div>
-                {isTenantDetailsLoading ? (
-                  <div className="mt-4 space-y-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="h-4 animate-pulse rounded bg-muted"
-                      />
-                    ))}
-                  </div>
-                ) : tenantDetails ? (
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Name
-                      </p>
-                      <p className="text-sm font-medium">{tenantDetails.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Region
-                      </p>
-                      <p className="text-sm font-medium">{tenantDetails.region}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Type
-                      </p>
-                      <p className="text-sm font-medium">{tenantDetails.type}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">
-                        Status
-                      </p>
-                      <div className="mt-1">
-                        <Badge
-                          variant={
-                            tenantDetails.isActive ? 'success' : 'destructive'
-                          }
-                        >
-                          {tenantDetails.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </div>
-                    {tenantDetails.code && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">
-                          Tenant Code
-                        </p>
-                        <p className="text-sm font-medium">{tenantDetails.code}</p>
-                      </div>
-                    )}
-                    {tenantDetails.createdAt && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">
-                          Created
-                        </p>
-                        <p className="text-sm font-medium">
-                          {new Date(tenantDetails.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    Failed to load tenant details
-                  </p>
-                )}
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedTenantId(null)}
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-
-          <DeleteConfirmationModal
-            open={!!tenantToDelete}
-            onClose={() => setTenantToDelete(null)}
-            onConfirm={handleConfirmDelete}
-            isDeleting={deleteTenant.isPending}
-            entityName='Tenant'
-          />
           
-          {/* {tenantToDelete && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
-                <h3 className="text-lg font-semibold">Delete tenant?</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  This action cannot be undone. The tenant will be permanently
-                  removed.
-                </p>
-                <div className="mt-6 flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setTenantToDelete(null)}
-                    disabled={deleteTenant.isPending}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleConfirmDelete}
-                    disabled={deleteTenant.isPending}
-                  >
-                    {deleteTenant.isPending ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )} */}
+
+
+
+
+          
+          
 
           {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-20 animate-pulse rounded-lg border bg-muted/40"
-                />
-              ))}
-            </div>
+            <Loader
+              text='Loading Tenanats...'
+              fullScreen
+            />
           ) : error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {formatError(error)}
-            </div>
+            <ErrorState 
+              title='Error loading tenants'
+            />
           ) : tenants.length === 0 ? (
-            <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-              No tenants yet. Create your first tenant to get started.
-            </div>
+            <NoData
+              title='No tenants found'
+            />
           ) : (
             
             <div className="space-y-3">
@@ -314,30 +293,67 @@ const TenantsPage = () => {
           )}
 
           {pagination && (
-                      <div className="mt-6 flex items-center justify-end gap-2">
-                        <div className="text-sm text-muted-foreground mr-4">
-                          Page {pagination.currentPage} of {pagination.totalPages}
-                            </div>
-                              <Button
-                                variant="outline"
-                                disabled={!pagination?.hasPrevPage}
-                                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                              >
-                              Previous
-                              </Button>
-                    
-                              <Button
-                                variant="outline"
-                                disabled={!pagination?.hasNextPage}
-                                onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
-                              >
-                              Next
-                              </Button>
-                            </div>
-                          )}
+            <div className="mt-6 flex items-center justify-end gap-2">            
+              <Button
+                variant="outline"
+                disabled={!pagination?.hasPrevPage}
+                onClick={() => setFilters(prev => 
+                  ({
+                    ...prev,
+                    page: Math.max(1, prev.page - 1)
+                  })
+                )}
+              >
+                Previous
+              </Button>
+              <div className="text-sm text-muted-foreground mr-4">
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </div>
+              <Button
+                variant="outline"
+                disabled={!pagination?.hasNextPage}
+                onClick={() => setFilters(prev => 
+                  ({
+                    ...prev,
+                    page: Math.min(pagination.totalPages, prev.page + 1)
+                  })
+                )}
+              >
+                Next
+              </Button>
+            </div>
+          )}
 
         </CardContent>
       </Card>
+
+
+      <TenantDetailsModal
+                  tenantId={selectedTenantId}
+                  open={!!selectedTenantId}
+                  onClose={() => setSelectedTenantId(null)}
+                />
+
+                
+      {isCreateModalOpen && (
+            <TenantForm
+              formData={formData}
+              onChange={handleInputChange}
+              onSubmit={handleCreateSubmit}
+              isSubmitting={createTenant.isPending}
+              onCancel={() => setIsCreateModalOpen(false)}
+            />
+          )}
+
+      <DeleteConfirmationModal
+            open={!!tenantToDelete}
+            onClose={() => setTenantToDelete(null)}
+            onConfirm={handleConfirmDelete}
+            isDeleting={deleteTenant.isPending}
+            entityName='Tenant'
+          />    
+
+            
     </div>
   )
 }

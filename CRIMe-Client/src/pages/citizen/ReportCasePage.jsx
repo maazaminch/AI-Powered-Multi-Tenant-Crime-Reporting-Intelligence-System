@@ -97,12 +97,26 @@ const ReportCasePage = () => {
     try {
       for (const file of files) {
         const filename = `evidence/${Date.now()}-${file.name}`
-        const { data: uploadData } = await uploadService.getPublicProfileUploadUrl(filename, file.type)
+        const uploadResponse = await uploadService.getPublicEvidenceUploadUrl(filename, file.type)
         
-        await uploadService.uploadFileToS3(uploadData.uploadUrl, file)
-        
-        fileIds.push(filename)
-        setUploadedFiles(prev => [...prev, { name: file.name, id: filename }])
+        if (!uploadResponse || !uploadResponse.data) {
+          throw new Error('Invalid response from server')
+        }
+
+        const uploadParams = uploadResponse.data
+        const { key, storageKey, provider } = uploadParams
+
+        // Upload the file using the unified upload method
+        const uploadResult = await uploadService.uploadFile(uploadParams, file)
+
+        // Use the returned public_id for Cloudinary, otherwise use key/storageKey
+        let finalStorageKey = key || storageKey
+        if (provider === 'cloudinary' && uploadResult.public_id) {
+          finalStorageKey = uploadResult.public_id
+        }
+
+        fileIds.push(finalStorageKey)
+        setUploadedFiles(prev => [...prev, { name: file.name, id: finalStorageKey }])
       }
 
       setFormData(prev => ({

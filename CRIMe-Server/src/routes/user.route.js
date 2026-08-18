@@ -2,6 +2,7 @@ import express from "express";
 import verifyJWT from "../middlewares/auth.middleware.js";
 import tenantGuard from "../middlewares/tenantGuard.middleware.js";
 import roleGuard from "../middlewares/roleGuard.middleware.js";
+import auditLog from "../middlewares/auditLog.middleware.js";
 import userController from "../controllers/user management/user.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
 
@@ -13,17 +14,8 @@ userRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
+    auditLog('UPDATE', 'USER'),
     userController.updateUserStatus
-);
-
-
-userRouter.get(
-    "/search-users",
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN, Roles.POLICE], 
-        flags: [UserFlags.IS_SUPER_ADMIN] }),
-    userController.searchUserController
 );
 
 userRouter.delete(
@@ -31,6 +23,7 @@ userRouter.delete(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
+    auditLog('DELETE', 'USER'),
     userController.deleteUserController
 );
 

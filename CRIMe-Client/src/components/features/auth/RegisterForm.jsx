@@ -6,6 +6,7 @@ import { Input } from '../../ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/Card'
 import { useAuth } from '../../../hooks/auth/useAuth'
 import { uploadService } from '../../../services/uploadService'
+import GoogleSignInButton from './GoogleSignInButton'
 
 const RegisterForm = () => {
   const navigate = useNavigate()
@@ -28,7 +29,10 @@ const RegisterForm = () => {
     badgeNumber: ''
   })
 
-  const { register, registerWithInvite, error, clearError } = useAuth()
+  const [googleData, setGoogleData] = useState(null)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+
+  const { register, registerWithInvite, googleRegister, error, clearError } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [localError, setLocalError] = useState('')
 
@@ -63,19 +67,32 @@ const RegisterForm = () => {
     setProfilePic(file)
     setProfilePicPreview(URL.createObjectURL(file))
 
-    // Upload to S3
+    // Upload to storage
     setIsUploading(true)
     try {
       const uploadResponse = await uploadService.getPublicProfileUploadUrl(file.name, file.type)
-      const { uploadUrl, key } = uploadResponse.data.data
+      
+      if (!uploadResponse || !uploadResponse.data) {
+        throw new Error('Invalid response from server')
+      }
 
-      await uploadService.uploadFileToS3(uploadUrl, file)
+      const uploadParams = uploadResponse.data
+      const { key, storageKey, provider } = uploadParams
 
-      setFormData(prev => ({ ...prev, profilePictureStorageKey: key }))
+      // Upload the file
+      const uploadResult = await uploadService.uploadFile(uploadParams, file)
+
+      // Use the returned public_id for Cloudinary, otherwise use key/storageKey
+      let finalStorageKey = key || storageKey
+      if (provider === 'cloudinary' && uploadResult.public_id) {
+        finalStorageKey = uploadResult.public_id
+      }
+
+      setFormData(prev => ({ ...prev, profilePictureStorageKey: finalStorageKey }))
       toast.success('Profile picture uploaded successfully')
     } catch (error) {
       console.error('Profile picture upload failed:', error)
-      toast.error('Failed to upload profile picture')
+      toast.error(error.message || 'Failed to upload profile picture')
       setProfilePic(null)
       setProfilePicPreview('')
       setFormData(prev => ({ ...prev, profilePictureStorageKey: '' }))
@@ -87,27 +104,68 @@ const RegisterForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (formData.password !== formData.confirmPassword) {
-      setLocalError('Passwords do not match')
-      return
-    }
+    if (googleData) {
+      // Google registration - no password needed
+      setIsLoading(true)
+      setLocalError('')
+      try {
+        const registrationData = {
+          idToken: googleData.idToken,
+          phone: formData.phone,
+          gender: formData.gender,
+          dateOfBirth: formData.dateOfBirth,
+          address: formData.address,
+          idType: formData.idType,
+          nationalIdHash: formData.nationalIdHash,
+          profilePictureStorageKey: formData.profilePictureStorageKey
+        }
 
-    setIsLoading(true)
-    setLocalError('')
-    try {
-      if (inviteToken) {
-        const res = await registerWithInvite(inviteToken, formData)
-        toast.success(res?.message || 'Account created successfully. Please sign in.')
-      } else {
-        const res = await register(formData)
-        toast.success(res?.message || 'Account created successfully. Please sign in.')
+        const res = await googleRegister(registrationData)
+        toast.success(res?.message || 'Account created successfully via Google. Please sign in.')
+        navigate('/login')
+      } catch {
+        // Error is handled in useAuth hook
+      } finally {
+        setIsLoading(false)
       }
-      navigate('/login')
-    } catch {
-      // Error is handled in useAuth hook
-    } finally {
-      setIsLoading(false)
+    } else {
+      // Regular registration
+      if (formData.password !== formData.confirmPassword) {
+        setLocalError('Passwords do not match')
+        return
+      }
+
+      setIsLoading(true)
+      setLocalError('')
+      try {
+        if (inviteToken) {
+          const res = await registerWithInvite(inviteToken, formData)
+          toast.success(res?.message || 'Account created successfully. Please sign in.')
+        } else {
+          const res = await register(formData)
+          toast.success(res?.message || 'Account created successfully. Please sign in.')
+        }
+        navigate('/login')
+      } catch {
+        // Error is handled in useAuth hook
+      } finally {
+        setIsLoading(false)
+      }
     }
+  }
+
+  const handleGoogleSignIn = (idToken) => {
+    setGoogleData({ idToken })
+    setFormData(prev => ({
+      ...prev,
+      fullName: prev.fullName || '', // Will be filled by Google
+      email: prev.email || '' // Will be filled by Google
+    }))
+  }
+
+  const handleGoogleError = (errorMessage) => {
+    console.error('Google sign-in error:', errorMessage)
+    toast.error('Google sign-in failed. Please try again.')
   }
 
   const displayError = localError || error
@@ -120,7 +178,27 @@ const RegisterForm = () => {
           {inviteToken ? 'Complete registration using your invite token.' : 'Create your account to report crimes'}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
+        {!isInviteRegistration && (
+          <>
+            <GoogleSignInButton
+              onSuccess={handleGoogleSignIn}
+              onError={handleGoogleError}
+              text="Sign up with Google"
+              disabled={isGoogleLoading}
+            />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+              </div>
+            </div>
+          </>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="profilePicture" className="text-sm font-medium">
@@ -181,8 +259,13 @@ const RegisterForm = () => {
                 placeholder="Enter your full name"
                 value={formData.fullName}
                 onChange={handleChange}
-                required
+                required={!googleData}
+                disabled={!!googleData}
+                className={googleData ? 'bg-gray-100' : ''}
               />
+              {googleData && (
+                <p className="text-xs text-gray-500">Name will be taken from Google</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -194,50 +277,59 @@ const RegisterForm = () => {
                 Your invited email will be used automatically. You do not need to enter it here.
               </div>
             ) : (
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
+              <>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required={!googleData}
+                  disabled={!!googleData}
+                  className={googleData ? 'bg-gray-100' : ''}
+                />
+                {googleData && (
+                  <p className="text-xs text-gray-500">Email will be taken from Google</p>
+                )}
+              </>
             )}
           </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          {!googleData && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="text-sm font-medium">
-                Confirm Password
-              </label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-              />
+              <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="text-sm font-medium">
+                  Confirm Password
+                </label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -364,10 +456,27 @@ const RegisterForm = () => {
             variant="success"
             type="submit" 
             className="w-full" 
-            disabled={isLoading || isUploading}
+            disabled={isLoading || isUploading || isGoogleLoading}
           >
-            {isLoading ? 'Registering...' : isUploading ? 'Uploading...' : 'Register'}
+            {isLoading ? 'Registering...' : isUploading ? 'Uploading...' : isGoogleLoading ? 'Connecting to Google...' : googleData ? 'Complete Registration' : 'Register'}
           </Button>
+
+          {googleData && (
+            <button
+              type="button"
+              onClick={() => {
+                setGoogleData(null)
+                setFormData(prev => ({
+                  ...prev,
+                  fullName: '',
+                  email: ''
+                }))
+              }}
+              className="w-full text-sm text-gray-600 hover:text-gray-800 underline"
+            >
+              Cancel Google Sign-In
+            </button>
+          )}
         </form>
       </CardContent>
     </Card>

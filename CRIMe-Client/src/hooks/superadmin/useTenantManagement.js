@@ -4,14 +4,13 @@ import { superAdminService } from '../../services/superAdminService'
 import { formatError } from '../../lib/utils'
 
 export const useTenantManagement = (
-  page,
-  selectedTenantId
+  filters
 ) => {
   const queryClient = useQueryClient()
 
   const { data: tenants, isLoading, error } = useQuery({
-    queryKey: ['tenants', page ],
-    queryFn: () => superAdminService.getTenants(page),
+    queryKey: ['tenants', filters ],
+    queryFn: () => superAdminService.getTenants(filters),
   })
 
   const createTenantMutation = useMutation({
@@ -48,22 +47,15 @@ export const useTenantManagement = (
     },
   })
 
-  const { data: tenantDetails, isLoading: isTenantDetailsLoading } = useQuery({
-    queryKey: ['tenantDetails', selectedTenantId],
-    queryFn: () => superAdminService.getTenantDetails(selectedTenantId),
-    enabled: !!selectedTenantId,
-  })
-
   return {
     tenants: tenants?.tenants || [],
+    totalTenants: tenants?.totalTenants || 0,
     pagination: tenants?.pagination,
     isLoading,
     error,
     createTenant: createTenantMutation,
     deleteTenant: deleteTenantMutation,
     toggleTenant: toggleTenantMutation,
-    tenantDetails,
-    isTenantDetailsLoading,
-    selectedTenantId,
+    
   }
 }

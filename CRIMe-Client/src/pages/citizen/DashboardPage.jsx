@@ -7,6 +7,8 @@ import { Button } from '../../components/ui/Button'
 import Loader from '../../components/ui/feedback/Loader'
 import ErrorState from '../../components/ui/feedback/ErrorState'
 import NoData from '../../components/ui/feedback/NoData'
+import StatCard from '../../components/common/StatCard'
+
 import { 
   Briefcase, 
   AlertCircle, 
@@ -17,41 +19,6 @@ import {
   FileText
 } from 'lucide-react'
 
-
-function StatCard({
-  title,
-  value,
-  color,
-  bg,
-  path,
-  icon: Icon
-}) {
-  const navigate = useNavigate()
-  return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card
-        onClick={() => navigate(path)}
-        className={`cursor-pointer transition-all duration-300 hover:shadow-xl ${bg} border-2`}
-      >
-        <CardContent className="flex flex-col items-center justify-center p-6">
-          <Icon className={`w-8 h-8 mb-2 ${color}`} />
-          <h2 className={`text-4xl font-bold ${color}`}>
-            {value}
-          </h2>
-          <p className="mt-2 text-sm font-medium text-muted-foreground">
-            {title}
-          </p>
-        </CardContent>
-      </Card>
-    </motion.div>
-  )
-}
 
 const CitizenDashboard = () => {
 
@@ -101,8 +68,8 @@ const CitizenDashboard = () => {
               <StatCard
                 title="Pending Cases"
                 value={stats?.pendingCases ?? '...'}
-                color="text-yellow-600"
-                bg="bg-blue-50 hover:bg-yellow-100"
+                color="text-white"
+                bg="bg-indigo-900"
                 path="/citizen/cases"
                 icon={Clock}
               />
@@ -110,8 +77,8 @@ const CitizenDashboard = () => {
               <StatCard
                 title="Assigned Cases"
                 value={stats?.assignedCases ?? '...'}
-                color="text-blue-600"
-                bg="bg-blue-50 hover:bg-blue-100"
+                color="text-white"
+                bg="bg-emerald-900"
                 path="/citizen/cases"
                 icon={Briefcase}
               />
@@ -119,8 +86,8 @@ const CitizenDashboard = () => {
               <StatCard
                 title="Under Investigation"
                 value={stats?.underInvestigationCases ?? '...'}
-                color="text-orange-600"
-                bg="bg-orange-50 hover:bg-orange-100"
+                color="text-white"
+                bg="bg-amber-900"
                 path="/citizen/cases"
                 icon={Clock}
               />
@@ -128,8 +95,8 @@ const CitizenDashboard = () => {
               <StatCard
                 title="Resolved Cases"
                 value={stats?.resolvedCases ?? '...'}
-                color="text-green-600"
-                bg="bg-green-50 hover:bg-green-100"
+                color="text-white"
+                bg="bg-rose-900"
                 path="/citizen/cases"
                 icon={CheckCircle}
               />

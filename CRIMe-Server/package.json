@@ -18,21 +18,23 @@
     "axios": "^1.15.0",
     "bcrypt": "^6.0.0",
     "celebrate": "^15.0.3",
+    "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.1",
+    "google-auth-library": "^11.0.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.2",
     "multer": "^2.0.2",
     "nanoid": "^5.1.11",
     "nodemailer": "^8.0.4",
+    "passport": "^0.7.0",
     "pdfkit": "^0.17.2",
     "redis": "^6.2.0",
-    "socket.io": "^4.8.3",
-    "zod": "^4.4.3"
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

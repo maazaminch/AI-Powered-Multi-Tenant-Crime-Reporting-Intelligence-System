@@ -2,12 +2,22 @@ import React from "react";
 import { Button } from "../../../ui/Button";
 import { Badge } from "../../../ui/Badge";
 
+import { usePoliceStationDetails } from "../../../../hooks/admin/usePoliceStationDetails";
+
+import Loader from "../../../ui/feedback/Loader";
+import ErrorState from "../../../ui/feedback/ErrorState";
+import NoData from "../../../ui/feedback/NoData";
+
 const StationDetailsModal = ({
   open,
   onClose,
-  stationDetails,
-  isLoading,
+  stationId,
 }) => {
+  const { 
+    stationDetails,
+    isDetailsLoading,
+    error } = usePoliceStationDetails(stationId);
+  
   if (!open) return null;
 
   return (
@@ -24,16 +34,19 @@ const StationDetailsModal = ({
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="mt-4 space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-4 animate-pulse rounded bg-muted"
-              />
-            ))}
-          </div>
-        ) : stationDetails ? (
+        {isDetailsLoading ? (
+          <Loader 
+            text='Loading station details...'
+          />
+        ) : error ? (
+          <ErrorState 
+            title="Error loading station details"
+          />
+        ) : stationDetails.length === 0 ? (
+          <NoData 
+            title="No Details Found"
+          />
+        ) : (
           <div className="mt-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-4">
@@ -49,7 +62,7 @@ const StationDetailsModal = ({
                 {stationDetails.locationLabel && (
                   <div>
                     <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Selected Address
+                      Location
                     </p>
                     <p className="text-sm font-medium">
                       {stationDetails.locationLabel}
@@ -59,7 +72,7 @@ const StationDetailsModal = ({
 
                 <div>
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Entered Address
+                    Exact Address
                   </p>
                   <p className="text-sm font-medium">
                     {stationDetails.address}
@@ -169,10 +182,6 @@ const StationDetailsModal = ({
               </div>
             </div>
           </div>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Failed to load station details
-          </p>
         )}
 
         <div className="mt-6 flex justify-end">

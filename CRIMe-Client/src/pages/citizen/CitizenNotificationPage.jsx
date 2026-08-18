@@ -122,7 +122,6 @@ const CitizenNotificationPage = () => {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="mt-6 flex items-center justify-end gap-2"
             >
-              
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   variant="outline"

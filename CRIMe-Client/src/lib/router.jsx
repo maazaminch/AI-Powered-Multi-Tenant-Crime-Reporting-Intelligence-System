@@ -39,6 +39,7 @@ import PoliceManagementPage from '../pages/admin/PoliceManagementPage'
 import TenantAnalyticsPage from '../pages/admin/TenantAnalyticsPage'
 import TenantCasesPage from '../pages/admin/TenantCasesPage'
 import AdminCaseDetailsPage from '../pages/admin/CaseDetailsPage'
+import AdminAuditLogsPage from '../pages/admin/AuditLogsPage'
 
 // Importing StationHead pages
 import StationHeadDashboard from '../pages/station-head/DashboardPage'
@@ -200,6 +201,10 @@ export const router = createBrowserRouter([
       {
         path: 'tenant-analytics',
         element: <TenantAnalyticsPage />
+      },
+      {
+        path: 'audit-logs',
+        element: <AdminAuditLogsPage />
       },
       {
         path: 'notifications',

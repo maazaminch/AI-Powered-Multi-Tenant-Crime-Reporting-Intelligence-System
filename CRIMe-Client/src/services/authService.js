@@ -7,6 +7,18 @@ export const authService = {
     return response
   },
 
+  // Login with Google
+  googleLogin: async (idToken) => {
+    const response = await api.post('/api/auth/google-login', { idToken })
+    return response
+  },
+
+  // Register citizen with Google
+  googleRegisterCitizen: async (userData) => {
+    const response = await api.post('/api/auth/google-register-citizen', userData)
+    return response
+  },
+
   // Register citizen
   registerCitizen: async (userData) => {
     const response = await api.post('/api/auth/register-citizen', userData)

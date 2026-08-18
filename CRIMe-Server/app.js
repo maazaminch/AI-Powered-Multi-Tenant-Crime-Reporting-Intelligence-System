@@ -18,6 +18,9 @@ import uploadRoutes from "./src/routes/upload.route.js";
 import notificationRoutes from "./src/routes/notification.route.js";
 import citizenRoutes from "./src/routes/citizen.route.js";
 import locationRoutes from "./src/routes/location.route.js";
+import evidenceRoutes from "./src/routes/evidence.route.js";
+import healthRoutes from "./src/routes/health.route.js";
+import auditRoutes from "./src/routes/audit.route.js";
 
 
 
@@ -56,7 +59,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/superAdmin", superAdminRoutes);
-// app.use("/api/maps", mapRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/station-head", stationHeadRoutes);
 app.use("/api/police", policeRoutes);
@@ -64,6 +66,9 @@ app.use("/api/uploads", uploadRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/citizen", citizenRoutes);
 app.use("/api/v1/location", locationRoutes);
+app.use("/api/evidence", evidenceRoutes);
+app.use("/api/health", healthRoutes);
+app.use("/api/audit", auditRoutes);
 
 //GLOBAL ERROR HANDLER (must be **after** all routes)
 app.use(errorHandler);

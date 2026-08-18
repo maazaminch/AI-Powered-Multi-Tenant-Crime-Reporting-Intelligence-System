@@ -7,16 +7,6 @@ const AuditLogSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Tenant",
-    index: true,
-    required: true
-  },
-
-  // Who performed the action
-  actorId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    index: true
   },
 
 actor: {
@@ -42,7 +32,7 @@ actor: {
   },
 
   flags: {
-    isSuperadmin: Boolean,
+    isSuperAdmin: Boolean,
     isStationHead: Boolean
   }
 },
@@ -57,9 +47,26 @@ actor: {
   // On what object
   targetType: {
     type: String,
-    enum: ["CASE", "USER", "TENANT", "EVIDENCE", "CASE_UPDATE"],
+    enum: [
+      "CASE",
+      "CASE_UPDATE",
+      "EVIDENCE",
+      "USER",
+      "TENANT",
+      "POLICE_STATION",
+      "NOTIFICATION",
+      "ROLE_PERMISSION",
+      "AUTH",
+      "PROFILE",
+      "STATION_ASSIGNMENT"
+    ],
     required: true,
     index: true
+  },
+
+  module:{
+  type:String,
+  index:true
   },
 
   targetId: {
@@ -80,13 +87,26 @@ actor: {
   // Optional structured payload (old/new values)
   metadata: { type: Object },
   
+  // Production-level fields
+  sessionId: { type: String, index: true },
+  requestId: { type: String, index: true },
+  sensitivity: { 
+    type: String, 
+    enum: ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"],
+    default: "INTERNAL"
+  },
+  duration: { type: Number },
+  errorMessage: { type: String }
+  
 }, { timestamps: true });
 
 
 // ───────── Indexes for forensic reconstruction ─────────
 AuditLogSchema.index({ tenantId: 1, createdAt: -1 });
 AuditLogSchema.index({ targetType: 1, targetId: 1, createdAt: -1 });
-AuditLogSchema.index({ actorId: 1, createdAt: -1 });
+AuditLogSchema.index({ 'actor.userId': 1, createdAt: -1 });
 AuditLogSchema.index({ action: 1, createdAt: -1 });
+AuditLogSchema.index({ tenantId: 1, action: 1, createdAt: -1 });
+AuditLogSchema.index({ sessionId: 1, createdAt: -1 });
 
 export default mongoose.model("AuditLog", AuditLogSchema);

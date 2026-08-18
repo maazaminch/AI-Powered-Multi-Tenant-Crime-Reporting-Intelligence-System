@@ -2,31 +2,29 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { superAdminService } from '../../services/superAdminService'
 import { usersService } from '../../services/usersService'
-import authService from '../../services/authService'
+import { authService } from '../../services/authService'
 import { formatError } from '../../lib/utils'
 
 export const useAdminsManagement = (
-    selectedAdminId,
-    page,
-    status,
+    filters
 ) => {
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['superadmin-admins', page, status],
-    queryFn: () => superAdminService.getAllAdmins({ page, status }),
+    queryKey: ['superadmin-admins', filters],
+    queryFn: () => superAdminService.getAllAdmins(filters),
   })
-
-  const { data: tenantsData } = useQuery({
+  //its for dropdown to show all tenants
+  const { data: tenants } = useQuery({
     queryKey: ['superadmin-tenants'],
-    queryFn: () => superAdminService.getTenants(1),
+    queryFn: () => superAdminService.tenantsDropDown(),
   })
 
-  const { data: adminDetails, isLoading: isDetailsLoading } = useQuery({
-    queryKey: ['admin-details', selectedAdminId],
-    queryFn: () => superAdminService.getAdminDetails(selectedAdminId),
-    enabled: !!selectedAdminId,
-  })
+  // const { data: adminDetails, isLoading: isDetailsLoading } = useQuery({
+  //   queryKey: ['admin-details', selectedAdminId],
+  //   queryFn: () => superAdminService.getAdminDetails(selectedAdminId),
+  //   enabled: !!selectedAdminId,
+  // })
 
   const statusMutation = useMutation({
     mutationFn: ({ userId, newStatus }) => usersService.updateUserStatus(userId, newStatus),
@@ -84,17 +82,16 @@ export const useAdminsManagement = (
     },
   })
 
-  const admins = data?.admins ?? []
-  const tenants = tenantsData?.tenants?.filter((tenant) => tenant.isActive) ?? []
+
+  // const tenants = tenantsData?.tenants?.filter((tenant) => tenant.isActive) ?? []
 
   return {
-    admins,
-    tenants,
+    admins: data?.admins || [],
+    tenants: tenants || [],
+    totalAdmins: data?.totalAdmins || 0,
     pagination: data?.pagination,
     isLoading,
     error,
-    adminDetails,
-    isDetailsLoading,
     statusMutation,
     deleteMutation,
     inviteMutation,

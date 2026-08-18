@@ -15,8 +15,8 @@ export const adminService = {
         const response = await api.post(`/api/admin/activate-or-deactivate-station/${stationId}`)
         return response.data
       },
-      getStations: async (page) => {
-        const response = await api.get(`/api/admin/get-stations?page=${page}&limit=10`)
+      getStations: async (filters={}) => {
+        const response = await api.get(`/api/admin/get-stations`, { params: filters })
         return response.data
       },      
       getStationDetails: async (stationId) => {
@@ -36,8 +36,12 @@ export const adminService = {
 
 
       // Police Management
-      getAllPolice: async (params = {}) => {
-        const response = await api.get('/api/admin/get-all-police', { params })
+      getAllPolice: async (filters = {}) => {
+        const response = await api.get('/api/admin/get-all-police', { params: filters })
+        return response.data
+      },
+      stationsDropdown: async () => {
+        const response = await api.get('/api/admin/stations-dropdown')
         return response.data
       },
       getPoliceDetails: async (policeId) => {
@@ -59,8 +63,8 @@ export const adminService = {
       },
 
       // Cases
-      tenantCases: async (params = {}) => {
-        const response = await api.get('/api/admin/tenant-cases', { params })
+      tenantCases: async (filters = {}) => {
+        const response = await api.get('/api/admin/tenant-cases', { params: filters })
         return response.data
       },
       caseDetails: async (caseId) => {

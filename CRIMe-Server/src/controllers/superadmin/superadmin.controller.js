@@ -17,22 +17,47 @@ class SuperAdminController {
             throw new apiError(403, "Only SuperAdmin can access this endpoint");
         }
 
-        const pendingAdmins = await User.find({
+        const {
+            page = 1,
+            limit = 10,
+        } = req.query;
+        const skip = (page - 1) * limit;
+        
+        const filter = {
             role: "ADMIN",
             status: "PENDING"
-        })
+        }
+
+        const pendingAdmins = await User.find(filter)
             .select("-password")
             .populate('tenantId', 'name code')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
+        const totalPendingAdmins = await User.countDocuments(filter)
+        const totalPages = Math.ceil(totalPendingAdmins / limit)
+        
         res.status(200).json(
-            new apiResponse(200, pendingAdmins, "Pending admin requests fetched successfully")
+            new apiResponse(200, 
+                {
+                    pendingAdmins,
+                    totalPendingAdmins,
+                    pagination: {
+                        currentPage: page,
+                        totalPages,
+                        hasNextPage: page < totalPages,
+                        hasPrevPage: page > 1
+                    }    
+                },
+                "Pending admin requests fetched successfully")
         );
     });
 
     static getAdminDetailsController = wrapAsync(async (req, res) => {
         const currentUser = req.user;
-        const adminId = req.params.adminId;
+        const { adminId } = req.params;
 
         if (!currentUser.isSuperAdmin) {
             throw new apiError(403, "Only SuperAdmin can access this endpoint");
@@ -53,34 +78,66 @@ class SuperAdminController {
 
     static getAllAdminsController = wrapAsync(async (req, res) => {
         const currentUser = req.user;
-        const status = req.query.status
 
         if (!currentUser.isSuperAdmin) {
             throw new apiError(403, "Only SuperAdmin can access all admins");
         }
 
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
+        const {
+            page = 1,
+            limit = 10,
 
+            search,
+            status,
+            tenantId
+        } = req.query;
         const skip = (page - 1) * limit;
 
         const filter = {
             role: "ADMIN",
-            isSuperAdmin: false
+            isSuperAdmin: false,
+            status: { $in: ["APPROVED", "BLOCKED"] }
         };
+        
+
+        const andConditions = [];
         if (status) {
             filter.status = status;
         }
 
-        const totalAdmins = await User.countDocuments(filter);
+        if (tenantId === "UNASSIGNED") {
+            andConditions.push({
+                $or: [
+                    { tenantId: null },
+                    { tenantId: { $exists: false } }
+                ]
+            });
+        } else if (tenantId) {
+            filter.tenantId = tenantId;
+        }
+
+        if (search) {
+            andConditions.push({
+                $or: [
+                    { fullName: { $regex: search, $options: "i" } },
+                    { email: { $regex: search, $options: "i" } }
+                ]
+            });
+        }
+
+        if (andConditions.length > 0) {
+            filter.$and = andConditions;
+        }
 
         const admins = await User.find(filter)
             .select("-password")
             .populate('tenantId', 'name code')
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
 
+        const totalAdmins = await User.countDocuments(filter);    
         const totalPages = Math.ceil(totalAdmins / limit);
 
         return res.status(200).json(
@@ -88,11 +145,10 @@ class SuperAdminController {
                 200,
                 {
                     admins,
+                    totalAdmins,
                     pagination: {
                         currentPage: page,
                         totalPages,
-                        totalAdmins,
-                        limit,
                         hasNextPage: page < totalPages,
                         hasPrevPage: page > 1,
                     }
@@ -101,6 +157,26 @@ class SuperAdminController {
             )
         );
     }); 
+    // its for tenant dropdown on admin page
+    static tenantsDropdownController = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+
+        if (!currentUser.isSuperAdmin) {
+            throw new apiError(403, "Only SuperAdmin can access tenants list");
+        }
+
+        const tenants = await Tenant.find({ isActive: true })
+            .select("name code")   // minimal fields — dropdown doesn't need everything
+            .sort({ name: 1 })
+            .lean();
+
+        return res.status(200).json(
+            new apiResponse(200, tenants, "Tenants fetched for dropdown")
+        );
+    });
+
+
+    
 
     // in assign and tranfer conteroller tenantId in invite model should also be updated 
     static assignAdminToTenantController = wrapAsync(async (req, res) => {
@@ -115,6 +191,9 @@ class SuperAdminController {
         const admin = await User.findById(adminId);
         if (!admin) throw new apiError(404, "Admin not found");
 
+        if (admin.status !== "APPROVED") {
+            throw new apiError(400, "Admin not approved");
+        }
         if (admin.role !== "ADMIN") {
             throw new apiError(400, "Only ADMIN role allowed");
         }
@@ -292,7 +371,7 @@ class SuperAdminController {
             pendingAdmins,
             totalCases ] = await Promise.all([
                 Tenant.countDocuments({}),
-                User.countDocuments({ role: "ADMIN", status: "APPROVED" , isSuperAdmin: false }),
+                User.countDocuments({ role: "ADMIN", status: { $in: ["APPROVED", "BLOCKED"] }, isSuperAdmin: false }),
                 User.countDocuments({ role: "ADMIN", status: "PENDING" }),
                 Case.countDocuments({})
             ]);
@@ -563,18 +642,43 @@ class SuperAdminController {
             );
         }
 
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
+        const {
+            page = 1,
+            limit = 10,
+            
+            search,
+
+            type,
+            isActive
+        } = req.query
 
         const skip = (page - 1) * limit;
 
-        const totalTenants = await Tenant.countDocuments();
+        const filter = {};
+        
+        if (search) {
+            filter.name = { $regex: search, $options: 'i' };
+        }
+        if (type) {
+            filter.type = type;
+        }
+        if (isActive !== undefined && isActive !== "") {
+            filter.isActive = isActive === "true";
+        }
+        // if using joi
+        // if (isActive !== undefined) {
+        //     filter.isActive = isActive;
+        // }
+        
 
-        const tenants = await Tenant.find({})
+        const tenants = await Tenant.find(filter)
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 });
-
+            .sort({ createdAt: -1 })
+            .lean();
+        
+        
+        const totalTenants = await Tenant.countDocuments(filter);
         const totalPages = Math.ceil(totalTenants / limit);
 
         return res.status(200).json(
@@ -582,11 +686,12 @@ class SuperAdminController {
                 200,
                 {
                     tenants,
+                    totalTenants,
                     pagination: {
                         currentPage: page,
                         totalPages,
-                        totalTenants,
-                        limit
+                        hasNextPage: page < totalPages,
+                        hasPrevPage: page > 1
                     }
                 },
                 "All tenants retrieved successfully"

@@ -6,6 +6,7 @@ import escapeRegex from '../../utils/escapeRegex.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import NotificationService from '../../services/notification.service.js'
+import { verifyGoogleIdToken } from '../../services/googleOAuth.service.js';
 import crypto from "crypto";
 import Invite from "../../models/invite.model.js";
 
@@ -660,23 +661,32 @@ class authController {
 
         if(user.status !== "APPROVED") {
             throw new apiError(403, 'Account not approved');
-        }        
-    
+        }
 
+    // ─────────────── Generate Access Token (30 mins) ───────────────
     const accessToken = jwt.sign(
         {
             id: user._id,
             tenantId: user.tenantId
         },
         process.env.JWT_SECRET,
-        { expiresIn: '1d' })
+        { expiresIn: '30m' })
 
-        if(user.status !== "APPROVED") {
-            throw new apiError(403, 'Account not approved');
-        }        
+    // ─────────────── Generate Refresh Token (7 days) ───────────────
+    const refreshToken = crypto.randomBytes(32).toString('hex');
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    const refreshTokenFamily = crypto.randomBytes(16).toString('hex');
+    const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    //cookies - options here used so no one can change cookies from the frontend
-    const options = {
+    // ─────────────── Store Refresh Token in MongoDB ───────────────
+    user.refreshTokenHash = refreshTokenHash;
+    user.refreshTokenExpiresAt = refreshTokenExpiresAt;
+    user.refreshTokenFamily = refreshTokenFamily;
+    user.lastLogin = new Date();
+    await user.save();
+
+    // ─────────────── Cookie Options ───────────────
+    const cookieOptions = {
         httpOnly: true,
         secure: false, //for localhost is false for prod its true
         sameSite: "lax"
@@ -685,7 +695,8 @@ class authController {
     const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
 
     return res.status(200)
-    .cookie("accessToken", accessToken, options)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new apiResponse(
         200,
         {
@@ -697,6 +708,17 @@ class authController {
 
     static logoutController = wrapAsync(async (req, res) => {
 
+    const userId = req.user._id;
+
+    // ─────────────── Clear Refresh Token from MongoDB ───────────────
+    await User.findByIdAndUpdate(userId, {
+        $unset: {
+            refreshTokenHash: 1,
+            refreshTokenExpiresAt: 1,
+            refreshTokenFamily: 1
+        }
+    });
+
     const options = {
         httpOnly: true,
         secure: false,
@@ -706,6 +728,7 @@ class authController {
     return res
         .status(200)
         .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
         .json(
             new apiResponse(
                 200,
@@ -713,7 +736,290 @@ class authController {
                 "Logged out successfully"
             )
         );
-});
+    });
+
+
+    static googleLoginController = wrapAsync(async (req, res) => {
+        const { idToken } = req.body;
+        
+        if (!idToken) {
+            throw new apiError(400, "ID token is required");
+        }
+
+        // ─────────────── Verify Google ID Token ───────────────
+        const payload = await verifyGoogleIdToken(idToken);
+        if (!payload) {
+            throw new apiError(401, "Invalid ID token");
+        }
+
+        // ─────────────── Find User by Email ───────────────
+        const user = await User.findOne({ email: payload.email });
+        if (!user) {
+            throw new apiError(404, "User not found. Please register first.");
+        }
+
+        // ─────────────── Check User Status ───────────────
+        if (user.status !== "APPROVED") {
+            throw new apiError(403, "Account not approved");
+        }
+
+        // ─────────────── Update Google OAuth Fields ───────────────
+        if (!user.googleId) {
+            user.googleId = payload.sub;
+            user.authProvider = "GOOGLE";
+            user.isEmailVerified = payload.email_verified;
+        }
+
+        // ─────────────── Generate Access Token (30 mins) ───────────────
+        const accessToken = jwt.sign(
+            {
+                id: user._id,
+                tenantId: user.tenantId
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '30m' }
+        );
+
+        // ─────────────── Generate Refresh Token (7 days) ───────────────
+        const refreshToken = crypto.randomBytes(32).toString('hex');
+        const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+        const refreshTokenFamily = crypto.randomBytes(16).toString('hex');
+        const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+        // ─────────────── Store Refresh Token in MongoDB ───────────────
+        user.refreshTokenHash = refreshTokenHash;
+        user.refreshTokenExpiresAt = refreshTokenExpiresAt;
+        user.refreshTokenFamily = refreshTokenFamily;
+        user.lastLogin = new Date();
+        await user.save();
+
+        // ─────────────── Cookie Options ───────────────
+        const cookieOptions = {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax"
+        };
+
+        const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
+
+        return res.status(200)
+            .cookie("accessToken", accessToken, cookieOptions)
+            .cookie("refreshToken", refreshToken, cookieOptions)
+            .json(new apiResponse(
+                200,
+                {
+                    user: userSafe,
+                },
+                'User logged in successfully via Google'
+            ));
+    });
+
+    static googleRegisterCitizenController = wrapAsync(async (req, res) => {
+        const { idToken, phone, gender, dateOfBirth, address, idType, nationalIdHash } = req.body;
+
+        if (!idToken) {
+            throw new apiError(400, "ID token is required");
+        }
+
+        // ─────────────── Verify Google ID Token ───────────────
+        const payload = await verifyGoogleIdToken(idToken);
+        if (!payload) {
+            throw new apiError(401, "Invalid ID token");
+        }
+
+        // ─────────────── Check Existing User ───────────────
+        const existingUser = await User.findOne({ email: payload.email });
+        if (existingUser) {
+            throw new apiError(400, "Email already registered. Please login instead.");
+        }
+
+        const existingUserByPhone = await User.findOne({ phone });
+        if (existingUserByPhone) {
+            throw new apiError(400, "Phone number already exists");
+        }
+
+        // ─────────────── Hash National ID ───────────────
+        const hashedNationalId = await bcrypt.hash(nationalIdHash, 10);
+
+        // ─────────────── Create Citizen User ───────────────
+        const userData = {
+            fullName: payload.name,
+            email: payload.email,
+            phone,
+            gender,
+            role: "CITIZEN",
+            dateOfBirth,
+            address,
+            idType,
+            nationalIdHash: hashedNationalId,
+            tenantId: null,
+            status: "APPROVED",
+            googleId: payload.sub,
+            authProvider: "GOOGLE",
+            isEmailVerified: payload.email_verified,
+            profilePictureUrl: payload.picture || null
+        };
+
+        const user = await User.create(userData);
+        if (!user) {
+            throw new apiError(500, "User creation failed");
+        }
+
+        // ─────────────── Generate Access Token (30 mins) ───────────────
+        const accessToken = jwt.sign(
+            {
+                id: user._id,
+                tenantId: user.tenantId
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '30m' }
+        );
+
+        // ─────────────── Generate Refresh Token (7 days) ───────────────
+        const refreshToken = crypto.randomBytes(32).toString('hex');
+        const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+        const refreshTokenFamily = crypto.randomBytes(16).toString('hex');
+        const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+        // ─────────────── Store Refresh Token in MongoDB ───────────────
+        user.refreshTokenHash = refreshTokenHash;
+        user.refreshTokenExpiresAt = refreshTokenExpiresAt;
+        user.refreshTokenFamily = refreshTokenFamily;
+        user.lastLogin = new Date();
+        await user.save();
+
+        // ─────────────── Cookie Options ───────────────
+        const cookieOptions = {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax"
+        };
+
+        const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
+
+        // ─────────────── Send Welcome Notification ───────────────
+        await NotificationService.send({
+            tenantId: null,
+            userId: user._id,
+            type: "WELCOME",
+            title: "Welcome to Crime Reporting System",
+            message: `Hi ${payload.name}, your account is active!`,
+            channels: ["inapp", "email"]
+        });
+
+        return res.status(201)
+            .cookie("accessToken", accessToken, cookieOptions)
+            .cookie("refreshToken", refreshToken, cookieOptions)
+            .json(new apiResponse(
+                201,
+                {
+                    user: userSafe,
+                },
+                'Citizen registered successfully via Google'
+            ));
+    });
+
+
+
+    static refreshAccessTokenController = wrapAsync(async (req, res) => {
+        const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+        if (!refreshToken) {
+            throw new apiError(401, "Refresh token missing");
+        }
+
+        // ─────────────── Find User by Refresh Token ───────────────
+        const users = await User.find({
+            refreshTokenExpiresAt: { $gt: new Date() }
+        }).select('+refreshTokenHash +refreshTokenFamily');
+
+        let matchedUser = null;
+        for (const user of users) {
+            const isMatch = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+            if (isMatch) {
+                matchedUser = user;
+                break;
+            }
+        }
+
+        if (!matchedUser) {
+            throw new apiError(401, "Invalid or expired refresh token");
+        }
+
+        // ─────────────── Check User Status ───────────────
+        if (matchedUser.status !== "APPROVED") {
+            throw new apiError(403, "Account not approved");
+        }
+
+        // ─────────────── Token Rotation ───────────────
+        const newRefreshToken = crypto.randomBytes(32).toString('hex');
+        const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
+        const newRefreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+        // ─────────────── Update MongoDB ───────────────
+        matchedUser.refreshTokenHash = newRefreshTokenHash;
+        matchedUser.refreshTokenExpiresAt = newRefreshTokenExpiresAt;
+        await matchedUser.save();
+
+        // ─────────────── Generate New Access Token ───────────────
+        const newAccessToken = jwt.sign(
+            {
+                id: matchedUser._id,
+                tenantId: matchedUser.tenantId
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '30m' }
+        );
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax"
+        };
+
+        const userSafe = await User.findById(matchedUser._id).select('-password -nationalIdHash');
+
+        return res.status(200)
+            .cookie("accessToken", newAccessToken, cookieOptions)
+            .cookie("refreshToken", newRefreshToken, cookieOptions)
+            .json(new apiResponse(
+                200,
+                {
+                    user: userSafe,
+                },
+                'Access token refreshed successfully'
+            ));
+    });
+
+    static revokeRefreshTokenController = wrapAsync(async (req, res) => {
+        const userId = req.user._id;
+
+        // ─────────────── Clear from MongoDB ───────────────
+        await User.findByIdAndUpdate(userId, {
+            $unset: {
+                refreshTokenHash: 1,
+                refreshTokenExpiresAt: 1,
+                refreshTokenFamily: 1
+            }
+        });
+
+        const options = {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax"
+        };
+
+        return res
+            .status(200)
+            .clearCookie("refreshToken", options)
+            .json(
+                new apiResponse(
+                    200,
+                    null,
+                    "Refresh token revoked successfully"
+                )
+            );
+    });
 
     static getCurrentUserController = wrapAsync(async(req, res) => {
     const currentUser = req.user;

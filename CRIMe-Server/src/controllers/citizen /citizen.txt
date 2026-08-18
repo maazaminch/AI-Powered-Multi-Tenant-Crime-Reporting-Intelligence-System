@@ -1,0 +1,153 @@
+// if (["RESOLVED", "CLOSED"].includes(case.status)) {
+//   throw new apiError(403, "Case is closed. No further updates allowed.");
+// }
+
+// if (!case.allowCitizenUpdates) {
+//   throw new apiError(403, "Investigating officer has disabled public updates for this case.");
+// }
+
+
+
+
+
+// CaseUpdate.find({
+//   caseId,
+//   $or: [
+//     { visibility: "PUBLIC" },              // police status announcements
+//     { updaterRole: { $in: ["CITIZEN", "GUEST"] } }  // their own evidence/notes
+//   ]
+// }).sort({ createdAt: 1 });
+
+
+// A simple switch on the case detail page: 
+// "Allow reporter to submit updates" → flips allowCitizenUpdates. 
+// SHO can also see it, useful during sensitive phases.
+
+
+
+// apis need for citizen
+
+
+//apis for police related to citizen
+// PATCH
+
+// /cases/:id/allow-updates
+
+
+
+// PATCH
+
+// /cases/:id/stop-updates
+
+
+
+// PATCH
+
+// /cases/:id/request-information
+
+
+
+// PATCH
+
+// /cases/:id/request-evidence
+
+
+
+// PATCH
+
+// /cases/:id/close-case
+
+
+
+// PATCH
+
+// /cases/:id/reopen-case
+
+
+// AUTH
+// -----
+
+// Register
+// Login
+// Logout
+// Forgot Password
+// Reset Password
+// Refresh Token
+// Get Current User
+
+
+// DASHBOARD
+// ---------
+
+// Get Dashboard
+
+
+// REPORTING
+// ---------
+
+// Report Crime
+
+
+// MY REPORTS
+// ----------
+
+// Get My Reports
+
+// Get Case Details
+
+// Add Information
+
+// Upload Evidence
+
+// Download Receipt
+
+// Download Full Report
+
+
+// NOTIFICATIONS
+// -------------
+
+// Get Notifications
+
+// Mark Notification Read
+
+// Mark All Notifications Read
+
+// Delete Notification
+
+
+// PROFILE
+// -------
+
+// Get Profile
+
+// Update Profile
+
+// Change Password
+
+
+// PUBLIC
+// ------
+
+// Report Crime
+
+// Track Complaint
+
+
+// GUEST
+// -----
+
+// Track Case
+
+// Add Information
+
+// Upload Evidence
+
+// Download Receipt
+
+
+
+
+
+
+

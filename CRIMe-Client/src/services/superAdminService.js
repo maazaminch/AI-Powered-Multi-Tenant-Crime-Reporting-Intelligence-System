@@ -17,11 +17,8 @@ export const superAdminService = {
     return response.data
   },
 
-  getTenants: async (page) => {
-    const response = await api.get(
-      `/api/superadmin/get-tenants?page=${page}&limit=10`
-    )
-
+  getTenants: async (filters = {}) => {
+    const response = await api.get('/api/superadmin/get-tenants', { params: filters })
     return response.data
   },
 
@@ -31,8 +28,12 @@ export const superAdminService = {
   },
 
   // Admin Management
-  getAllAdmins: async ({ page, status }) => {
-    const response = await api.get(`/api/superadmin/get-admins?page=${page}&limit=10&status=${status}`)
+  getAllAdmins: async (filters = {}) => {
+    const response = await api.get('/api/superadmin/get-admins', { params: filters })
+    return response.data
+  },
+  tenantsDropDown: async() => {
+    const response = await api.get('/api/superadmin/tenants-dropdown')
     return response.data
   },
 
@@ -41,8 +42,8 @@ export const superAdminService = {
     return response.data
   },
 
-  getPendingAdmins: async () => {
-    const response = await api.get('/api/superadmin/pending-admins')
+  pendingAdmins: async (filters = {}) => {
+    const response = await api.get('/api/superadmin/pending-admins', { params: filters })
     return response.data
   },
 

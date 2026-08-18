@@ -3,12 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { usePoliceManagement } from '../../hooks/admin/usePoliceManagement'
-import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
 
 import InvitePoliceModal from '../../components/features/police/modals/InvitePoliceModal'
 import AssignOrTransferStationModal from '../../components/features/police/modals/AssignOrTransferStationModal'
 import PoliceDetailsModal from '../../components/features/police/modals/PoliceDetailsModal'
-import DeleteConfirmationModal from '../../components/features/DeleteConfirmationModal'
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal'
+import SearchDropdown from '../../components/common/SearchDropdown'
 
 import { 
   Search, 
@@ -21,9 +21,12 @@ import ErrorState from '../../components/ui/feedback/ErrorState'
 import NoData from '../../components/ui/feedback/NoData'
 
 const PoliceManagementPage = () => {
-  const [page, setPage] = useState(1)
+  
 
   const [filters, setFilters] = useState({
+    page: 1, 
+    limit: 10,
+
     search: '',
     status: '',
     policeStationId: ''
@@ -55,16 +58,31 @@ const PoliceManagementPage = () => {
     invitePolice,
     policeDetails,
     isPoliceDetailsLoading,
-  } = usePoliceManagement({
-    page, 
-    ...filters, 
-    selectedPoliceId})
+  } = usePoliceManagement(
+    filters, 
+    selectedPoliceId)
   
-  const { stations } = usePoliceStationManagement()
+        const policeStationOptions = [
+      {
+        value: "",
+        label: "All Stations",
+      },
+      {
+        value: "UNASSIGNED",
+        label: "Unassigned",
+      },
+      ...policeStations.map((station) => ({
+        value: station._id,
+        label: station.name,
+      })),
+    ];
 
   const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
-    setPage(1)
+    setFilters((prev) => ({ 
+      ...prev,
+      [key]: value,
+      page: 1
+    }))
   }
 
 
@@ -134,7 +152,7 @@ const PoliceManagementPage = () => {
 
 
 
-  const statuses = ['APPROVED', 'BLOCKED', 'PENDING']
+  const statuses = ['APPROVED', 'BLOCKED']
   return (
     <div className="space-y-6">
       <Card>
@@ -154,7 +172,7 @@ const PoliceManagementPage = () => {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input
                         type="text"
-                        placeholder="Search by case ID, reporter name, or description..."
+                        placeholder="Search by name or badge number..."
                         value={filters.search}
                         onChange={(e) => handleFilterChange('search', e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -176,11 +194,10 @@ const PoliceManagementPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
       
                       <div>
-                        <label className="text-sm font-medium mb-1 block">Status</label>
                         <select
                           value={filters.status}
                           onChange={(e) => handleFilterChange('status', e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full h-10 px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">All Statuses</option>
                           {statuses.map(status => (
@@ -188,25 +205,23 @@ const PoliceManagementPage = () => {
                           ))}
                         </select>
                       </div>
+                      
+                      <SearchDropdown
+                        value={filters.policeStationId}
+                        options={policeStationOptions}
+                        onChange={(value) => handleFilterChange("policeStationId", value)}
+                        placeholder="All Police Stations"
+                        searchPlaceholder="Search police stations..."
+                        emptyMessage="No police station found."
+                      />    
 
-                      <div>
-                        <label className="text-sm font-medium mb-1 block">Police Stations</label>
-                        <select
-                          value={filters.policeStationId}
-                          onChange={(e) => handleFilterChange('policeStationId', e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">All</option>
-                          {stations?.map(station => (
-                            <option key={station._id} value={station._id}>{station.name}</option>
-                          ))}
-                        </select>
-                      </div>    
-      
                       <div className="flex items-end">
                         <Button
                           variant="outline"
                           onClick={() => setFilters({
+                            page: 1, 
+                            limit: 10,
+                            search: '',
                             status: '',
                             policeStationId: ''
                           })}
@@ -308,9 +323,10 @@ const PoliceManagementPage = () => {
 
       {pagination && (
                 <div className="mt-6 flex items-center justify-end gap-2">
+                  
+                  <Button variant="outline" disabled={!pagination?.hasPrevPage} onClick={() => setFilters(prev => ({...prev, page: Math.max(1, prev.page - 1)}))}>Previous</Button>
                   <div className="text-sm text-muted-foreground mr-4">Page {pagination.currentPage} of {pagination.totalPages}</div>
-                  <Button variant="outline" disabled={!pagination?.hasPrevPage} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>Previous</Button>
-                  <Button variant="outline" disabled={!pagination?.hasNextPage} onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}>Next</Button>
+                  <Button variant="outline" disabled={!pagination?.hasNextPage} onClick={() => setFilters(prev => ({...prev, page: Math.min(pagination.totalPages, prev.page + 1)}))}>Next</Button>
                 </div>
               )}   
 

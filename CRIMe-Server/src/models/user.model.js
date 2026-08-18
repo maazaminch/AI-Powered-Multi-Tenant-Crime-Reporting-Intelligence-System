@@ -7,12 +7,13 @@ const UserSchema = new mongoose.Schema({
   tenantId: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Tenant",
+  default: null
 },
 
   fullName: { type: String, required: true, trim: true },
   email: { type: String, required: true , unique: true, trim: true, lowercase: true},
   phone: { type: String, required: true , unique: true, trim: true},
-  password: { type: String, required: true },
+  password: { type: String, required: function() { return this.authProvider === "LOCAL"; } },
   // confirmPassword: {type: String, required: true}, its only required in frontend
   profilePictureUrl: { 
     type: String, 
@@ -46,15 +47,24 @@ const UserSchema = new mongoose.Schema({
     default: false,
   },
 
+  // ─────────────── International Fields ───────────────
+  dateOfBirth: { type: Date, required: true },
+  age: {type: Number },
+  address: { type: String },
+  idType: { type: String, enum: ["PASSPORT", "DRIVER_LICENSE", "NATIONAL_ID"], required: true },
+  nationalIdHash: { type: String, required: true, index: true },
 
 
-    // ─────────────── International Fields ───────────────
-    dateOfBirth: { type: Date, required: true },
-    age: {type: Number },
-    address: { type: String },
-    idType: { type: String, enum: ["PASSPORT", "DRIVER_LICENSE", "NATIONAL_ID"], required: true },
-    nationalIdHash: { type: String, required: true, index: true },
-
+  // Refresh Token
+  refreshTokenHash: { type: String, select: false },
+  refreshTokenExpiresAt: { type: Date },
+  refreshTokenFamily: { type: String }, // for token rotation tracking
+  
+  // Google OAuth
+  googleId: { type: String, unique: true, sparse: true, index: true },
+  authProvider: { type: String, enum: ["LOCAL", "GOOGLE"], default: "LOCAL" },
+  isEmailVerified: { type: Boolean, default: false },
+  
   // ─────────────── Authentication ───────────────
   lastLogin: { type: Date },
   failedLoginAttempts: { type: Number, default: 0 },
@@ -64,12 +74,6 @@ const UserSchema = new mongoose.Schema({
   // ─────────────── Two-Factor Authentication ───────────────
   // twoFactorEnabled: { type: Boolean, default: false },
   // twoFactorSecret: { type: String }, // TOTP secret for Admin/Police
-
-  // ─────────────── Email Verification / OTP ───────────────
-  //isEmailVerified: { type: Boolean, default: false },
-  //emailVerificationOtpHash: { type: String }, // hashed OTP
-  //emailVerificationExpires: { type: Date },
-
 
 
   // ─────────────── Governance / Audit ───────────────
@@ -98,6 +102,11 @@ UserSchema.index({ tenantId: 1, status: 1 });               // pending approvals
 UserSchema.index({ tenantId: 1, policeStationId: 1 });      // station police list
 UserSchema.index({ isStationHead: 1 }); 
 
+
+UserSchema.index({ refreshTokenExpiresAt: 1 }, { 
+  expireAfterSeconds: 0,
+  partialFilterExpression: { refreshTokenExpiresAt: { $exists: true } }
+});
 
 UserSchema.pre("save", function() {
   if (!this.dateOfBirth) return 

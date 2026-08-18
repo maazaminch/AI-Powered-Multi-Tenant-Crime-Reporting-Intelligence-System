@@ -1,47 +1,69 @@
 import React, { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
-import { formatError } from '../../lib/utils'
 
 import StationDetailsModal from '../../components/features/police-stations/modals/StationDetailsModal'
-import DeleteConfirmationModal from '../../components/features/DeleteConfirmationModal'
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal'
 import CreateStationModal from '../../components/features/police-stations/modals/CreateStationModal'
 import AssignSHOModal from '../../components/features/police-stations/modals/AssignSHOModal'
 import RemoveSHOModal from '../../components/features/police-stations/modals/RemoveSHOModal'
 
+import Loader from '../../components/ui/feedback/Loader';
+import ErrorState from '../../components/ui/feedback/ErrorState';
+import NoData from '../../components/ui/feedback/NoData';
+
+import { 
+  FileText, 
+  Search, 
+  Filter, 
+  ChevronDown,
+} from 'lucide-react'
+
+
+
 const PoliceStationsPage = () => {
 
 
-  const [page, setPage] = useState(1)
   const [shoStationId, setShoStationId] = useState(null)
   const [removeShoStationId, setRemoveShoStationId] = useState(null)
   const [selectedStationId, setSelectedStationId] = useState(null)
 
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 10,
+
+    search: '',
+    isActive: undefined
+  })
+
+  const [showFilters, setShowFilters] = useState(false)
+
   const {
     stations,
+    totalStations,
     pagination,
     isLoading,
     error,
     createStation,
     deleteStation,
     toggleStation,
-    stationDetails,
-    isStationDetailsLoading,
     assignOrChangeSho,
     removeSho,
-  } = usePoliceStationManagement(page, selectedStationId)
+  } = usePoliceStationManagement(filters)
 
   //its only for dashboard page because without using location i cannot go to the tenant form directly
   const location = useLocation()
-  const navigate = useNavigate()
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(
     location.state?.openCreateModal || false)
   const [stationToDelete, setStationToDelete] = useState(null)
 
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
+  }
 
   const handleCreateSubmit = (stationData) => {
     createStation.mutate(stationData, { onSuccess: () => setIsCreateModalOpen(false) })
@@ -80,21 +102,6 @@ const PoliceStationsPage = () => {
     })
   }
 
-  const pendingToggleId = toggleStation.isPending
-    ? toggleStation.variables
-    : null
-
-  const pendingDeleteId = deleteStation.isPending
-    ? deleteStation.variables?.stationId
-    : null
-
-  const pendingAssignOrChangeShoId = assignOrChangeSho.isPending
-    ? assignOrChangeSho.variables?.stationId
-    : null
-
-  const pendingRemoveShoId = removeSho.isPending
-    ? removeSho.variables?.stationId
-    : null
 
   return (
     <div className="space-y-6">
@@ -102,78 +109,100 @@ const PoliceStationsPage = () => {
         <CardHeader>
           <CardTitle>Police Station Management</CardTitle>
           <CardDescription>Manage police stations and their details</CardDescription>
+        
+          <Button
+            className='ml-auto justify-end'
+            variant="success"
+            onClick={() => setIsCreateModalOpen(true)}>
+              Create New Station
+          </Button>
         </CardHeader>
+      </Card> 
 
+
+      {/* Filters */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Search Bar */}
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search by name"
+                        value={filters.search}
+                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="flex items-center gap-2"
+                    >
+                      <Filter className="w-4 h-4" />
+                      Filters
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </div>
+      
+                  {/* Expandable Filters */}
+                  {showFilters && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+  
+      
+                      <div>
+                        <select
+                          value={filters.isActive}
+                          onChange={(e) => handleFilterChange('isActive', e.target.value)}
+                          className="w-full px-3 py-2 h-10 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">All</option>
+                          <option value="true">Active</option>
+                          <option value="false">Inactive</option>
+                        </select>
+                      </div>
+      
+                      <div className="flex items-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => setFilters({
+                            page: 1,
+                            search: '',
+                            isActive: ''
+                          })}
+                          className="w-full"
+                        >
+                          Clear Filters
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+      <Card>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">All Stations</h3>
-
-            <Button
-              variant="success"
-              onClick={() => setIsCreateModalOpen(true)}>
-              Create New Station
-            </Button>
+              <Badge variant="success">Total Stations: {totalStations}</Badge>
           </div>
-
-          {/* Create Station */}
-          <CreateStationModal
-            open={isCreateModalOpen}
-            onClose={() => setIsCreateModalOpen(false)}
-            onSubmit={handleCreateSubmit}
-            isSubmitting={createStation.isPending}
-          />
-
-          {/* Station Details */}
-          <StationDetailsModal
-            open={!!selectedStationId}
-            onClose={() => setSelectedStationId(null)}
-            stationDetails={stationDetails}
-            isLoading={isStationDetailsLoading}
-          />
-
-          {/* Delete Confirmation */}
-          <DeleteConfirmationModal
-            open={!!stationToDelete}
-            onClose={() => setStationToDelete(null)}
-            onConfirm={handleConfirmDelete}
-            isDeleting={deleteStation.isPending}
-          />
-
-          {/* Assign/Change SHO */}
-          <AssignSHOModal
-            open={!!shoStationId}
-            onClose={() => setShoStationId(null)}
-            onAssign={handleAssignSho}
-            stationId={shoStationId}
-            isAssigning={assignOrChangeSho.isPending}
-          />
-
-          {/* Remove SHO */}
-          <RemoveSHOModal
-            open={!!removeShoStationId}
-            onClose={() => setRemoveShoStationId(null)}
-            onConfirm={handleRemoveSho}
-            shoName={stations.find(s => s._id === removeShoStationId)?.stationHead?.fullName || ''}
-            isRemoving={removeSho.isPending}
-          />
-
+            
           {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-20 animate-pulse rounded-lg border bg-muted/40"
-                />
-              ))}
-            </div>
+            <Loader 
+              text='Loading stations...'
+              fullScreen
+            />
           ) : error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {formatError(error)}
-            </div>
+            <ErrorState 
+              title='Error loading stations'
+            />
           ) : stations.length === 0 ? (
-            <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-              No stations yet. Create your first station to get started.
-            </div>
+            <NoData 
+              title='No stations found'
+            />
           ) : (
             
             <div className="space-y-3">
@@ -207,14 +236,8 @@ const PoliceStationsPage = () => {
                     <Button
                       variant="success"
                       size="sm"
-                      disabled={
-                        assignOrChangeSho.isPending &&
-                        pendingAssignOrChangeShoId === station._id
-                      }
-                      onClick={() => {
-                        if (!station._id) {
-                          return
-                        }
+                      disabled={assignOrChangeSho.isPending }
+                      onClick={() => {if (!station._id) {return}
                         setShoStationId(station._id)
                       }}
                     >
@@ -224,10 +247,7 @@ const PoliceStationsPage = () => {
                       <Button
                         variant="destructive"
                         size="sm"
-                        disabled={
-                          removeSho.isPending &&
-                          pendingRemoveShoId === station._id
-                        }
+                        disabled={removeSho.isPending}
                         onClick={() => setRemoveShoStationId(station._id)}
                       >
                         Remove SHO
@@ -244,10 +264,7 @@ const PoliceStationsPage = () => {
                     <Button
                       variant="default"
                       size="sm"
-                      disabled={
-                        toggleStation.isPending &&
-                        pendingToggleId === station._id
-                      }
+                      disabled={toggleStation.isPending}
                       onClick={() => handleToggle(station._id)}
                     >
                       {toggleStation.isPending &&
@@ -261,10 +278,7 @@ const PoliceStationsPage = () => {
                     <Button
                       variant="destructive"
                       size="sm"
-                      disabled={
-                        deleteStation.isPending &&
-                        pendingDeleteId === station._id
-                      }
+                      disabled={deleteStation.isPending}
                       onClick={() => setStationToDelete(station._id)}
                     >
                       Delete
@@ -276,30 +290,79 @@ const PoliceStationsPage = () => {
           )}
 
           {pagination && (
-                      <div className="mt-6 flex items-center justify-end gap-2">
+                      <div className="mt-6 flex items-center justify-end gap-2">            
+                        <Button
+                          variant="outline"
+                          disabled={!pagination?.hasPrevPage}
+                          onClick={() => setFilters(prev => 
+                            ({
+                              ...prev,
+                              page: Math.max(1, prev.page - 1)
+                            })
+                          )}
+                        >
+                          Previous
+                        </Button>
                         <div className="text-sm text-muted-foreground mr-4">
                           Page {pagination.currentPage} of {pagination.totalPages}
-                            </div>
-                              <Button
-                                variant="outline"
-                                disabled={!pagination?.hasPrevPage}
-                                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                              >
-                              Previous
-                              </Button>
-                    
-                              <Button
-                                variant="outline"
-                                disabled={!pagination?.hasNextPage}
-                                onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
-                              >
-                              Next
-                              </Button>
-                            </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          disabled={!pagination?.hasNextPage}
+                          onClick={() => setFilters(prev => 
+                            ({
+                              ...prev,
+                              page: Math.min(pagination.totalPages, prev.page + 1)
+                            })
                           )}
-
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
         </CardContent>
       </Card>
+
+      {/* Create Station */}
+          <CreateStationModal
+            open={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSubmit={handleCreateSubmit}
+            isSubmitting={createStation.isPending}
+          />
+
+          {/* Station Details */}
+          <StationDetailsModal
+            open={!!selectedStationId}
+            onClose={() => setSelectedStationId(null)}
+            stationId={selectedStationId}
+          />
+
+          {/* Delete Confirmation */}
+          <DeleteConfirmationModal
+            open={!!stationToDelete}
+            onClose={() => setStationToDelete(null)}
+            onConfirm={handleConfirmDelete}
+            isDeleting={deleteStation.isPending}
+          />
+
+          {/* Assign/Change SHO */}
+          <AssignSHOModal
+            open={!!shoStationId}
+            onClose={() => setShoStationId(null)}
+            onAssign={handleAssignSho}
+            stationId={shoStationId}
+            isAssigning={assignOrChangeSho.isPending}
+          />
+
+          {/* Remove SHO */}
+          <RemoveSHOModal
+            open={!!removeShoStationId}
+            onClose={() => setRemoveShoStationId(null)}
+            onConfirm={handleRemoveSho}
+            shoName={stations.find(s => s._id === removeShoStationId)?.stationHead?.fullName || ''}
+            isRemoving={removeSho.isPending}
+          />
     </div>
   )
 }

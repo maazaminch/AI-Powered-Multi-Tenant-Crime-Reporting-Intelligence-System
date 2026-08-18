@@ -71,14 +71,21 @@ class EvidenceController {
         storageKey,
         fileSize,
         sha256Hash,
-        fileType
+        fileType,
+        fileUrl,
+        provider,
+        bucketName,
+        region,
+        publicId,
+        folder,
+        resourceType
       } = file;
 
       if (!storageKey || !fileSize || !sha256Hash || !fileType) {
         throw new apiError(400, "Invalid file object");
       }
 
-      const evidence = await Evidence.create({
+      const evidenceData = {
         tenantId: caseDoc.tenantId,
         caseId: caseDoc._id,
         storageKey,
@@ -88,8 +95,22 @@ class EvidenceController {
         uploadedBy: currentUser._id,
         uploadIp: req.ip,
         storageClass: "STANDARD",
-        storageRegion: process.env.AWS_REGION || "us-east-1"
-      });
+        provider: provider || 's3',
+        fileUrl: fileUrl || ''
+      };
+
+      // Add provider-specific fields
+      if (provider === 'cloudinary') {
+        evidenceData.publicId = publicId;
+        evidenceData.folder = folder;
+        evidenceData.resourceType = resourceType;
+      } else {
+        // S3 or other providers
+        evidenceData.bucketName = bucketName;
+        evidenceData.region = region || process.env.AWS_REGION || "us-east-1";
+      }
+
+      const evidence = await Evidence.create(evidenceData);
 
       evidenceIds.push(evidence._id);
     }

@@ -2,6 +2,7 @@ import express from "express";
 import verifyJWT from "../middlewares/auth.middleware.js";
 import tenantGuard from "../middlewares/tenantGuard.middleware.js";
 import roleGuard from "../middlewares/roleGuard.middleware.js";
+import auditLog from "../middlewares/auditLog.middleware.js";
 import authController from "../controllers/auth and session/auth.controller.js";
 import { Roles , UserFlags} from "../constants/roles.js";
 
@@ -19,12 +20,14 @@ authRouter.post(
 
 authRouter.post(
     "/register-with-invite-link",
+    auditLog('CREATE', 'USER'),
     authController.registerWithInviteController
 );
 
 //tested
 authRouter.post(
     "/register-citizen",
+    auditLog('CREATE', 'USER'),
     authController.registerCitizenController
 );
 
@@ -34,6 +37,7 @@ authRouter.put(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.CITIZEN, Roles.POLICE, Roles.ADMIN] }),
+    auditLog('UPDATE', 'USER'),
     authController.updateUserDetailsController
 )
 
@@ -42,8 +46,42 @@ authRouter.put(
 //tested
 authRouter.post(
     "/login",
+    auditLog('LOGIN', 'AUTH'),
     authController.loginController
 );
+
+authRouter.post(
+    "/google-login",
+    auditLog('LOGIN', 'AUTH'),
+    authController.googleLoginController
+);
+
+authRouter.post(
+    "/google-register-citizen",
+    auditLog('CREATE', 'USER'),
+    authController.googleRegisterCitizenController
+);
+
+//tested
+authRouter.post(
+    "/logout",
+    auditLog('LOGOUT', 'AUTH'),
+    authController.logoutController
+);
+
+// Refresh access token
+authRouter.post(
+    "/refresh-token",
+    authController.refreshAccessTokenController
+);
+
+// Revoke refresh token
+authRouter.post(
+    "/revoke-token",
+    verifyJWT,
+    authController.revokeRefreshTokenController
+);
+
 
 // Get current user - CRITICAL for frontend auth state
 authRouter.get(
@@ -52,10 +90,5 @@ authRouter.get(
     authController.getCurrentUserController
 );
 
-//tested
-authRouter.post(
-    "/logout",
-    authController.logoutController
-);
 
 export default authRouter;

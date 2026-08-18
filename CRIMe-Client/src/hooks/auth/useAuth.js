@@ -72,6 +72,32 @@ const initializeAuth = async () => {
     }
   })
 
+  // Google login mutation
+  const googleLoginMutation = useMutation({
+    mutationFn: authService.googleLogin,
+
+    onSuccess: (data) => {
+      setUser(data?.data?.user)
+      clearError()
+    },
+    onError: (error) => {
+      setError(error?.response?.data?.message || 'Google login failed')
+    }
+  })
+
+  // Google register citizen mutation
+  const googleRegisterMutation = useMutation({
+    mutationFn: authService.googleRegisterCitizen,
+
+    onSuccess: (data) => {
+      setUser(data?.data?.user)
+      clearError()
+    },
+    onError: (error) => {
+      setError(error?.response?.data?.message || 'Google registration failed')
+    }
+  })
+
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
@@ -105,6 +131,18 @@ const initializeAuth = async () => {
     return await registerWithInviteMutation.mutateAsync({ token, userData })
   }
 
+  // Combined google login function
+  const googleLogin = async (idToken) => {
+    clearError()
+    return await googleLoginMutation.mutateAsync(idToken)
+  }
+
+  // Combined google register function
+  const googleRegister = async (userData) => {
+    clearError()
+    return await googleRegisterMutation.mutateAsync(userData)
+  }
+
   // Combined logout function
   const logout = async () => {
     return await logoutMutation.mutateAsync()
@@ -114,13 +152,15 @@ const initializeAuth = async () => {
     // State
     user,
     isAuthenticated,
-    isLoading: isLoading  || loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending,
+    isLoading: isLoading || loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending || googleLoginMutation.isPending || googleRegisterMutation.isPending,
     error,
 
     // Actions
     login,
     register,
     registerWithInvite,
+    googleLogin,
+    googleRegister,
     logout,
     initializeAuth,
     clearError,

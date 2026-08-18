@@ -1,56 +1,69 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { usePendingAdminRequests } from '../../hooks/superadmin/usePendingAdminRequests'
-import { formatError } from '../../lib/utils'
+
+import Loader from '../../components/ui/feedback/Loader'
+import ErrorState from '../../components/ui/feedback/ErrorState'
+import NoData from '../../components/ui/feedback/NoData'
+
+import { 
+  Clock
+ } from 'lucide-react'
 
 const PendingRequestsPage = () => {
+  
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 10
+  })
+  
   const {
     pendingAdmins,
+    totalPendingAdmins,
+    pagination,
     isLoading,
     error,
-    approveMutation,
-    rejectMutation,
-  } = usePendingAdminRequests()
+    approveUser,
+    rejectUser,
+  } = usePendingAdminRequests(filters)
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Pending Admin Requests</CardTitle>
+          <CardTitle className='flex items-center gap-2'>
+            <Clock className="w-6 h-6" />
+            Pending Admin Requests
+          </CardTitle>
           <CardDescription>
             Review pending admin registrations and approve or reject them.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="h-20 animate-pulse rounded-lg border bg-muted/40" />
-              ))}
-            </div>
+            <Loader 
+              text='Loading pending admin requests...'
+              fullScreen
+            />
           ) : error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {formatError(error)}
-            </div>
+            <ErrorState title='Error loading pending admin requests' />
           ) : pendingAdmins.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-              No pending admin requests found.
-            </div>
+            <NoData title="No pending admin requests found." />
           ) : (
             <div className="space-y-3">
+              <div  className='flex justify-end'>
+              <Badge variant='warning'>Pending Admins: {totalPendingAdmins}</Badge>
+              </div>
               {pendingAdmins.map((admin) => (
                 <div key={admin._id} className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between">
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap gap-2 items-center">
                       <p className="font-semibold">{admin.fullName}</p>
-                      <Badge variant="secondary">{admin.role}</Badge>
+                      <Badge variant="info">{admin.role}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{admin.email}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Tenant: {admin.tenantId?.name ?? 'Unassigned'}
-                    </p>
                     <p className="text-sm text-muted-foreground">
                       Requested on: {new Date(admin.createdAt).toLocaleDateString()}
                     </p>
@@ -59,18 +72,18 @@ const PendingRequestsPage = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={approveMutation.isPending}
-                      onClick={() => approveMutation.mutate(admin._id)}
+                      disabled={approveUser.isPending}
+                      onClick={() => approveUser.mutate(admin._id)}
                     >
-                      {approveMutation.isPending ? 'Approving...' : 'Approve'}
+                      {approveUser.isPending ? 'Approving...' : 'Approve'}
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
-                      disabled={rejectMutation.isPending}
-                      onClick={() => rejectMutation.mutate(admin._id)}
+                      disabled={rejectUser.isPending}
+                      onClick={() => rejectUser.mutate(admin._id)}
                     >
-                      {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
+                      {rejectUser.isPending ? 'Rejecting...' : 'Reject'}
                     </Button>
                   </div>
                 </div>
@@ -78,6 +91,40 @@ const PendingRequestsPage = () => {
             </div>
           )}
         </CardContent>
+
+
+      {pagination && (
+                  <div className="mt-6 flex items-center justify-end gap-2">            
+                    <Button
+                      variant="outline"
+                      disabled={!pagination?.hasPrevPage}
+                      onClick={() => setFilters(prev => 
+                        ({
+                          ...prev,
+                          page: Math.max(1, prev.page - 1)
+                        })
+                      )}
+                    >
+                      Previous
+                    </Button>
+                    <div className="text-sm text-muted-foreground mr-4">
+                      Page {pagination.currentPage} of {pagination.totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      disabled={!pagination?.hasNextPage}
+                      onClick={() => setFilters(prev => 
+                        ({
+                          ...prev,
+                          page: Math.min(pagination.totalPages, prev.page + 1)
+                        })
+                      )}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+
       </Card>
     </div>
   )

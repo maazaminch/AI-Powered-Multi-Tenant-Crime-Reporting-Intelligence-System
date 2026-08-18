@@ -31,14 +31,17 @@ const validate = (schema) => {
 
             if (error.details) {
 
-                const message = error.details
-                    .map((item) => item.message)
-                    .join(", ");
+                const errors = error.details.reduce((acc, item) => {
+                    const field = item.path.join('.');
+                    acc[field] = item.message;
+                    return acc;
+                }, {});
 
                 return next(
                     new apiError(
                         400,
-                        message
+                        "Validation failed",
+                        { errors }
                     )
                 );
 

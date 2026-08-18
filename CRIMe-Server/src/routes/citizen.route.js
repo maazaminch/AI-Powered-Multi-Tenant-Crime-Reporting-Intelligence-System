@@ -1,6 +1,7 @@
 import express from "express";
 import verifyJWT from "../middlewares/auth.middleware.js";
 import roleGuard from "../middlewares/roleGuard.middleware.js";
+import auditLog from "../middlewares/auditLog.middleware.js";
 import CitizenController from "../controllers/citizen /citizen.controller.js";
 import { Roles } from "../constants/roles.js";
 
@@ -20,6 +21,7 @@ citizenRouter.post(
     "/report-case-citizen",
     verifyJWT,
     roleGuard(Roles.CITIZEN),
+    auditLog('CREATE', 'CASE'),
     CitizenController.reportCase
 );
 
@@ -55,6 +57,7 @@ citizenRouter.post(
     "/add-note/:caseId",
     verifyJWT,
     roleGuard(Roles.CITIZEN),
+    auditLog('CREATE', 'CASE_UPDATE'),
     CitizenController.addNote
 );
 
@@ -62,6 +65,7 @@ citizenRouter.post(
     "/upload-evidence/:caseId",
     verifyJWT,
     roleGuard(Roles.CITIZEN),
+    auditLog('UPLOAD', 'EVIDENCE'),
     CitizenController.uploadEvidence
 );
 

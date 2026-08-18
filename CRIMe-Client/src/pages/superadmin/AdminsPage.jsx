@@ -3,13 +3,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useAdminsManagement } from '../../hooks/superadmin/useAdminsManagement'
+import { useAdminsDetails } from '../../hooks/superadmin/useAdminDetails'
+
 import InviteAdminForm from '../../components/features/admin/forms/InviteAdminForm'
 import AssignOrTransferAdminForm from '../../components/features/admin/forms/AssignOrTransferAdminForm'
-import { formatError } from '../../lib/utils'
+import AdminDetailsModal from '../../components/features/admin/modals/AdminDetailsModals'
+import SearchDropdown from '../../components/common/SearchDropdown'
+
+import Loader from '../../components/ui/feedback/Loader';
+import ErrorState from '../../components/ui/feedback/ErrorState';
+import NoData from '../../components/ui/feedback/NoData';
+
+
+import { 
+  FileText, 
+  Search, 
+  Filter, 
+  ChevronDown,
+
+} from 'lucide-react'
 
 const AdminsPage = () => {
-  const [activeTab, setActiveTab] = useState('APPROVED')
-  const [page, setPage] = useState(1)
 
   const [selectedAdminId, setSelectedAdminId] = useState(null)
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
@@ -19,22 +33,53 @@ const AdminsPage = () => {
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false)
   const [tenantForm, setTenantForm] = useState({ tenantId: '' })
 
+  const [filters, setFilters] = useState({
+    page: 1,
+
+    search: '',
+    status: '',
+    tenantId: ''
+  })
+
+  const [showFilters, setShowFilters] = useState(false)
 
     const {
       admins,
       tenants,
+      totalAdmins,
       pagination,
       isLoading,
       error,
-      adminDetails,
-      isDetailsLoading,
       statusMutation,
       deleteMutation,
       assignMutation,
       transferMutation,
       inviteMutation,
-    } = useAdminsManagement(selectedAdminId, page, activeTab)
+    } = useAdminsManagement(filters)
 
+    const tenantOptions = [
+      {
+        value: "",
+        label: "All Tenants",
+      },
+      {
+        value: "UNASSIGNED",
+        label: "Unassigned",
+      },
+      ...tenants.map((tenant) => ({
+        value: tenant._id,
+        label: tenant.name,
+      })),
+    ];
+
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      page: 1
+    }))
+  }  
   const onUpdateStatus = (userId, newStatus) => {
     statusMutation.mutate({ userId, newStatus })
   }
@@ -107,64 +152,123 @@ const AdminsPage = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Admins Management</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-6 h-6"/>
+            Admin Management
+          </CardTitle>
           <CardDescription>
-            Manage all approved and blocked admins. Use the action buttons to view details, block, unblock, or delete.
+            Manage all Admins. Use the action buttons to manage them.
           </CardDescription>
-          <div className='mt-4 flex gap-2'>
-            <Button
-            variant={activeTab === 'APPROVED' ? 'default' : 'outline'}
-            onClick={() => {
-              setActiveTab('APPROVED')
-              setPage(1)
-            }}
-            >
-              Approved Admins
-            </Button>
-            <Button
-            variant={activeTab === 'BLOCKED' ? 'default' : 'outline'}
-            onClick={() => {
-              setActiveTab('BLOCKED')
-              setPage(1)
-            }}
-            >
-              Blocked Admins
-            </Button>
-          </div>
 
-          <div className="mt-4 flex justify-end">
-            <Button variant='default' onClick={() => setIsInviteModalOpen(true)}>
+          <Button
+              className='ml-auto justify-end'
+              variant="success"
+              onClick={() => setIsInviteModalOpen(true)}>
               Invite Admin
             </Button>
-          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="h-20 animate-pulse rounded-lg border bg-muted/40" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {formatError(error)}
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">{activeTab} Admins</h2>
-                    <p className="text-sm text-muted-foreground">Admins with active access to the system.</p>
-                  </div>
-                  <Badge variant="success">{pagination?.totalAdmins ?? admins.length}</Badge>
-                </div>
+      </Card>  
 
-                {admins.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                    No {activeTab.toLowerCase()} admins found.
-                  </div>
-                ) : (
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search by name"
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              </Button>
+            </div>
+
+            {/* Expandable Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+                
+               
+              <SearchDropdown
+                value={filters.tenantId}
+                options={tenantOptions}
+                onChange={(value) => handleFilterChange("tenantId", value)}
+                placeholder="All Tenants"
+                searchPlaceholder="Search tenants..."
+                emptyMessage="No tenant found."
+              />
+
+                <div>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    className="w-full px-3 py-2 h-10 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="APPROVED">Active</option>
+                    <option value="BLOCKED">Blocked</option>
+                  </select>
+                </div>
+                
+
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setFilters({
+                      page: 1,
+                      search: '',
+                      status: '',
+                      tenantId: ''
+                    })}
+                    className="w-full h-10 px-3"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">All Admins</h3>
+
+            
+
+            <Badge variant="success">Total Admins: {totalAdmins}</Badge>
+            
+          </div>
+          
+          {isLoading ? (
+            <Loader 
+              text='Loading Admins'
+              fullScreen
+            />
+          ) : error ? (
+            <ErrorState 
+              title='Error Loading Admins'
+            />
+          ) : admins.length === 0 ? (
+            <NoData 
+              title='No Admin found'
+            />      
+          ) : (
                   <div className="space-y-3">
                     {admins.map((admin) => (
                       <div key={admin._id} className="rounded-lg border bg-card p-4 sm:flex sm:items-center sm:justify-between">
@@ -172,7 +276,7 @@ const AdminsPage = () => {
                           <div className="flex flex-wrap gap-2">
                             <p className="font-semibold text-lg">{admin.fullName}</p>
                             <Badge variant={admin.status === 'APPROVED' ? 'success' : 'destructive'}>
-                              {admin.status}
+                              {admin.status }
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -186,10 +290,12 @@ const AdminsPage = () => {
                             onClick={() => handleOpenTenantModal(admin)}>
                             {admin.tenantId ? 'Transfer Tenant' : 'Assign Tenant'}
                           </Button>
+                          
                           <Button variant='outline' 
                           size="sm" onClick={() => setSelectedAdminId(admin._id)}>
                             View Details
                           </Button>
+                          
                           <Button
                             size="sm"
                             variant="default"
@@ -214,105 +320,38 @@ const AdminsPage = () => {
                     ))}
                   </div>
                 )}
-              </section>
+              
               {pagination && (
-                <div className="mt-6 flex items-center justify-end gap-2">
-                  <div className="text-sm text-muted-foreground mr-4">
-                    Page {pagination.currentPage} of {pagination.totalPages}
-                  </div>
-                  <Button
-                    variant="outline"
-                    disabled={!pagination?.hasPrevPage}
-                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                  >
-                    Previous
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    disabled={!pagination?.hasNextPage}
-                    onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {selectedAdminId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-2xl rounded-lg border bg-white bg-card p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Admin Details</h3>
-                    <p className="text-sm text-muted-foreground">Detailed admin information.</p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedAdminId(null)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {isDetailsLoading ? (
-                  <div className="mt-5 space-y-3">
-                    {[1, 2, 3].map((item) => (
-                      <div key={item} className="h-4 animate-pulse rounded bg-muted" />
-                    ))}
-                  </div>
-                ) : adminDetails ? (
-                  <div className="mt-5 space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Name</p>
-                      <p className="text-sm font-medium">{adminDetails.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Email</p>
-                      <p className="text-sm font-medium">{adminDetails.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Status</p>
-                      <Badge variant={adminDetails.status === 'APPROVED' ? 'success' : 'destructive'}>
-                        {adminDetails.status}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Tenant</p>
-                      <p className="text-sm font-medium">
-                        {adminDetails.tenantId?.name ?? 'Unassigned'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground">Contact Number</p>
-                      <p className="text-sm font-medium">
-                        {adminDetails.phone ?? 'Unassigned'}
-                      </p>
-                    </div>
-                    {adminDetails.createdAt && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">Created</p>
-                        <p className="text-sm font-medium">
-                          {new Date(adminDetails.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mt-5 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    Unable to load admin details.
-                  </div>
-                )}
-
-                <div className="mt-6 flex justify-end">
-                  <Button variant="outline" onClick={() => setSelectedAdminId(null)}>
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+                          <div className="mt-6 flex items-center justify-end gap-2">            
+                            <Button
+                              variant="outline"
+                              disabled={!pagination?.hasPrevPage}
+                              onClick={() => setFilters(prev => 
+                                ({
+                                  ...prev,
+                                  page: Math.max(1, prev.page - 1)
+                                })
+                              )}
+                            >
+                              Previous
+                            </Button>
+                            <div className="text-sm text-muted-foreground mr-4">
+                              Page {pagination.currentPage} of {pagination.totalPages}
+                            </div>
+                            <Button
+                              variant="outline"
+                              disabled={!pagination?.hasNextPage}
+                              onClick={() => setFilters(prev => 
+                                ({
+                                  ...prev,
+                                  page: Math.min(pagination.totalPages, prev.page + 1)
+                                })
+                              )}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        )}
         </CardContent>
 
         {isInviteModalOpen && (
@@ -335,6 +374,13 @@ const AdminsPage = () => {
             isSubmitting={assignMutation.isPending || transferMutation.isPending}
           />
         )}
+
+        <AdminDetailsModal
+          adminId={selectedAdminId}
+          open={!!selectedAdminId}
+          onClose={() => setSelectedAdminId(null)}
+        />
+
       </Card>
     </div>
   )

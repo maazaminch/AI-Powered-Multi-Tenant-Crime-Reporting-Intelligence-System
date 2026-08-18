@@ -4,12 +4,12 @@ import { superAdminService } from '../../services/superAdminService'
 import { usersService } from '../../services/usersService'
 import { formatError } from '../../lib/utils'
 
-export const usePendingAdminRequests = () => {
+export const usePendingAdminRequests = (filters = {}) => {
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['pending-admins'],
-    queryFn: () => superAdminService.getPendingAdmins(),
+    queryKey: ['pending-admins', filters],
+    queryFn: () => superAdminService.pendingAdmins(filters),
   })
 
   const approveMutation = useMutation({
@@ -35,11 +35,13 @@ export const usePendingAdminRequests = () => {
   })
 
   return {
-    pendingAdmins: data ?? [],
+    pendingAdmins: data?.pendingAdmins ?? [],
+    totalPendingAdmins: data?.totalPendingAdmins ?? 0,
+    pagination: data?.pagination,
     isLoading,
     error,
-    approveMutation,
-    rejectMutation,
+    approveUser: approveMutation,
+    rejectUser: rejectMutation,
   }
 }
 

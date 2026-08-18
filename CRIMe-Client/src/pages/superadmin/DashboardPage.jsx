@@ -3,33 +3,33 @@ import { useNavigate } from "react-router-dom"
 import { useDashboardStats } from '../../hooks/superadmin/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
+import StatCard from '../../components/common/StatCard'
 
+// function StatCard({
+//   title,
+//   value,
+//   color,
+//   bg,
+//   path,
+// }) {
+//     const navigate = useNavigate()
+//   return (
+//     <Card
+//       onClick={() => navigate(path)}
+//       className={`cursor-pointer transition hover:shadow-lg ${bg}`}
+//     >
+//       <CardContent className="flex flex-col items-center justify-center p-6">
+//         <h2 className={`text-3xl font-bold ${color}`}>
+//           {value}
+//         </h2>
 
-function StatCard({
-  title,
-  value,
-  color,
-  bg,
-  path,
-}) {
-    const navigate = useNavigate()
-  return (
-    <Card
-      onClick={() => navigate(path)}
-      className={`cursor-pointer transition hover:shadow-lg ${bg}`}
-    >
-      <CardContent className="flex flex-col items-center justify-center p-6">
-        <h2 className={`text-3xl font-bold ${color}`}>
-          {value}
-        </h2>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          {title}
-        </p>
-      </CardContent>
-    </Card>
-  )
-}
+//         <p className="mt-2 text-sm text-muted-foreground">
+//           {title}
+//         </p>
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
 const SuperAdminDashboard = () => {
 
@@ -54,32 +54,32 @@ const SuperAdminDashboard = () => {
           <StatCard
             title="Total Tenants"
             value={stats?.totalTenants ?? '...'}
-            color="text-blue-600"
-            bg="bg-blue-50"
+            color="text-white"
+            bg="bg-indigo-900"
             path="/superadmin/tenants"
           />
 
           <StatCard
-            title="Active Admins"
+            title="Total Admins"
             value={stats?.approvedAdmins ?? '...'}
-            color="text-green-600"
-            bg="bg-green-50"
+            color="text-white"
+            bg="bg-emerald-900"
             path="/superadmin/admins"
           />
 
           <StatCard
             title="Pending Requests"
             value={stats?.pendingAdmins ?? '...'}
-            color="text-yellow-600"
-            bg="bg-yellow-50"
+            color="text-white"
+            bg="bg-amber-900"
             path="/superadmin/pending-requests"
           />
 
           <StatCard
             title="Total Cases"
             value={stats?.totalCases ?? '...'}
-            color="text-purple-600"
-            bg="bg-purple-50"
+            color="text-white"
+            bg="bg-rose-900"
             path="/super-admin/cases"
           />
 

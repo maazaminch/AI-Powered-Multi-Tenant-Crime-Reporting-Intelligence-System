@@ -65,6 +65,16 @@ superAdminRouter.get(
 );
 
 superAdminRouter.get(
+    "/tenants-dropdown",
+    verifyJWT,
+    tenantGuard,
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    superAdminController.tenantsDropdownController
+);
+
+
+
+superAdminRouter.get(
     "/get-admin-details/:adminId",
     verifyJWT,
     tenantGuard,

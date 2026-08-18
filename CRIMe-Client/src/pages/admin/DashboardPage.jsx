@@ -3,33 +3,9 @@ import { useNavigate } from "react-router-dom"
 import { useDashboardStats } from '../../hooks/admin/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
+import StatCard from '../../components/common/StatCard'
 
 
-function StatCard({
-  title,
-  value,
-  color,
-  bg,
-  path,
-}) {
-    const navigate = useNavigate()
-  return (
-    <Card
-      onClick={() => navigate(path)}
-      className={`cursor-pointer transition hover:shadow-lg ${bg}`}
-    >
-      <CardContent className="flex flex-col items-center justify-center p-6">
-        <h2 className={`text-3xl font-bold ${color}`}>
-          {value}
-        </h2>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          {title}
-        </p>
-      </CardContent>
-    </Card>
-  )
-}
 
 const AdminDashboard = () => {
 
@@ -54,32 +30,32 @@ const AdminDashboard = () => {
           <StatCard
             title="Total Police Stations"
             value={dashboardStats?.totalPoliceStations ?? '...'}
-            color="text-blue-600"
-            bg="bg-blue-50"
+            color="text-white"
+            bg="bg-indigo-900"
             path="/admin/police-stations"
           />
 
           <StatCard
             title="Active Police"
             value={dashboardStats?.approvedPolice ?? '...'}
-            color="text-green-600"
-            bg="bg-green-50"
+            color="text-white"
+            bg="bg-emerald-900"
             path="/admin/police-management"
           />
 
           <StatCard
             title="Pending Requests"
             value={dashboardStats?.pendingPolice ?? '...'}
-            color="text-yellow-600"
-            bg="bg-yellow-50"
+            color="text-white"
+            bg="bg-amber-900"
             path="/admin/pending-police"
           />
 
           <StatCard
             title="Total Cases"
             value={dashboardStats?.totalCases ?? '...'}
-            color="text-purple-600"
-            bg="bg-purple-50"
+            color="text-white"
+            bg="bg-rose-900"
             path="/admin/cases"
           />
 

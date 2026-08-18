@@ -64,9 +64,11 @@ export const useCaseDetails = (caseId) => {
 
   return {
     caseDetails,
+    isLoading: detailsLoading,
+    error: detailsError,
     updates,
-    isLoading: detailsLoading || updatesLoading,
-    error: detailsError || updatesError,
+    updatesLoading,
+    updatesError,
     refetchDetails,
     refetchUpdates,
     closeCase: closeCaseMutation.mutateAsync,

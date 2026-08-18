@@ -56,6 +56,13 @@ const errorHandler = (err, req, res, next) => {
     else if (err.statusCode) {
         statusCode = err.statusCode;
         message = err.message;
+        
+        // Include data field if present (for validation errors)
+        if (err.data) {
+            return res
+                .status(statusCode)
+                .json(new apiResponse(statusCode, null, message, err.data));
+        }
     }
 
     return res

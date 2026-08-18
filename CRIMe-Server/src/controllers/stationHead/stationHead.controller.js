@@ -23,8 +23,7 @@ class StationHeadController {
             stationPolice,
             totalCases,
             pendingCases,
-            underInvestigationCases,
-            resolvedCases
+            underInvestigationCases
         ] = await Promise.all([
             User.countDocuments({
                 ...filter,
@@ -42,11 +41,8 @@ class StationHeadController {
             Case.countDocuments({
                 ...filter,
                 status: "UNDER_INVESTIGATION"
-            }),
-            Case.countDocuments({
-                ...filter,
-                status: "RESOLVED"
             })
+            
         ])
         
         res.status(200).json(
@@ -55,8 +51,7 @@ class StationHeadController {
                 stationPolice,
                 totalCases,
                 pendingCases,
-                underInvestigationCases,
-                resolvedCases
+                underInvestigationCases                
             }, 
             "Dashboard stats fetched successfully")
         );

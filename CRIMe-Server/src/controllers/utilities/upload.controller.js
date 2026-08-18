@@ -1,5 +1,5 @@
 import wrapAsync from "../../utils/wrapAsync.js";
-import generatePresignedUrl from "../../services/s3PreSignedUrl.service.js";
+import { generateUploadParams } from "../../services/storage/storage.service.js";
 import apiError from "../../utils/apiError.js";
 import apiResponse from "../../utils/apiResponse.js";
 import CrimeReport from "../../models/case.model.js";
@@ -22,7 +22,7 @@ class UploadController {
     }
 
     // Use "temp" as referenceId for registration uploads
-    const result = await generatePresignedUrl(
+    const result = await generateUploadParams(
       filename,
       type,
       "profile",
@@ -32,7 +32,43 @@ class UploadController {
     return res
       .status(200)
       .json(new apiResponse(200, result
-        , "Upload URL, file url and storageKey generated for profilePic"));
+        , "Upload URL generated"));
+  });
+
+  // Public evidence upload for guests (no auth required)
+  static getPublicEvidenceUploadUrl = wrapAsync(async (req, res) => {
+
+    const { filename, type } = req.body;
+
+    if (!filename || !type) {
+      throw new apiError(400, "filename and type are required");
+    }
+
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "video/mp4",
+      "audio/mpeg",
+      "application/pdf",
+      "application/zip"
+    ];
+
+    if (!allowedTypes.includes(type)) {
+      throw new apiError(400, "Invalid file type for evidence");
+    }
+
+    // Use "temp" as referenceId for guest uploads
+    const result = await generateUploadParams(
+      filename,
+      type,
+      "evidence",
+      "temp"
+    );
+
+    return res
+      .status(200)
+      .json(new apiResponse(200, result
+        , "Upload URL generated"));
   });
 
   //that fields comes from frontend and is used to generate a presigned url
@@ -70,7 +106,7 @@ class UploadController {
         throw new apiError(401, "Authentication required");
       }
 
-      const result = await generatePresignedUrl(
+      const result = await generateUploadParams(
         filename,
         type,
         purpose,
@@ -138,7 +174,7 @@ class UploadController {
         throw new apiError(400, "Cannot upload evidence for a resolved or archived case");
       }
 
-      const result = await generatePresignedUrl(
+      const result = await generateUploadParams(
         filename,
         type,
         purpose,

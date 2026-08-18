@@ -5,15 +5,14 @@ import { formatError } from '../../lib/utils'
 
 
 export const usePoliceStationManagement = (
-  page,
-  selectedStationId) => {
+  filters) => {
   
   
   const queryClient = useQueryClient()
 
   const { data: stations, isLoading, error } = useQuery({
-    queryKey: ['Stations', page],
-    queryFn: () => adminService.getStations(page),
+    queryKey: ['Stations', filters],
+    queryFn: () => adminService.getStations(filters),
   })
 
   const createStationMutation = useMutation({
@@ -50,11 +49,6 @@ export const usePoliceStationManagement = (
     },
   })
 
-  const { data: stationDetails, isLoading: isStationDetailsLoading } = useQuery({
-    queryKey: ['stationDetails', selectedStationId],
-    queryFn: () => adminService.getStationDetails(selectedStationId),
-    enabled: !!selectedStationId,
-  })
 
   const assignOrChangeShoMutation = useMutation({
     mutationFn: ({ stationId, policeId }) => adminService.assignOrChangeSho({ stationId, policeId }),
@@ -82,14 +76,13 @@ export const usePoliceStationManagement = (
 
   return {
     stations: stations?.stations || [],
+    totalStations: stations?.totalStations || 0,
     pagination: stations?.pagination || {},
     isLoading,
     error,
     createStation: createStationMutation,
     deleteStation: deleteStationMutation,
     toggleStation: toggleStationMutation,
-    stationDetails,
-    isStationDetailsLoading,
     assignOrChangeSho: assignOrChangeShoMutation,
     removeSho: removeShoMutation,
   }
