@@ -106,7 +106,7 @@ const CaseDetailsPage = () => {
               <p className="text-muted-foreground mb-4">
                 {detailsError?.message || 'Case not found'}
               </p>
-              <Button onClick={() => navigate('/station-head/station-cases')}>
+              <Button onClick={() => navigate('/admin/tenant-cases')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Cases
               </Button>
@@ -122,7 +122,7 @@ const CaseDetailsPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col gap-10">
-          <Button variant="default" onClick={() => navigate('/station-head/station-cases')} className="w-fit">
+          <Button variant="default" onClick={() => navigate('/admin/tenant-cases')} className="w-fit">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
@@ -219,7 +219,7 @@ const CaseDetailsPage = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground font-medium">Name</p>
-                  <p className="font-medium text-base">{caseDetails.reporter?.name}</p>
+                  <p className="font-medium text-base">{caseDetails.reporter?.fullName}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground font-medium">Type</p>
