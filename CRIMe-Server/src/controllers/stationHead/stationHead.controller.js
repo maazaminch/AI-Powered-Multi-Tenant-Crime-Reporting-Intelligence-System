@@ -707,11 +707,9 @@ class StationHeadController {
             new apiResponse(200, updatedCase, "Case assigned to police successfully")
         );
 
-
+        const tasks = [];
 
         setImmediate( async () => {
-
-            const tasks = [];
             // Create case update
             tasks.push(CaseUpdate.create({
             tenantId: caseData.tenantId,
@@ -756,8 +754,8 @@ class StationHeadController {
                 tenantId: caseData.tenantId,
                 userId: null,
                 email: caseData.reporter.email,
-                type: "case_reassigned",
-                title: "Case Reassigned",
+                type: "case_assigned",
+                title: "Case Assigned",
                 message: `Your case ${updatedCase.caseId} has been assigned to ${police.fullName}`,
                 channels: ["email"]
             }));
@@ -775,16 +773,16 @@ class StationHeadController {
             tasks.push(NotificationService.send({
                 tenantId: caseData.tenantId,
                 userId: _id,
-                type: "case_reassigned",
-                title: "Case Reassigned",
+                type: "case_assigned",
+                title: "Case Assigned",
                 message: `Case ${updatedCase.caseId} has been assigned to ${police.fullName}`,
                 channels: ["inapp"]
             }));
         });
         });
 
-         const results = await Promise.allSettled(tasks);
-            results.forEach((r, i) => {
+        const results = await Promise.allSettled(tasks);
+        results.forEach((r, i) => {
             if (r.status === "rejected") {
                 console.error(`assignCaseToPolice background task ${i} failed:`, r.reason);
             }

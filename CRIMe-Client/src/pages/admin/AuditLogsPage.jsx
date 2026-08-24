@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useAuditLogs, useAuditStats } from '../../hooks/auditLog/useAuditLog'
+import { useUsers } from '../../hooks/user/useUsers'
 import AuditFilters from '../../components/features/auditLog/AuditFilters'
 import AuditTable from '../../components/features/auditLog/AuditTable'
 import AuditStats from '../../components/features/auditLog/AuditStats'
@@ -28,6 +29,7 @@ const AdminAuditLogsPage = () => {
 
   const { logs, pagination, isLoading, error, refetch } = useAuditLogs(filters)
   const { stats, isLoading: statsLoading } = useAuditStats()
+  const { users, isLoading: usersLoading } = useUsers()
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ 
@@ -82,6 +84,7 @@ const AdminAuditLogsPage = () => {
         filters={filters} 
         onFilterChange={handleFilterChange}
         onReset={handleResetFilters}
+        users={users}
       />
 
       {/* Audit Logs Table */}

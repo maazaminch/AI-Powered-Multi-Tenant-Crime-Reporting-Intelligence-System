@@ -70,6 +70,7 @@ const SearchDropdown = ({
                     onChange(option.value);
                     setOpen(false);
                   }}
+                  className="text-slate-900"
                 >
                   <Check
                     className={cn(

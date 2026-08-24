@@ -586,67 +586,6 @@ class authController {
     );
     });
 
-    static updateUserDetailsController = wrapAsync(async (req, res)=> {
-    
-    const targetUserId = req.user._id;
-    const requester = req.user;
-    const tenantId = req.user.tenantId;
-
-
-    const targetUser = await User.findOne({
-        _id: targetUserId,
-        tenantId,
-    });
-    if(!targetUser) throw new apiError(400, 'User not found');
-
-    const isSelf = targetUser._id.equals(requester._id);
-    if(!isSelf) throw new apiError(400, 'You are not authorized to update this user');
-
-    const allowedFields = ['fullName', 'email', 'password', 'profilePictureUrl',
-        'gender', 'dateOfBirth', 'address']
-    for(const field of allowedFields){
-        if(req.body[field] !==undefined) targetUser[field] = req.body[field] 
-    }  
-
-    if (req.body.password) {
-    if (req.body.password !== req.body.confirmPassword) {
-        throw new apiError(400, 'Password mismatch');
-    }
-
-    const hashPassword = await bcrypt.hash(req.body.password, 10);
-    targetUser.password = hashPassword;
-}
-    
-    const updatedUser = await targetUser.save();
-    if(!updatedUser) throw new apiError(400, 'User not updated')
-
-    //Notification Service 
-    const updatedUserSafe = await User.findById(updatedUser._id).select('-password -nationalIdHash');
-    if(!updatedUserSafe) throw new apiError(400, 'updatedUser not found')
-    await NotificationService.send({
-        tenantId,
-        userId: targetUser._id,
-        type: "PROFILE_UPDATED",
-        title: "Profile Updated",
-        message: "Your profile has been updated successfully",
-        channels: ["inapp"]
-    })
-    
-    const admins = await User.find({tenantId, role: 'ADMIN', status: 'APPROVED', isApproved: true})
-    if(!admins) throw new apiError(400, 'No admin found')
-    for(const admin of admins){
-        await NotificationService.send({
-        tenantId,
-        userId: targetUser._id,
-        type: "USER_PROFILE_UPDATED",
-        title: "User Profile Updated",
-        message: `${targetUser.fullName} has been updated successfully`,
-        channels: ["inapp"]
-    })
-    } 
-    return res.status(200).json(new apiResponse(200, updatedUserSafe, 'User updated successfully'))
-    })
-
 
 
     static loginController = wrapAsync(async(req, res) => {
@@ -694,6 +633,8 @@ class authController {
 
     const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
 
+    req.user = user;
+    
     return res.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
@@ -1055,9 +996,13 @@ class authController {
                 isStationHead: user.isStationHead || false,
                 isSuperAdmin: user.isSuperAdmin || false,
                 status: user.status,
-                isApproved: user.isApproved,
+                isApproved: user.status === "APPROVED",
                 phone: user.phone,
-                profilePictureUrl: user.profilePictureUrl
+                profilePictureUrl: user.profilePictureUrl,
+                gender: user.gender,
+                dateOfBirth: user.dateOfBirth,
+                address: user.address,
+                age: user.age
             }
         }, "Current user fetched successfully"))
 

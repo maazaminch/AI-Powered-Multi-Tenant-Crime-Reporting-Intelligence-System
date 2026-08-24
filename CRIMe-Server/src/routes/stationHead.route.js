@@ -2,6 +2,7 @@ import express from "express";
 import verifyJWT from "../middlewares/auth.middleware.js";
 import tenantGuard from "../middlewares/tenantGuard.middleware.js";
 import roleGuard from "../middlewares/roleGuard.middleware.js";
+import auditLog from "../middlewares/auditLog.middleware.js";
 import StationHeadController from "../controllers/stationHead/stationHead.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
 
@@ -57,6 +58,7 @@ stationHeadRouter.patch(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    auditLog('UPDATE', 'CASE'),
     StationHeadController.closeCaseStatus
 );
 
@@ -65,6 +67,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    auditLog('CREATE', 'CASE_UPDATE'),
     StationHeadController.addCaseUpdate
 );
 
@@ -81,6 +84,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    auditLog('UPDATE', 'CASE'),
     StationHeadController.assignCaseToPolice
 );
 
@@ -89,6 +93,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    auditLog('UPDATE', 'CASE'),
     StationHeadController.reassignCase
 );
 

@@ -2,13 +2,22 @@ import React, { useState } from 'react'
 import { Card, CardContent } from '../../ui/Card'
 import { Button } from '../../ui/Button'
 import { Search, Filter, X } from 'lucide-react'
+import SearchDropdown from '../../common/SearchDropdown'
 
-const AuditFilters = ({ filters, onFilterChange, onReset }) => {
+const AuditFilters = ({ filters, onFilterChange, onReset, users = [] }) => {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
-  const actions = ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'UPLOAD', 'DOWNLOAD', 'VIEW']
-  const targetTypes = ['CASE', 'CASE_UPDATE', 'EVIDENCE', 'USER', 'TENANT', 'POLICE_STATION', 'NOTIFICATION', 'ROLE_PERMISSION', 'AUTH', 'PROFILE', 'STATION_ASSIGNMENT']
+  const actions = ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'UPLOAD']
+  const targetTypes = ['CASE', 'CASE_UPDATE', 'EVIDENCE', 'USER', 'TENANT', 'POLICE_STATION', 'AUTH', 'PROFILE-UPDATE']
   const sensitivities = ['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']
+
+  // Convert users to dropdown options - only include users with fullName
+  const userOptions = users
+    .filter(user => user?.fullName)
+    .map(user => ({
+      value: user._id,
+      label: user.fullName
+    }))
 
   return (
     <Card className="border border-slate-200 bg-white shadow-sm">
@@ -20,7 +29,7 @@ const AuditFilters = ({ filters, onFilterChange, onReset }) => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by user, action, or target..."
+                placeholder="Search by user name, email, action, case ID, or target..."
                 value={filters.search}
                 onChange={(e) => onFilterChange('search', e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -39,6 +48,18 @@ const AuditFilters = ({ filters, onFilterChange, onReset }) => {
           {/* Advanced Filters */}
           {showAdvanced && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-200">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">User</label>
+                <SearchDropdown
+                  value={filters.userId}
+                  onChange={(value) => onFilterChange('userId', value)}
+                  options={userOptions}
+                  placeholder="All Users"
+                  searchPlaceholder="Search users..."
+                  emptyMessage="No users found"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Action</label>
                 <select

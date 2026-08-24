@@ -62,6 +62,10 @@ import CitizenCaseDetailsPage from '../pages/citizen/CaseDetailsPage'
 import CitizenNotificationsPage from '../pages/citizen/CitizenNotificationPage'
 import ReportCasePage from '../pages/citizen/ReportCasePage'
 
+// Importing User pages
+import ProfilePage from '../pages/user/ProfilePage'
+import ChangePasswordPage from '../pages/user/ChangePasswordPage'
+
 
 
 // // Importing Unauthorized page
@@ -163,6 +167,14 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <NotificationsPage />
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />
+      },
+      {
+        path: 'change-password',
+        element: <ChangePasswordPage />
       }
     ]
   },
@@ -209,6 +221,14 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <AdminNotificationsPage />
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />
+      },
+      {
+        path: 'change-password',
+        element: <ChangePasswordPage />
       }
     ]
   },
@@ -243,6 +263,14 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <StationHeadNotificationPage />
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />
+      },
+      {
+        path: 'change-password',
+        element: <ChangePasswordPage />
       }
     ]
   },
@@ -269,6 +297,14 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <PoliceNotificationPage />
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />
+      },
+      {
+        path: 'change-password',
+        element: <ChangePasswordPage />
       }
     ]
   },
@@ -299,6 +335,14 @@ export const router = createBrowserRouter([
       {
         path: 'notifications',
         element: <CitizenNotificationsPage />
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />
+      },
+      {
+        path: 'change-password',
+        element: <ChangePasswordPage />
       }
     ]
   },

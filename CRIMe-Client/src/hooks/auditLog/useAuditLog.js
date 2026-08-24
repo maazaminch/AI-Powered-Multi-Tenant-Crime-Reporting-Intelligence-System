@@ -27,23 +27,7 @@ export const useAuditStats = () => {
   })
 
   return {
-    stats: data?.data || {},
-    isLoading,
-    error
-  }
-}
-
-export const useUserActivity = (userId, filters) => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['user-activity', userId, filters],
-    queryFn: () => auditService.getUserActivity(userId, filters),
-    enabled: !!userId,
-    staleTime: 1000 * 60 * 2 // 2 minutes
-  })
-
-  return {
-    logs: data?.logs || [],
-    pagination: data?.pagination || {},
+    stats: data || {},
     isLoading,
     error
   }

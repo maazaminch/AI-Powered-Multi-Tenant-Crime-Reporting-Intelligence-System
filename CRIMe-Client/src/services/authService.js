@@ -49,12 +49,6 @@ export const authService = {
   logout: async () => {
     const response = await api.post('/api/auth/logout')
     return response
-  },
-
-  // Update user details
-  updateProfile: async (userData) => {
-    const response = await api.put('/api/auth/update-user-details', userData)
-    return response
   }
 }
 

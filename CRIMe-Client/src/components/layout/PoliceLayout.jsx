@@ -1,10 +1,7 @@
 import React, { useState } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Bell } from 'lucide-react'
 import { useNotifications } from '../../hooks/notifications/useNotifications'
-import { Bell } from 'lucide-react' 
-
-
 import useAuthStore from '../../store/authStore'
 
 import { Button } from "../ui/Button"
@@ -149,18 +146,12 @@ const PoliceLayout = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40 bg-white" align="start">
                   <DropdownMenuGroup>
-                    <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >
-                      Profile
-                      <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                    <DropdownMenuItem asChild className='cursor-pointer hover:bg-gray-500' >
+                      <Link to="/police/profile">Profile</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className='cursor-pointer hover:bg-gray-500'  >
-                      Settings
-                      <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+                    <DropdownMenuItem asChild className='cursor-pointer hover:bg-gray-500' >
+                      <Link to="/police/change-password">Change Password</Link>
                     </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem className='cursor-pointer hover:bg-gray-500' >Change Password</DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>

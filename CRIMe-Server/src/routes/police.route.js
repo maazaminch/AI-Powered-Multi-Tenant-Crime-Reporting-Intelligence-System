@@ -2,6 +2,7 @@ import express from "express";
 import tenantGuard from "../middlewares/tenantGuard.middleware.js";
 import verifyJWT from "../middlewares/auth.middleware.js";
 import roleGuard from "../middlewares/roleGuard.middleware.js";
+import auditLog from "../middlewares/auditLog.middleware.js";
 import PoliceController from "../controllers/police/police.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
 
@@ -31,6 +32,7 @@ policeRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
+    auditLog('CREATE', 'CASE_UPDATE'),
     PoliceController.addCaseUpdate
 )
 
@@ -40,6 +42,7 @@ policeRouter.patch(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
+    auditLog('UPDATE', 'CASE'),
     PoliceController.updateCaseStatus
 )
 

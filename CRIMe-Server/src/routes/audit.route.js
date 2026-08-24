@@ -23,40 +23,16 @@ auditRouter.get(
   AuditController.getAuditLogs
 );
 
-/**
- * Get audit log by ID with access control
- */
-auditRouter.get(
-  "/logs/:id",
-  verifyJWT,
-  tenantGuard,
-  roleGuard({ roles: [Roles.ADMIN] }),
-  // validate(getAuditLogByIdSchema, 'params'),
-  AuditController.getAuditLogById
-);
 
-/**
- * Get audit statistics
- */
+
+
+//  Get audit statistics
 auditRouter.get(
   "/stats",
   verifyJWT,
   tenantGuard,
   roleGuard({ roles: [Roles.ADMIN] }),
   AuditController.getAuditStats
-);
-
-/**
- * Get user activity logs
- */
-auditRouter.get(
-  "/user-activity/:userId",
-  verifyJWT,
-  tenantGuard,
-  roleGuard({ roles: [Roles.ADMIN] }),
-  // validate(getUserActivitySchema, 'params'),
-  // validate(getUserActivityQuerySchema, 'query'),
-  AuditController.getUserActivity
 );
 
 export default auditRouter;

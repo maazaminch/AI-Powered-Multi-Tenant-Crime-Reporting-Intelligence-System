@@ -88,9 +88,9 @@ const AuditTable = ({ logs, pagination, isLoading, error, onPageChange, onRefetc
             <thead>
               <tr className="border-b border-slate-200">
                 <th className="text-left p-3 text-sm font-semibold text-slate-700">Timestamp</th>
-                <th className="text-left p-3 text-sm font-semibold text-slate-700">Action</th>
-                <th className="text-left p-3 text-sm font-semibold text-slate-700">Target</th>
                 <th className="text-left p-3 text-sm font-semibold text-slate-700">User</th>
+                <th className="text-left p-3 text-sm font-semibold text-slate-700">Action</th>
+                <th className="text-left p-3 text-sm font-semibold text-slate-700">Target Type</th>
                 <th className="text-left p-3 text-sm font-semibold text-slate-700">Sensitivity</th>
                 <th className="text-left p-3 text-sm font-semibold text-slate-700">Status</th>
                 <th className="text-left p-3 text-sm font-semibold text-slate-700">IP Address</th>
@@ -103,6 +103,18 @@ const AuditTable = ({ logs, pagination, isLoading, error, onPageChange, onRefetc
                   <td className="p-3 text-sm text-slate-600 font-mono">
                     {formatDateTime(log.createdAt)}
                   </td>
+                  <td className="p-3 text-sm text-slate-700">
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {log.actor.userId?.fullName || 'Unknown'}
+                      </span>
+                      {log.actor.role && (
+                        <Badge variant="outline" className="text-xs mt-1 w-fit">
+                          {log.actor.role}
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-3">
                     <Badge className={`text-xs font-medium border ${getActionColor(log.action)}`}>
                       {log.action}
@@ -111,26 +123,9 @@ const AuditTable = ({ logs, pagination, isLoading, error, onPageChange, onRefetc
                   <td className="p-3 text-sm text-slate-700">
                     <div className="flex flex-col">
                       <span className="font-medium">{log.targetType}</span>
-                      {log.targetName && (
-                        <span className="text-xs text-slate-500">{log.targetName}</span>
-                      )}
                     </div>
                   </td>
-                  <td className="p-3 text-sm text-slate-700">
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {log.actor.userId?.name || 'Guest'}
-                      </span>
-                      {log.actor.userId?.email && (
-                        <span className="text-xs text-slate-500">{log.actor.userId.email}</span>
-                      )}
-                      {log.actor.role && (
-                        <Badge variant="outline" className="text-xs mt-1 w-fit">
-                          {log.actor.role}
-                        </Badge>
-                      )}
-                    </div>
-                  </td>
+                  
                   <td className="p-3">
                     <Badge className={`text-xs font-medium border ${getSensitivityColor(log.sensitivity)}`}>
                       {log.sensitivity}

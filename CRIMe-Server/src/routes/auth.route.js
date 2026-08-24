@@ -31,15 +31,7 @@ authRouter.post(
     authController.registerCitizenController
 );
 
-//tested
-authRouter.put(
-    '/update-user-details',
-    verifyJWT,
-    tenantGuard,
-    roleGuard({ roles: [Roles.CITIZEN, Roles.POLICE, Roles.ADMIN] }),
-    auditLog('UPDATE', 'USER'),
-    authController.updateUserDetailsController
-)
+
 
 
 
@@ -65,6 +57,7 @@ authRouter.post(
 //tested
 authRouter.post(
     "/logout",
+    verifyJWT,
     auditLog('LOGOUT', 'AUTH'),
     authController.logoutController
 );

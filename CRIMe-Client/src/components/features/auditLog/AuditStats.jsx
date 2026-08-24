@@ -21,8 +21,8 @@ const AuditStats = ({ stats, isLoading }) => {
     )
   }
 
-  const errorRate = stats.totalLogs > 0 
-    ? Math.round((stats.errorLogs / stats.totalLogs) * 100) 
+  const errorRate = stats.errorRate !== undefined 
+    ? Math.round(stats.errorRate) 
     : 0
 
   const statCards = [

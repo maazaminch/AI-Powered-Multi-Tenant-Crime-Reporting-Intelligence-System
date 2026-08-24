@@ -9,11 +9,32 @@ import Case from "../../models/case.model.js";
 import Invite from "../../models/invite.model.js";
 import mongoose from "mongoose";
 import escapeRegex from "../../utils/escapeRegex.js";
+import bcrypt from "bcrypt";
 
 
 
 class UserController {
     
+    // Get users for dropdown (tenant-specific for admin, all for superadmin)
+    static getUsers = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+        
+        let filter = { status: "APPROVED" };
+        
+        // Regular admin only sees users from their tenant
+        if (!currentUser.isSuperAdmin) {
+            filter.tenantId = currentUser.tenantId;
+        }
+        
+        const users = await User.find(filter)
+            .select('_id fullName email role')
+            .sort({ fullName: 1 });
+            
+        res.status(200).json(
+            new apiResponse(200, users, "Users fetched successfully")
+        );
+    });
+
     //approve ,reject and block 
     static updateUserStatus = wrapAsync(async (req, res) => {
     const { userId } = req.params;
@@ -293,10 +314,83 @@ class UserController {
             throw error;
         }
     });
-    
 
+    // Update user profile (name, profile pic, gender, date of birth, address)
+    // Only citizens can change email
+    static updateProfile = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+        const { fullName, email, profilePictureUrl, gender, dateOfBirth, address } = req.body;
+
+        const user = await User.findById(currentUser._id);
+        if (!user) throw new apiError(404, "User not found");
+
+        // Update allowed fields (handle empty strings as valid updates)
+        if (fullName !== undefined) user.fullName = fullName;
+        if (profilePictureUrl !== undefined) user.profilePictureUrl = profilePictureUrl;
+        if (gender !== undefined) user.gender = gender;
+        if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
+        if (address !== undefined) user.address = address;
+
+        // Only citizens can change email
+        if (email !== undefined && email !== '' && email !== user.email) {
+            if (user.role !== "CITIZEN") {
+                throw new apiError(403, "Only citizens can change their email");
+            }
+            // Check if email is already taken by another user
+            const existingUser = await User.findOne({ email, _id: { $ne: user._id } });
+            if (existingUser) {
+                throw new apiError(400, "Email already in use");
+            }
+            user.email = email;
+        }
+
+        await user.save();
+
+        const updatedUser = await User.findById(user._id).select('-password -nationalIdHash -refreshTokenHash');
+
+        res.status(200).json(
+            new apiResponse(200, updatedUser, "Profile updated successfully")
+        );
+    });
+
+    // Change password
+    static changePassword = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            throw new apiError(400, "Current password, new password, and confirm password are required");
+        }
+
+        const user = await User.findById(currentUser._id);
+        if (!user) throw new apiError(404, "User not found");
+
+        // Verify current password
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            throw new apiError(400, "Current password is incorrect");
+        }
+
+        if(newPassword === currentPassword) {
+            throw new apiError(400, "New password cannot be the same as current password");
+        }
+        if(newPassword !== confirmPassword) {
+            throw new apiError(400, "New password and confirm password do not match");
+        }
+
+        // Update password
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.lastPasswordChangedAt = new Date();
+        user.refreshTokenHash = null;
+        await user.save();
+
+        res.status(200).json(
+            new apiResponse(200, null, "Password changed successfully")
+        );
+    });
 
 
 }
 
 export default UserController;
+
