@@ -1,0 +1,378 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+const PDFDocument = require('pdfkit');
+
+// Create directories if they don't exist
+const outputDir = path.join(__dirname, '../sample-pdfs');
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+}
+
+// ============================================
+// PDF 1: ACKNOWLEDGMENT RECEIPT
+// ============================================
+function generateAcknowledgmentReceipt() {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const stream = fs.createWriteStream(path.join(outputDir, 'acknowledgment-receipt.pdf'));
+  doc.pipe(stream);
+
+  // Header
+  doc.fontSize(24).font('Helvetica-Bold').fillColor('#1e3a8a').text('CRIME REPORTING SYSTEM', { align: 'center' });
+  doc.moveDown(0.3);
+  doc.fontSize(12).font('Helvetica').fillColor('#64748b').text('Multi-Tenant Crime Management Platform', { align: 'center' });
+  doc.moveDown(1);
+
+  // Separator
+  doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e2e8f0').lineWidth(1).stroke();
+  doc.moveDown(1);
+
+  // Title
+  doc.fontSize(18).font('Helvetica-Bold').fillColor('#0f172a').text('CASE ACKNOWLEDGMENT RECEIPT', { align: 'center' });
+  doc.moveDown(0.5);
+  doc.fontSize(10).font('Helvetica-Oblique').fillColor('#dc2626').text('⚠ This is an acknowledgment of filing, not a legal certified copy.', { align: 'center' });
+  doc.moveDown(1.5);
+
+  // Case Details Box
+  doc.roundedRect(50, doc.y, 495, 140, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('CASE DETAILS', 65, doc.y + 15);
+  
+  const startY = doc.y + 35;
+  const leftCol = 65;
+  const rightCol = 300;
+  
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('Case Reference Number:', leftCol, startY);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('CR-8X7Y2Z3A', rightCol, startY);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Filing Date & Time:', leftCol, startY + 20);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('January 15, 2025 - 14:32:45', rightCol, startY + 20);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Station/Tenant:', leftCol, startY + 40);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('Central Police Station - Karachi', rightCol, startY + 40);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Case Type:', leftCol, startY + 60);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('THEFT', rightCol, startY + 60);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Severity:', leftCol, startY + 80);
+  doc.fillColor('#ef4444').font('Helvetica-Bold').text('HIGH', rightCol, startY + 80);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Current Status:', leftCol, startY + 100);
+  doc.fillColor('#f59e0b').font('Helvetica-Bold').text('PENDING REVIEW', rightCol, startY + 100);
+
+  doc.y = startY + 145;
+  doc.moveDown(1);
+
+  // Reporter Information Box
+  doc.roundedRect(50, doc.y, 495, 100, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('REPORTER INFORMATION', 65, doc.y + 15);
+  
+  const reporterStartY = doc.y + 35;
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('Reporter Type:', leftCol, reporterStartY);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('CITIZEN (Authenticated)', rightCol, reporterStartY);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Full Name:', leftCol, reporterStartY + 20);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('John Doe', rightCol, reporterStartY + 20);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Email:', leftCol, reporterStartY + 40);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('j***n@example.com', rightCol, reporterStartY + 40);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Phone:', leftCol, reporterStartY + 60);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('+92-***-***-4521', rightCol, reporterStartY + 60);
+
+  doc.y = reporterStartY + 105;
+  doc.moveDown(1.5);
+
+  // Tracking Information
+  doc.roundedRect(50, doc.y, 495, 60, 5).fillAndStroke('#eff6ff', '#3b82f6');
+  doc.fillColor('#1e40af').fontSize(11).font('Helvetica-Bold').text('TRACKING INFORMATION', 65, doc.y + 15);
+  doc.fontSize(10).font('Helvetica').fillColor('#1e3a8a');
+  doc.text('Use this tracking code to check your case status:', 65, doc.y + 35);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(14).text('TRACK-CODE-8X7Y2Z3A', 65, doc.y + 50);
+
+  doc.y += 75;
+  doc.moveDown(1);
+
+  // Footer
+  doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e2e8f0').lineWidth(1).stroke();
+  doc.moveDown(1);
+  
+  doc.fontSize(9).font('Helvetica').fillColor('#64748b');
+  doc.text('Generated by Crime Reporting System', { align: 'center' });
+  doc.text('Document ID: ACK-2025-8X7Y2Z3A-001', { align: 'center' });
+  doc.text('Content Hash: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6', { align: 'center' });
+  doc.moveDown(0.5);
+  doc.text('This document is auto-generated. For any queries, contact the police station.', { align: 'center' });
+
+  doc.end();
+  console.log('✅ Acknowledgment Receipt PDF generated');
+}
+
+// ============================================
+// PDF 2: FINAL REPORT (CLOSED CASE) - CITIZEN VERSION
+// ============================================
+function generateFinalReportCitizen() {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const stream = fs.createWriteStream(path.join(outputDir, 'final-report-citizen.pdf'));
+  doc.pipe(stream);
+
+  // Header
+  doc.fontSize(24).font('Helvetica-Bold').fillColor('#1e3a8a').text('CRIME REPORTING SYSTEM', { align: 'center' });
+  doc.moveDown(0.3);
+  doc.fontSize(12).font('Helvetica').fillColor('#64748b').text('Multi-Tenant Crime Management Platform', { align: 'center' });
+  doc.moveDown(1);
+
+  // Separator
+  doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e2e8f0').lineWidth(1).stroke();
+  doc.moveDown(1);
+
+  // Title
+  doc.fontSize(18).font('Helvetica-Bold').fillColor('#0f172a').text('CASE FINAL REPORT', { align: 'center' });
+  doc.fontSize(10).font('Helvetica').fillColor('#22c55e').text('✓ CASE CLOSED', { align: 'center' });
+  doc.moveDown(1.5);
+
+  // Case Details Box
+  doc.roundedRect(50, doc.y, 495, 160, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('CASE DETAILS', 65, doc.y + 15);
+  
+  const startY = doc.y + 35;
+  const leftCol = 65;
+  const rightCol = 300;
+  
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('Case Reference Number:', leftCol, startY);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('CR-8X7Y2Z3A', rightCol, startY);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Filing Date:', leftCol, startY + 20);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('January 15, 2025', rightCol, startY + 20);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Closure Date:', leftCol, startY + 40);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('February 20, 2025', rightCol, startY + 40);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Station/Tenant:', leftCol, startY + 60);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('Central Police Station - Karachi', rightCol, startY + 60);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Case Type:', leftCol, startY + 80);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('THEFT', rightCol, startY + 80);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Severity:', leftCol, startY + 100);
+  doc.fillColor('#ef4444').font('Helvetica-Bold').text('HIGH', rightCol, startY + 100);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Final Status:', leftCol, startY + 120);
+  doc.fillColor('#22c55e').font('Helvetica-Bold').text('CLOSED', rightCol, startY + 120);
+
+  doc.y = startY + 165;
+  doc.moveDown(1);
+
+  // Case Summary
+  doc.roundedRect(50, doc.y, 495, 80, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('CASE SUMMARY', 65, doc.y + 15);
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('A theft case was reported on January 15, 2025. The victim reported loss of personal belongings.', 65, doc.y + 35);
+  doc.text('After thorough investigation, the case has been resolved with appropriate actions taken.', 65, doc.y + 50);
+  doc.text('Resolution: Property recovered, suspect identified and processed according to law.', 65, doc.y + 65);
+
+  doc.y += 90;
+  doc.moveDown(1);
+
+  // Investigation Timeline
+  doc.roundedRect(50, doc.y, 495, 100, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('INVESTIGATION TIMELINE', 65, doc.y + 15);
+  
+  const timelineY = doc.y + 35;
+  doc.fontSize(9).font('Helvetica').fillColor('#475569');
+  doc.text('• Jan 15, 2025 - Case filed and assigned for investigation', 65, timelineY);
+  doc.text('• Jan 16, 2025 - Status changed to UNDER_INVESTIGATION', 65, timelineY + 15);
+  doc.text('• Jan 20, 2025 - Evidence collected and witnesses interviewed', 65, timelineY + 30);
+  doc.text('• Feb 10, 2025 - Suspect identified and apprehended', 65, timelineY + 45);
+  doc.text('• Feb 15, 2025 - Status changed to RESOLVED', 65, timelineY + 60);
+  doc.text('• Feb 20, 2025 - Case CLOSED by Station Head', 65, timelineY + 75);
+
+  doc.y = timelineY + 80;
+  doc.moveDown(1);
+
+  // Evidence Summary
+  doc.roundedRect(50, doc.y, 495, 50, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('EVIDENCE SUMMARY', 65, doc.y + 15);
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('Total Evidence Files: 5 (2 Images, 1 PDF, 2 Documents)', 65, doc.y + 35);
+
+  doc.y += 60;
+  doc.moveDown(1);
+
+  // Closure Information
+  doc.roundedRect(50, doc.y, 495, 70, 5).fillAndStroke('#f0fdf4', '#22c55e');
+  doc.fillColor('#166534').fontSize(12).font('Helvetica-Bold').text('CLOSURE INFORMATION', 65, doc.y + 15);
+  doc.fontSize(10).font('Helvetica').fillColor('#166534');
+  doc.text('Closed By: Station Head - Officer Ahmed Khan', 65, doc.y + 35);
+  doc.text('Closure Reason: Case resolved - property recovered', 65, doc.y + 50);
+
+  doc.y += 80;
+  doc.moveDown(1);
+
+  // Footer
+  doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e2e8f0').lineWidth(1).stroke();
+  doc.moveDown(1);
+  
+  doc.fontSize(9).font('Helvetica').fillColor('#64748b');
+  doc.text('Generated by Crime Reporting System', { align: 'center' });
+  doc.text('Document ID: FINAL-2025-8X7Y2Z3A-001', { align: 'center' });
+  doc.text('Content Hash: b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7', { align: 'center' });
+  doc.moveDown(0.5);
+  doc.text('This is a redacted version for the reporter. Full version available to authorized personnel.', { align: 'center' });
+
+  doc.end();
+  console.log('✅ Final Report (Citizen Version) PDF generated');
+}
+
+// ============================================
+// PDF 3: FINAL REPORT (CLOSED CASE) - FULL VERSION
+// ============================================
+function generateFinalReportFull() {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const stream = fs.createWriteStream(path.join(outputDir, 'final-report-full.pdf'));
+  doc.pipe(stream);
+
+  // Header
+  doc.fontSize(24).font('Helvetica-Bold').fillColor('#1e3a8a').text('CRIME REPORTING SYSTEM', { align: 'center' });
+  doc.moveDown(0.3);
+  doc.fontSize(12).font('Helvetica').fillColor('#64748b').text('Multi-Tenant Crime Management Platform', { align: 'center' });
+  doc.moveDown(1);
+
+  // Separator
+  doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e2e8f0').lineWidth(1).stroke();
+  doc.moveDown(1);
+
+  // Title
+  doc.fontSize(18).font('Helvetica-Bold').fillColor('#0f172a').text('CASE FINAL REPORT - FULL VERSION', { align: 'center' });
+  doc.fontSize(10).font('Helvetica').fillColor('#dc2626').text('⚠ AUTHORIZED PERSONNEL ONLY', { align: 'center' });
+  doc.fontSize(10).font('Helvetica').fillColor('#22c55e').text('✓ CASE CLOSED', { align: 'center' });
+  doc.moveDown(1.5);
+
+  // Case Details Box
+  doc.roundedRect(50, doc.y, 495, 180, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('CASE DETAILS', 65, doc.y + 15);
+  
+  const startY = doc.y + 35;
+  const leftCol = 65;
+  const rightCol = 300;
+  
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('Case Reference Number:', leftCol, startY);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('CR-8X7Y2Z3A', rightCol, startY);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Filing Date:', leftCol, startY + 20);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('January 15, 2025', rightCol, startY + 20);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Closure Date:', leftCol, startY + 40);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('February 20, 2025', rightCol, startY + 40);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Station/Tenant:', leftCol, startY + 60);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('Central Police Station - Karachi', rightCol, startY + 60);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Case Type:', leftCol, startY + 80);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('THEFT', rightCol, startY + 80);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Severity:', leftCol, startY + 100);
+  doc.fillColor('#ef4444').font('Helvetica-Bold').text('HIGH', rightCol, startY + 100);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Final Status:', leftCol, startY + 120);
+  doc.fillColor('#22c55e').font('Helvetica-Bold').text('CLOSED', rightCol, startY + 120);
+  
+  doc.fillColor('#475569').font('Helvetica').text('Assigned Officer:', leftCol, startY + 140);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text('Officer Ali Hassan (Badge: KP-1234)', rightCol, startY + 140);
+
+  doc.y = startY + 185;
+  doc.moveDown(1);
+
+  // Case Summary
+  doc.roundedRect(50, doc.y, 495, 80, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('CASE SUMMARY', 65, doc.y + 15);
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('A theft case was reported on January 15, 2025. The victim reported loss of personal belongings.', 65, doc.y + 35);
+  doc.text('After thorough investigation, the case has been resolved with appropriate actions taken.', 65, doc.y + 50);
+  doc.text('Resolution: Property recovered, suspect identified and processed according to law.', 65, doc.y + 65);
+
+  doc.y += 90;
+  doc.moveDown(1);
+
+  // Investigation Timeline
+  doc.roundedRect(50, doc.y, 495, 120, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('INVESTIGATION TIMELINE', 65, doc.y + 15);
+  
+  const timelineY = doc.y + 35;
+  doc.fontSize(9).font('Helvetica').fillColor('#475569');
+  doc.text('• Jan 15, 2025 14:32 - Case filed and assigned to Officer Ali Hassan', 65, timelineY);
+  doc.text('• Jan 16, 2025 09:15 - Status changed to UNDER_INVESTIGATION', 65, timelineY + 15);
+  doc.text('• Jan 18, 2025 16:45 - Evidence collected from crime scene (Photos, fingerprints)', 65, timelineY + 30);
+  doc.text('• Jan 20, 2025 11:30 - Witness interviewed: Muhammad Ali (Witness ID: W-001)', 65, timelineY + 45);
+  doc.text('• Jan 25, 2025 14:00 - CCTV footage analyzed, suspect identified', 65, timelineY + 60);
+  doc.text('• Feb 02, 2025 08:30 - Raid conducted, suspect apprehended', 65, timelineY + 75);
+  doc.text('• Feb 05, 2025 10:00 - Confession recorded, property recovered', 65, timelineY + 90);
+  doc.text('• Feb 10, 2025 15:45 - Status changed to RESOLVED', 65, timelineY + 105);
+  doc.text('• Feb 20, 2025 12:00 - Case CLOSED by Station Head Ahmed Khan', 65, timelineY + 120);
+
+  doc.y = timelineY + 125;
+  doc.moveDown(1);
+
+  // Evidence Summary
+  doc.roundedRect(50, doc.y, 495, 80, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+  doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('EVIDENCE SUMMARY', 65, doc.y + 15);
+  doc.fontSize(10).font('Helvetica').fillColor('#475569');
+  doc.text('Total Evidence Files: 7', 65, doc.y + 35);
+  doc.text('• Images: 3 (Crime scene photos, recovered property)', 65, doc.y + 50);
+  doc.text('• PDF: 1 (CCTV footage report)', 65, doc.y + 65);
+  doc.text('• Documents: 3 (Fingerprint report, Witness statements, Confession)', 65, doc.y + 80);
+
+  doc.y += 90;
+  doc.moveDown(1);
+
+  // Officer Notes (INTERNAL - Full Version Only)
+  doc.roundedRect(50, doc.y, 495, 70, 5).fillAndStroke('#fef2f2', '#dc2626');
+  doc.fillColor('#991b1b').fontSize(12).font('Helvetica-Bold').text('OFFICER NOTES (INTERNAL)', 65, doc.y + 15);
+  doc.fontSize(9).font('Helvetica').fillColor('#7f1d1d');
+  doc.text('Note 1: Suspect has prior criminal record (Case ref: CR-5A3B1C2D)', 65, doc.y + 35);
+  doc.text('Note 2: Cooperation with neighboring station required for full investigation', 65, doc.y + 50);
+
+  doc.y += 80;
+  doc.moveDown(1);
+
+  // Closure Information
+  doc.roundedRect(50, doc.y, 495, 70, 5).fillAndStroke('#f0fdf4', '#22c55e');
+  doc.fillColor('#166534').fontSize(12).font('Helvetica-Bold').text('CLOSURE INFORMATION', 65, doc.y + 15);
+  doc.fontSize(10).font('Helvetica').fillColor('#166534');
+  doc.text('Closed By: Station Head - Officer Ahmed Khan (Badge: KP-9999)', 65, doc.y + 35);
+  doc.text('Closure Reason: Case resolved - property recovered, suspect prosecuted', 65, doc.y + 50);
+
+  doc.y += 80;
+  doc.moveDown(1);
+
+  // Footer
+  doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e2e8f0').lineWidth(1).stroke();
+  doc.moveDown(1);
+  
+  doc.fontSize(9).font('Helvetica').fillColor('#64748b');
+  doc.text('Generated by Crime Reporting System', { align: 'center' });
+  doc.text('Document ID: FINAL-2025-8X7Y2Z3A-002', { align: 'center' });
+  doc.text('Content Hash: c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8', { align: 'center' });
+  doc.text('Classification: INTERNAL - AUTHORIZED PERSONNEL ONLY', { align: 'center' });
+  doc.moveDown(0.5);
+  doc.text('This document contains sensitive information. Handle with care.', { align: 'center' });
+
+  doc.end();
+  console.log('✅ Final Report (Full Version) PDF generated');
+}
+
+// Generate all PDFs
+console.log('📄 Generating sample PDFs...\n');
+generateAcknowledgmentReceipt();
+generateFinalReportCitizen();
+generateFinalReportFull();
+console.log('\n✅ All PDFs generated successfully!');
+console.log('📁 Location: /sample-pdfs/');
