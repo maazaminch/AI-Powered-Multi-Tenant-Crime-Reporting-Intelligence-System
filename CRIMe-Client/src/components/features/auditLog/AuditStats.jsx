@@ -2,24 +2,11 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/Card'
 import { Badge } from '../../ui/Badge'
 import { Activity, AlertTriangle, Clock, Users, Shield, Zap } from 'lucide-react'
+import Loader from '../../ui/feedback/Loader'
+import NoData from '../../ui/feedback/NoData'
+
 
 const AuditStats = ({ stats, isLoading }) => {
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="border border-slate-200 bg-white shadow-sm">
-            <CardContent className="p-6">
-              <div className="animate-pulse space-y-3">
-                <div className="h-8 bg-slate-200 rounded"></div>
-                <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
 
   const errorRate = stats.errorRate !== undefined 
     ? Math.round(stats.errorRate) 

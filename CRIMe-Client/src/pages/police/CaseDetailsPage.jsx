@@ -303,7 +303,7 @@ const CaseDetailsPage = () => {
                     <p className="font-medium text-base">{caseDetails.reporter?.email || 'Not provided'}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground font-medium">Phone</p>
+                    <p className="text-sm text-muted-foreground font-medium">Contact</p>
                     <p className="font-medium text-base">{caseDetails.reporter?.phone || 'Not provided'}</p>
                   </div>
                 </div>

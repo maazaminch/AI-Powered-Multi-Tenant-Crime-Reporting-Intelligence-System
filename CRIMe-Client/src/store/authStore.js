@@ -83,7 +83,13 @@ const useAuthStore = create(
       }
     }),
     {
-      name: 'auth-storage'
+      name: 'auth-storage',
+      // Don't persist error state across sessions
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        isLoading: state.isLoading
+      })
     }
   )
 )

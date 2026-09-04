@@ -18,7 +18,8 @@ class EvidenceController {
     }
 
     const caseDoc = await Case.findById(id)
-      .select("tenantId citizenId status");
+      .select("tenantId citizenId status assignedTo")
+      .lean();
 
     if (!caseDoc) {
       throw new apiError(404, "Case not found");

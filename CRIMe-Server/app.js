@@ -21,6 +21,7 @@ import locationRoutes from "./src/routes/location.route.js";
 import evidenceRoutes from "./src/routes/evidence.route.js";
 import healthRoutes from "./src/routes/health.route.js";
 import auditRoutes from "./src/routes/audit.route.js";
+import pdfRoutes from "./src/routes/pdf.route.js";
 
 
 
@@ -69,6 +70,7 @@ app.use("/api/v1/location", locationRoutes);
 app.use("/api/evidence", evidenceRoutes);
 app.use("/api/health", healthRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/pdf", pdfRoutes);
 
 //GLOBAL ERROR HANDLER (must be **after** all routes)
 app.use(errorHandler);

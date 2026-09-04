@@ -6,6 +6,8 @@ import PoliceStation from "../../models/policeStation.model.js";
 import Case from "../../models/case.model.js";
 import CaseUpdate from "../../models/caseUpdate.model.js";
 import NotificationService from "../../services/notification.service.js";
+import PDFService from "../../services/pdf.service.js";
+import Evidence from "../../models/evidence.model.js";
 
 class StationHeadController {
 
@@ -412,12 +414,46 @@ class StationHeadController {
 
         const updatedCase = await Case.findOneAndUpdate(
             { caseId: caseId, status: "RESOLVED" },
-            { status: newStatus },
+            {
+                status: newStatus,
+                closureReason: remarks || `Case closed by Station Head: ${currentUser.fullName}`,
+                closedBy: currentUser._id,
+                closedAt: new Date()
+            },
             { new: true }
         ).lean();
         if (!updatedCase) {
             throw new apiError(409, "Case was modified by another request. Please retry.");
         }
+
+        // Generate final report PDF (background task - doesn't block response)
+        const afterResponse = async () => {
+            try {
+                const station = await PoliceStation.findById(updatedCase.policeStationId);
+                const stationName = station ? station.name : "Police Station";
+                const tenantName = "Police Department";
+
+                // Get case updates for timeline
+                const updates = await CaseUpdate.find({ caseId: caseDoc._id })
+                    .sort({ createdAt: 1 })
+                    .lean();
+
+                // Get evidence count
+                const evidenceCount = await Evidence.countDocuments({ caseId: caseDoc._id });
+
+                // Generate full case report PDF
+                const fullPdfPath = await PDFService.generateFullCase(updatedCase, updates, evidenceCount, true);
+
+                // Save PDF path to case
+                await Case.findByIdAndUpdate(caseDoc._id, { fullPdf: fullPdfPath });
+            } catch (pdfError) {
+                console.error('Final report PDF generation failed:', pdfError);
+                // Case closure still succeeds even if PDF fails
+            }
+        };
+
+        // Start PDF generation in background
+        afterResponse().catch(err => console.error("Background PDF generation failed", err));
 
         // Create case update
         await CaseUpdate.create({

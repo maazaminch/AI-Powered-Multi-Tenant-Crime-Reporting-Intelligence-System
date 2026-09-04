@@ -133,7 +133,8 @@ class UploadController {
       }
 
       const crimeReport = await CrimeReport.findById(referenceId)
-        .select("citizenId tenantId status");
+        .select("citizenId tenantId status assignedTo")
+        .lean();
 
       if (!crimeReport) {
         throw new apiError(404, "Crime report not found");

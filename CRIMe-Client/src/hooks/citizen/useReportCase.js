@@ -6,10 +6,12 @@ export const useReportCase = () => {
   return useMutation({
     mutationFn: (caseData) => citizenService.reportCase(caseData),
     onSuccess: (data) => {
+      console.log('Report case success data:', data)
       toast.success('Case reported successfully')
       return data
     },
     onError: (error) => {
+      console.error('Report case error:', error)
       toast.error(error.response?.data?.message || 'Failed to report case')
       throw error
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/Card'
@@ -12,15 +12,20 @@ const LoginForm = () => {
     password: ''
   })
 
-  const { login, googleLogin, error, clearError } = useAuth()
+  const { login, googleLogin, clearError } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const navigate = useNavigate()
 
+  // Clear error on component mount
+  useEffect(() => {
+    clearError()
+    return () => clearError()
+  }, [clearError])
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    if (error) clearError()
   }
 
   const handleSubmit = async (e) => {
@@ -83,7 +88,7 @@ const LoginForm = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-        
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -100,7 +105,7 @@ const LoginForm = () => {
                 className="w-full"
               />
             </div>
-          
+
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -117,16 +122,10 @@ const LoginForm = () => {
               />
             </div>
 
-            {error && (
-              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md">
-                {error}
-              </div>
-            )}
-
-            <Button 
+            <Button
               variant="success"
-              type="submit" 
-              className="w-full py-2" 
+              type="submit"
+              className="w-full py-2"
               disabled={isLoading || isGoogleLoading}
             >
               {isLoading ? 'Logging in...' : 'Login'}

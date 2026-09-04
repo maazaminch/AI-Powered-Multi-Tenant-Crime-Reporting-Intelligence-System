@@ -133,10 +133,10 @@ class PoliceController {
         res.status(200).json(
             new apiResponse(200, {
                 cases,
+                totalCases,
                 pagination: {
                     page: parseInt(page),
                     limit: parseInt(limit),
-                    totalCases,
                     totalPages,
                     hasNextPage: page < totalPages,
                     hasPrevPage: page > 1

@@ -36,20 +36,3 @@ export default async function generatePresignedUrl(filename, type, purpose, refe
 
 }
 
-
-// POST /api/uploads/profile-url-public
-// {
-//   "filename": "me.png",
-//   "type": "image/png",
-//   "purpose": "profile"
-// }
-// Evidence:
-// json
-// Copy code
-// POST /api/uploads/evidence-url
-// {
-//   "filename": "knife.mp4",
-//   "type": "video/mp4",
-//   "purpose": "evidence",
-//   "referenceId": "caseId12345"
-// }

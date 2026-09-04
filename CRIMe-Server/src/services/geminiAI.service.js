@@ -14,7 +14,9 @@ class geminiAIService {
 
         const models = [
             process.env.GEMINI_MODEL || "gemini-flash-latest",
-            "gemini-flash-lite-latest"
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash",
+            "gemini-3.1-flash-lite"
         ];
 
         for (const model of models) {

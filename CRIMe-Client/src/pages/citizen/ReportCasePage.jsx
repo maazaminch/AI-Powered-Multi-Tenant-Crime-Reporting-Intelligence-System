@@ -7,13 +7,15 @@ import { Badge } from '../../components/ui/Badge'
 import Loader from '../../components/ui/feedback/Loader'
 import ErrorState from '../../components/ui/feedback/ErrorState'
 import { useReportCase, useSuggestNearestStations } from '../../hooks/citizen/useReportCase'
+import { usePDF } from '../../hooks/usePDF'
+import { CaseReportedSuccessModal } from '../../components/features/citizen/modals/CaseReportedSuccessModal'
 import LocationPicker from '../../components/map/LocationPicker'
 import { uploadService } from '../../services/uploadService'
-import { 
-  AlertTriangle, 
-  MapPin, 
-  FileText, 
-  Upload, 
+import {
+  AlertTriangle,
+  MapPin,
+  FileText,
+  Upload,
   CheckCircle,
   X,
   Building2,
@@ -25,6 +27,7 @@ const ReportCasePage = () => {
   const navigate = useNavigate()
   const reportCase = useReportCase()
   const suggestStations = useSuggestNearestStations()
+  const { downloadReceipt, isDownloadingReceipt } = usePDF()
 
   const [formData, setFormData] = useState({
     crimeType: '',
@@ -39,6 +42,8 @@ const ReportCasePage = () => {
   const [nearestStations, setNearestStations] = useState([])
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [isUploading, setIsUploading] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [submittedCaseId, setSubmittedCaseId] = useState(null)
 
   const crimeTypes = [
     'THEFT', 'ROBBERY', 'ASSAULT', 'MURDER', 'DOMESTIC_VIOLENCE',
@@ -159,12 +164,25 @@ const ReportCasePage = () => {
     }
 
     try {
-      await reportCase.mutateAsync(formData)
-      toast.success('Case reported successfully')
-      navigate('/citizen/cases')
+      const result = await reportCase.mutateAsync(formData)
+      console.log('Report case result:', result)
+      console.log('Case ID from result:', result.data?.caseId || result.caseId)
+      setSubmittedCaseId(result.data?.caseId || result.caseId)
+      setShowSuccessDialog(true)
     } catch (error) {
       // Error handled by mutation
     }
+  }
+
+  const handleDownloadReceipt = () => {
+    if (submittedCaseId) {
+      downloadReceipt(submittedCaseId)
+    }
+  }
+
+  const handleSuccessDialogClose = () => {
+    setShowSuccessDialog(false)
+    navigate('/citizen/cases')
   }
 
   const getSeverityColor = (type) => {
@@ -374,6 +392,15 @@ const ReportCasePage = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Success Dialog with Receipt Download */}
+      <CaseReportedSuccessModal
+        open={showSuccessDialog}
+        onClose={handleSuccessDialogClose}
+        onDownloadReceipt={handleDownloadReceipt}
+        caseId={submittedCaseId}
+        isDownloading={isDownloadingReceipt}
+      />
     </motion.div>
   )
 }

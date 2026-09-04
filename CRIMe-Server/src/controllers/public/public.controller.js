@@ -5,6 +5,7 @@ import Evidence from "../../models/evidence.model.js";
 import User from "../../models/user.model.js";
 import NotificationService from "../../services/notification.service.js";
 import geminiAIService from "../../services/geminiAI.service.js";
+import PDFService from "../../services/pdf.service.js";
 import { sendEmail } from "../../services/nodemailer.service.js";
 import {
   generateOTP,
@@ -195,15 +196,7 @@ class PublicController {
       isVerified: true
     };
 
-    // ───── 6. Validate evidence ownership ─────
-    let evidenceIds = [];
-    if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
-      const evidences = await Evidence.find({ _id: { $in: evidenceFileIds } });
-      if (evidences.length !== evidenceFileIds.length) {
-        throw new apiError(400, "One or more evidence files are invalid");
-      }
-      evidenceIds = evidences.map((e) => e._id);
-    }
+    // ───── 6. AI classification ─────
 
     // ───── 7. AI classification ─────
     let summary, severity;
@@ -236,17 +229,55 @@ class PublicController {
       locationLabel,
       address,
       reporter,
-      evidenceFiles: evidenceIds,
+      evidenceFiles: [], // Will be populated after evidence creation
       trackingToken,
       status: "PENDING"
     });
 
+    // ───── 9. Create Evidence documents from uploaded files ─────
+    let evidenceIds = [];
+    if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
+      for (const fileId of evidenceFileIds) {
+        // Create Evidence document for each uploaded file
+        const evidence = await Evidence.create({
+          tenantId: station.tenantId,
+          caseId: newCase._id, // Now we have the caseId
+          uploadedBy: null, // Guest user
+          provider: 's3',
+          storageKey: fileId,
+          fileUrl: fileId,
+          originalFileName: `guest_uploaded_file_${Date.now()}`,
+          mimeType: 'application/octet-stream',
+          fileType: 'DOCUMENT',
+          fileSize: 0,
+          uploadIp: req.ip
+        });
+        evidenceIds.push(evidence._id);
+      }
+
+      // Update case with evidence IDs
+      await Case.findByIdAndUpdate(newCase._id, { evidenceFiles: evidenceIds });
+    }
+
+    // ───── 10. Generate acknowledgment receipt PDF (background task) ─────
+    const afterResponse = async () => {
+      try {
+        const receiptPdfPath = await PDFService.generateReceipt(newCase, station.name, "Police Department");
+        await Case.findByIdAndUpdate(newCase._id, { receiptPdf: receiptPdfPath });
+      } catch (pdfError) {
+        console.error('PDF generation failed:', pdfError);
+        // Case creation still succeeds even if PDF fails
+      }
+    };
+
+    // Start PDF generation in background
+    afterResponse().catch(err => console.error("Background PDF generation failed", err));
 
     // OTP session has served its purpose.
     // Delete it so it cannot be reused.
     await invalidateOTP(sessionId);
 
-     // ───── 9. Respond immediately — don't make guest wait on notifications ─────
+     // ───── 11. Respond immediately — don't make guest wait on notifications ─────
     res.status(201).json(
       new apiResponse(201, {
         caseId: newCase.caseId,
@@ -254,7 +285,7 @@ class PublicController {
       }, "Crime reported successfully")
     );
 
-    // ───── 11. Fire-and-forget background tasks — runs AFTER response is sent ─────
+    // ───── 12. Fire-and-forget background tasks — runs AFTER response is sent ─────
     setImmediate(async () => {
       const tasks = [];
 

@@ -62,7 +62,25 @@ const CaseSchema = new mongoose.Schema({
     unique: true,
     sparse: true,
     index: true
-  },   
+  },
+
+  // To limit guest download (only immediate download allowed)
+  guestDownloadAllowed: {
+    type: Boolean,
+    default: true
+  },
+
+  // To track closure metadata for PDF
+  closedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
+  closedAt: {
+    type: Date
+  },
+  closureReason: {
+    type: String
+  },
 
   // ───── Crime Classification (CRITICAL) ─────
   crimeType: {

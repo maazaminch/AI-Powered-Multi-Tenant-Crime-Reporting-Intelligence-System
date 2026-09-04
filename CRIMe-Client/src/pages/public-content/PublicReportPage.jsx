@@ -6,15 +6,17 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import LocationPicker from '../../components/map/LocationPicker'
 import OTPVerification from '../../components/guest/OTPVerification'
+import { GuestCaseReportedSuccessModal } from '../../components/features/public/modals/GuestCaseReportedSuccessModal'
 import { useSendOTP, useVerifyOTP, useGuestReportCase, useGuestSuggestStations } from '../../hooks/public/useGuestReport'
+import { usePDF } from '../../hooks/usePDF'
 import { uploadService } from '../../services/uploadService'
-import { 
-  AlertTriangle, 
-  Mail, 
-  User, 
-  Phone, 
-  FileText, 
-  Upload, 
+import {
+  AlertTriangle,
+  Mail,
+  User,
+  Phone,
+  FileText,
+  Upload,
   CheckCircle,
   X,
   Building2,
@@ -29,20 +31,21 @@ const PublicReportPage = () => {
   const verifyOTP = useVerifyOTP()
   const reportCase = useGuestReportCase()
   const suggestStations = useGuestSuggestStations()
+  const { guestDownloadReceipt, isGuestDownloadingReceipt } = usePDF()
 
   const [step, setStep] = useState(1)
   const [sessionId, setSessionId] = useState('')
   const [otp, setOtp] = useState('')
-  
+
   // Step 1: Email
   const [email, setEmail] = useState('')
-  
+
   // Step 3: Guest Info + Case Details (merged)
   const [guestInfo, setGuestInfo] = useState({
     name: '',
     phone: ''
   })
-  
+
   const [caseData, setCaseData] = useState({
     crimeType: '',
     description: '',
@@ -52,10 +55,12 @@ const PublicReportPage = () => {
     policeStationId: '',
     evidenceFileIds: []
   })
-  
+
   const [nearestStations, setNearestStations] = useState([])
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [isUploading, setIsUploading] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [submittedCaseData, setSubmittedCaseData] = useState({ caseId: null, trackingToken: null })
 
   const crimeTypes = [
     'THEFT', 'ROBBERY', 'ASSAULT', 'MURDER', 'DOMESTIC_VIOLENCE',
@@ -203,17 +208,30 @@ const PublicReportPage = () => {
         email,
         ...caseData
       })
-      
-      // Navigate to success page with case data
-      navigate('/public/success', { 
-        state: { 
-          caseId: result.caseId,
-          trackingToken: result.trackingToken 
-        } 
+
+      setSubmittedCaseData({
+        caseId: result.caseId,
+        trackingToken: result.trackingToken
       })
+      setShowSuccessModal(true)
+      toast.success('Case reported successfully')
     } catch (error) {
       // Error handled by mutation
     }
+  }
+
+  const handleDownloadReceipt = () => {
+    if (submittedCaseData.caseId && submittedCaseData.trackingToken) {
+      guestDownloadReceipt({
+        caseId: submittedCaseData.caseId,
+        trackingToken: submittedCaseData.trackingToken
+      })
+    }
+  }
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false)
+    navigate('/public')
   }
 
   const steps = [
@@ -558,6 +576,16 @@ const PublicReportPage = () => {
             </AnimatePresence>
           </CardContent>
         </Card>
+
+        {/* Success Modal */}
+        <GuestCaseReportedSuccessModal
+          open={showSuccessModal}
+          onClose={handleSuccessModalClose}
+          onDownloadReceipt={handleDownloadReceipt}
+          caseId={submittedCaseData.caseId}
+          trackingToken={submittedCaseData.trackingToken}
+          isDownloading={isGuestDownloadingReceipt}
+        />
       </div>
     </motion.div>
   )

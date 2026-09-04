@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { authService }  from '../../services/authService'
 import useAuthStore from '../../store/authStore'
+import { toast } from 'sonner'
 
 export const useAuth = () => {
   const queryClient = useQueryClient()
@@ -40,10 +41,12 @@ const initializeAuth = async () => {
     onSuccess: (data) => {
       setUser(data?.data?.user)
       clearError()
-      
+      toast.success('Login successful')
     },
     onError: (error) => {
-      setError(error?.response?.data?.message || 'Login failed')
+      const errorMessage = error?.response?.data?.message || 'Login failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
     }
   })
 
@@ -53,9 +56,12 @@ const initializeAuth = async () => {
 
     onSuccess: () => {
       clearError()
+      toast.success('Registration successful')
     },
     onError: (error) => {
-      setError(error?.response?.data?.message || 'Registration failed')
+      const errorMessage = error?.response?.data?.message || 'Registration failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
     }
   })
 
@@ -66,9 +72,12 @@ const initializeAuth = async () => {
 
     onSuccess: () => {
       clearError()
+      toast.success('Registration successful')
     },
     onError: (error) => {
-      setError(error?.response?.data?.message || 'Registration failed')
+      const errorMessage = error?.response?.data?.message || 'Registration failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
     }
   })
 
@@ -79,9 +88,12 @@ const initializeAuth = async () => {
     onSuccess: (data) => {
       setUser(data?.data?.user)
       clearError()
+      toast.success('Google login successful')
     },
     onError: (error) => {
-      setError(error?.response?.data?.message || 'Google login failed')
+      const errorMessage = error?.response?.data?.message || 'Google login failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
     }
   })
 
@@ -92,9 +104,12 @@ const initializeAuth = async () => {
     onSuccess: (data) => {
       setUser(data?.data?.user)
       clearError()
+      toast.success('Google registration successful')
     },
     onError: (error) => {
-      setError(error?.response?.data?.message || 'Google registration failed')
+      const errorMessage = error?.response?.data?.message || 'Google registration failed'
+      setError(errorMessage)
+      toast.error(errorMessage)
     }
   })
 
@@ -105,11 +120,13 @@ const initializeAuth = async () => {
     onSuccess: () => {
       logoutStore()
       queryClient.clear()
+      toast.success('Logged out successfully')
     },
     onError: () => {
       // Force logout even if API call fails
       logoutStore()
       queryClient.clear()
+      toast.success('Logged out successfully')
     }
   })
 

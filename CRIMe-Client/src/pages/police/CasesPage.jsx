@@ -32,7 +32,7 @@ const CasesPage = () => {
   })
   const [showFilters, setShowFilters] = useState(false)
 
-  const { cases, pagination, isLoading, error, refetch } = usePoliceCases({
+  const { cases,totalCases, pagination, isLoading, error, refetch } = usePoliceCases({
     page,
     ...filters
   })

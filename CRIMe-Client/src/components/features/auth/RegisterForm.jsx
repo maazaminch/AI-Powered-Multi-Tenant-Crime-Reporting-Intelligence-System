@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { toast } from 'sonner'
 import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/Card'
@@ -32,19 +31,22 @@ const RegisterForm = () => {
   const [googleData, setGoogleData] = useState(null)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  const { register, registerWithInvite, googleRegister, error, clearError } = useAuth()
+  const { register, registerWithInvite, googleRegister, clearError } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [localError, setLocalError] = useState('')
 
   const [profilePic, setProfilePic] = useState(null)
   const [profilePicPreview, setProfilePicPreview] = useState('')
   const [isUploading, setIsUploading] = useState(false)
 
+  // Clear error on component mount
+  useEffect(() => {
+    clearError()
+    return () => clearError()
+  }, [clearError])
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    if (error) clearError()
-    if (localError) setLocalError('')
   }
 
   const handleProfilePicChange = async (e) => {
@@ -71,7 +73,7 @@ const RegisterForm = () => {
     setIsUploading(true)
     try {
       const uploadResponse = await uploadService.getPublicProfileUploadUrl(file.name, file.type)
-      
+
       if (!uploadResponse || !uploadResponse.data) {
         throw new Error('Invalid response from server')
       }
@@ -89,7 +91,6 @@ const RegisterForm = () => {
       }
 
       setFormData(prev => ({ ...prev, profilePictureStorageKey: finalStorageKey }))
-      toast.success('Profile picture uploaded successfully')
     } catch (error) {
       console.error('Profile picture upload failed:', error)
       toast.error(error.message || 'Failed to upload profile picture')
@@ -107,7 +108,6 @@ const RegisterForm = () => {
     if (googleData) {
       // Google registration - no password needed
       setIsLoading(true)
-      setLocalError('')
       try {
         const registrationData = {
           idToken: googleData.idToken,
@@ -121,7 +121,6 @@ const RegisterForm = () => {
         }
 
         const res = await googleRegister(registrationData)
-        toast.success(res?.message || 'Account created successfully via Google. Please sign in.')
         navigate('/login')
       } catch {
         // Error is handled in useAuth hook
@@ -131,19 +130,16 @@ const RegisterForm = () => {
     } else {
       // Regular registration
       if (formData.password !== formData.confirmPassword) {
-        setLocalError('Passwords do not match')
+        toast.error('Passwords do not match')
         return
       }
 
       setIsLoading(true)
-      setLocalError('')
       try {
         if (inviteToken) {
           const res = await registerWithInvite(inviteToken, formData)
-          toast.success(res?.message || 'Account created successfully. Please sign in.')
         } else {
           const res = await register(formData)
-          toast.success(res?.message || 'Account created successfully. Please sign in.')
         }
         navigate('/login')
       } catch {
@@ -167,8 +163,6 @@ const RegisterForm = () => {
     console.error('Google sign-in error:', errorMessage)
     toast.error('Google sign-in failed. Please try again.')
   }
-
-  const displayError = localError || error
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -445,12 +439,6 @@ const RegisterForm = () => {
               </div>
             )}
           </div>
-
-          {displayError && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-500">
-              {displayError}
-            </div>
-          )}
 
           <Button 
             variant="success"
