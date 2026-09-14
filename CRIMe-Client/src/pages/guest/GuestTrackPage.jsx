@@ -14,7 +14,7 @@ import {
   Shield,
   Clock
 } from 'lucide-react'
-import { useTrackCase } from '../../hooks/public/useGuestReport'
+import { useTrackCase } from '../../hooks/guest/useGuestReport'
 import { toast } from 'sonner'
 
 const PublicTrackPage = () => {

@@ -44,6 +44,14 @@ export const reportCaseSchema = {
             .messages({
                 'string.pattern.base': 'Invalid police station ID format'
             }),
+        evidenceFileIds: Joi.array()
+            .items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/))
+            .max(10)
+            .optional()
+            .messages({
+                'array.max': 'Maximum 10 evidence files allowed',
+                'string.pattern.base': 'Invalid evidence ID format'
+            }),
         allowCitizenUpdates: Joi.boolean()
             .default(true)
             .optional()

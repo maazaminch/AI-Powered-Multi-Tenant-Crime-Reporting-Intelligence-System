@@ -3,6 +3,7 @@ import Case from "../models/case.model.js";
 import CaseUpdate from "../models/caseUpdate.model.js";
 import Evidence from "../models/evidence.model.js";
 import PoliceStation from "../models/policeStation.model.js";
+import Tenant from "../models/tenant.model.js";
 import apiError from "../utils/apiError.js";
 import wrapAsync from "../utils/wrapAsync.js";
 import apiResponse from "../utils/apiResponse.js";
@@ -35,11 +36,11 @@ class PDFController {
 
         // If PDF doesn't exist yet (still generating in background), generate it on-demand
         if (!caseDoc.receiptPdf || !fs.existsSync(caseDoc.receiptPdf)) {
-            const station = await PoliceStation.findById(caseDoc.policeStationId);
-            const stationName = station ? station.name : "Police Station";
-            const tenantName = "Police Department";
+            const station = await PoliceStation.findById(caseDoc.policeStationId)
+            .populate('stationHead', 'fullName email phone badgeNumber');
+            const tenant = await Tenant.findById(caseDoc.tenantId);
 
-            const filePath = await PDFService.generateReceipt(caseDoc, stationName, tenantName);
+            const filePath = await PDFService.generateReceipt(caseDoc, station, tenant);
             await Case.findByIdAndUpdate(caseDoc._id, { receiptPdf: filePath });
 
             // Disable future downloads immediately
@@ -72,11 +73,11 @@ class PDFController {
 
         // If PDF doesn't exist yet (still generating in background), generate it on-demand
         if (!caseDoc.receiptPdf || !fs.existsSync(caseDoc.receiptPdf)) {
-            const station = await PoliceStation.findById(caseDoc.policeStationId);
-            const stationName = station ? station.name : "Police Station";
-            const tenantName = "Police Department";
+            const station = await PoliceStation.findById(caseDoc.policeStationId)
+            .populate('stationHead', 'fullName email phone badgeNumber');
+            const tenant = await Tenant.findById(caseDoc.tenantId);
 
-            const filePath = await PDFService.generateReceipt(caseDoc, stationName, tenantName);
+            const filePath = await PDFService.generateReceipt(caseDoc, station, tenant);
             await Case.findByIdAndUpdate(caseDoc._id, { receiptPdf: filePath });
             res.download(filePath, `receipt-${caseId}.pdf`);
         } else {

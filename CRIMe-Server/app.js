@@ -7,14 +7,13 @@ import errorHandler from "./src/middlewares/errorHandler.middleware.js";
 import cookieParser from 'cookie-parser'
 
 
-import publicRoutes from "./src/routes/public.route.js";
+import guestRoutes from "./src/routes/guest.route.js";
 import superAdminRoutes from "./src/routes/superAdmin.route.js";
 import authRoutes from "./src/routes/auth.route.js";
 import userRoutes from "./src/routes/user.route.js";
 import adminRoutes from "./src/routes/admin.route.js";
 import stationHeadRoutes from "./src/routes/stationHead.route.js";
 import policeRoutes from "./src/routes/police.route.js";  
-import uploadRoutes from "./src/routes/upload.route.js";
 import notificationRoutes from "./src/routes/notification.route.js";
 import citizenRoutes from "./src/routes/citizen.route.js";
 import locationRoutes from "./src/routes/location.route.js";
@@ -58,12 +57,11 @@ app.use(generalLimiter);
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/public", publicRoutes);
+app.use("/api/guest", guestRoutes);
 app.use("/api/superAdmin", superAdminRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/station-head", stationHeadRoutes);
 app.use("/api/police", policeRoutes);
-app.use("/api/uploads", uploadRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/citizen", citizenRoutes);
 app.use("/api/v1/location", locationRoutes);

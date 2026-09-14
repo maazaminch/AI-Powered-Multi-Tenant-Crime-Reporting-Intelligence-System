@@ -1,10 +1,18 @@
 import "./src/config/env.js";
 import "./src/config/redis.js";
 
+import cloudinary from './src/config/cloudinary.js';
+
 import app from "./app.js";
 import connectDB from "./src/config/db.js";
 import http from 'http';
 import { Server } from 'socket.io';
+
+// Validate Cloudinary configuration
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.error('Missing Cloudinary configuration. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET');
+  process.exit(1);
+}
 
 
 const server = http.createServer(app);

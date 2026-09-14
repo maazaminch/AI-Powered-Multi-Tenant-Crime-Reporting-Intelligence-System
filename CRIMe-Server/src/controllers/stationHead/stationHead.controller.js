@@ -362,7 +362,7 @@ class StationHeadController {
             .populate('assignedTo', 'fullName badgeNumber email phone')
             .populate('reporter.citizenId', 'fullName email phone')
             .populate('policeStationId', 'name address')
-            // .populate('evidenceFiles')
+            .populate('evidenceFiles')
             .lean();
 
         if (!caseDetails) {
@@ -572,7 +572,16 @@ class StationHeadController {
             updateData.statement = statement;
         } else if (updateType === "ARREST" && arrest) {
             updateData.arrest = arrest;
-        } else if (updateType === "EVIDENCE" && evidenceFiles) {
+        } else if (updateType === "EVIDENCE" && evidenceFiles?.length) {
+            const validEvidence = await Evidence.find({
+                _id: { $in: evidenceFiles },
+                uploadedBy: currentUser._id
+            });
+
+            if (validEvidence.length !== evidenceFiles.length) {
+                throw new apiError(400, "Invalid evidence files");
+            }
+
             updateData.evidenceFiles = evidenceFiles;
         }
 

@@ -65,7 +65,7 @@ const validateGuestCaseAccess = async (caseId, trackingToken) => {
     return caseDoc;
 };
 
-class PublicController {
+class GuestController {
 
   // ───── Step 1: Request OTP (sent to guest's email) ─────
   static sendOTP = wrapAsync(async (req, res) => {
@@ -140,6 +140,7 @@ class PublicController {
 
 
   // ───── Step 2: Verify OTP + Submit Case (guest, no login) ─────
+    // ───── Step 2: Verify OTP + Submit Case (guest, no login) ─────
   static reportCase = wrapAsync(async (req, res) => {
     const {
       sessionId,
@@ -152,10 +153,9 @@ class PublicController {
       locationLabel,
       address,
       policeStationId,
-      evidenceFileIds
+      evidenceFileIds,
+      guestSessionId
     } = req.body;
-
-    
 
     await validateVerifiedSession(sessionId, email);
 
@@ -167,6 +167,11 @@ class PublicController {
     // ───── 3. Case data validation (same as citizen flow) ─────
     if (!crimeType || !description || !policeStationId) {
       throw new apiError(400, "crimeType, description and policeStationId are required");
+    }
+
+    // Validate evidenceFileIds if provided
+    if (evidenceFileIds && (!Array.isArray(evidenceFileIds) || evidenceFileIds.length > 10)) {
+      throw new apiError(400, "evidenceFileIds must be an array with maximum 10 items");
     }
 
     if (
@@ -196,7 +201,25 @@ class PublicController {
       isVerified: true
     };
 
-    // ───── 6. AI classification ─────
+    // ───── 6. Validate evidence ownership (if attached before submit) ─────
+    let evidenceIds = [];
+    if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
+
+      if (!guestSessionId) {
+        throw new apiError(400, "guestSessionId is required when attaching evidence");
+      }
+
+      const evidences = await Evidence.find({
+        _id: { $in: evidenceFileIds },
+        guestSessionId
+      });
+
+      if (evidences.length !== evidenceFileIds.length) {
+        throw new apiError(400, "One or more evidence files are invalid");
+      }
+
+      evidenceIds = evidences.map((e) => e._id);
+    }
 
     // ───── 7. AI classification ─────
     let summary, severity;
@@ -217,7 +240,6 @@ class PublicController {
     // ───── 8. Create case ─────
     const trackingToken = nanoid(24);
 
-
     const newCase = await Case.create({
       tenantId: station.tenantId,
       policeStationId: station._id,
@@ -229,34 +251,17 @@ class PublicController {
       locationLabel,
       address,
       reporter,
-      evidenceFiles: [], // Will be populated after evidence creation
+      evidenceFiles: evidenceIds,
       trackingToken,
       status: "PENDING"
     });
 
-    // ───── 9. Create Evidence documents from uploaded files ─────
-    let evidenceIds = [];
-    if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
-      for (const fileId of evidenceFileIds) {
-        // Create Evidence document for each uploaded file
-        const evidence = await Evidence.create({
-          tenantId: station.tenantId,
-          caseId: newCase._id, // Now we have the caseId
-          uploadedBy: null, // Guest user
-          provider: 's3',
-          storageKey: fileId,
-          fileUrl: fileId,
-          originalFileName: `guest_uploaded_file_${Date.now()}`,
-          mimeType: 'application/octet-stream',
-          fileType: 'DOCUMENT',
-          fileSize: 0,
-          uploadIp: req.ip
-        });
-        evidenceIds.push(evidence._id);
-      }
-
-      // Update case with evidence IDs
-      await Case.findByIdAndUpdate(newCase._id, { evidenceFiles: evidenceIds });
+    // ───── 9. Link uploaded evidence to this case ─────
+    if (evidenceIds.length > 0) {
+      await Evidence.updateMany(
+        { _id: { $in: evidenceIds } },
+        { $set: { caseId: newCase._id, tenantId: newCase.tenantId } }
+      );
     }
 
     // ───── 10. Generate acknowledgment receipt PDF (background task) ─────
@@ -266,18 +271,15 @@ class PublicController {
         await Case.findByIdAndUpdate(newCase._id, { receiptPdf: receiptPdfPath });
       } catch (pdfError) {
         console.error('PDF generation failed:', pdfError);
-        // Case creation still succeeds even if PDF fails
       }
     };
 
-    // Start PDF generation in background
     afterResponse().catch(err => console.error("Background PDF generation failed", err));
 
     // OTP session has served its purpose.
-    // Delete it so it cannot be reused.
     await invalidateOTP(sessionId);
 
-     // ───── 11. Respond immediately — don't make guest wait on notifications ─────
+    // ───── 11. Respond immediately ─────
     res.status(201).json(
       new apiResponse(201, {
         caseId: newCase.caseId,
@@ -285,7 +287,7 @@ class PublicController {
       }, "Crime reported successfully")
     );
 
-    // ───── 12. Fire-and-forget background tasks — runs AFTER response is sent ─────
+    // ───── 12. Fire-and-forget background tasks ─────
     setImmediate(async () => {
       const tasks = [];
 
@@ -487,6 +489,15 @@ class PublicController {
       throw new apiError(403, "Investigating officer has disabled public updates for this case");
     }
 
+    const validEvidence = await Evidence.find({
+        _id: { $in: evidenceFiles },
+        trackingToken: trackingToken
+    });
+
+    if (validEvidence.length !== evidenceFiles.length) {
+        throw new apiError(400, "Invalid evidence files");
+    }
+
     const updateData = {
       tenantId: caseDoc.tenantId,
       caseId: caseDoc._id,
@@ -599,4 +610,4 @@ class PublicController {
   });
 }
 
-export default PublicController;
+export default GuestController;

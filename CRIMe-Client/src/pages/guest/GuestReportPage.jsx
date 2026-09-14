@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import LocationPicker from '../../components/map/LocationPicker'
-import OTPVerification from '../../components/guest/OTPVerification'
+import OTPVerification from '../../components/features/guest/OTPVerification'
 import { GuestCaseReportedSuccessModal } from '../../components/features/public/modals/GuestCaseReportedSuccessModal'
-import { useSendOTP, useVerifyOTP, useGuestReportCase, useGuestSuggestStations } from '../../hooks/public/useGuestReport'
-import { usePDF } from '../../hooks/usePDF'
-import { uploadService } from '../../services/uploadService'
+import { useSendOTP, useVerifyOTP, useGuestReportCase, useGuestSuggestStations } from '../../hooks/guest/useGuestReport'
+import { usePDF } from '../../hooks/pdf/usePDF'
+import { useEvidence } from '../../hooks/evidence/useEvidence'
 import {
   AlertTriangle,
   Mail,
@@ -25,13 +25,14 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-const PublicReportPage = () => {
+const GuestReportPage = () => {
   const navigate = useNavigate()
   const sendOTP = useSendOTP()
   const verifyOTP = useVerifyOTP()
   const reportCase = useGuestReportCase()
   const suggestStations = useGuestSuggestStations()
   const { guestDownloadReceipt, isGuestDownloadingReceipt } = usePDF()
+  const { uploadStandalone } = useEvidence(true) // true for guest
 
   const [step, setStep] = useState(1)
   const [sessionId, setSessionId] = useState('')
@@ -147,21 +148,27 @@ const PublicReportPage = () => {
 
     try {
       for (const file of files) {
-        const filename = `evidence/${Date.now()}-${file.name}`
-        const { data: uploadData } = await uploadService.getPublicProfileUploadUrl(filename, file.type)
-        await uploadService.uploadFileToS3(uploadData.uploadUrl, file)
-        fileIds.push(filename)
-        setUploadedFiles(prev => [...prev, { name: file.name, id: filename }])
+        const formData = new FormData()
+        formData.append('files', file)
+        formData.append('guestSessionId', sessionId)
+
+        const response = await uploadStandalone.mutateAsync(formData)
+        
+        if (response && response.data && response.data.evidenceIds) {
+          const newEvidenceIds = response.data.evidenceIds
+          fileIds.push(...newEvidenceIds)
+          
+          newEvidenceIds.forEach(id => {
+            setUploadedFiles(prev => [...prev, { name: file.name, id }])
+          })
+        }
       }
 
       setCaseData(prev => ({
         ...prev,
         evidenceFileIds: [...prev.evidenceFileIds, ...fileIds]
       }))
-
-      toast.success('Files uploaded successfully')
     } catch (error) {
-      toast.error('Failed to upload files')
       console.error('Upload error:', error)
     } finally {
       setIsUploading(false)
@@ -591,4 +598,4 @@ const PublicReportPage = () => {
   )
 }
 
-export default PublicReportPage
+export default GuestReportPage

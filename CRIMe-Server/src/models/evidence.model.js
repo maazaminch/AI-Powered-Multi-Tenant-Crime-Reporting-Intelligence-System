@@ -1,4 +1,4 @@
-// Multi-Storage Support (S3, Cloudinary, etc.)
+// Cloudinary Storage - Evidence Model
 import mongoose from "mongoose";
 
 const EvidenceSchema = new mongoose.Schema({
@@ -7,7 +7,7 @@ const EvidenceSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Tenant",
-    required: true,
+    default: null,
     index: true
   },
 
@@ -15,7 +15,7 @@ const EvidenceSchema = new mongoose.Schema({
   caseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Case",
-    required: true,
+    default: null,
     index: true
   },
 
@@ -25,52 +25,33 @@ const EvidenceSchema = new mongoose.Schema({
     ref: "User"
   },
 
-  // Storage provider (s3, cloudinary, etc.)
-  provider: {
-    type: String,
-    required: true,
-    enum: ['s3', 'cloudinary'],
-    default: 's3'
-  },
+  trackingToken: { type: String, index: true, sparse: true },
+  guestSessionId: { type: String, index: true, sparse: true },
 
-  // Storage key (S3 key or Cloudinary public ID)
-  storageKey: {
+  // Cloudinary public ID — used to delete/manage the asset later
+  publicId: {
     type: String,
     required: true,
     unique: true
   },
 
-  // Public or signed URL
+  // Cloudinary secure_url — what you actually render/download
   fileUrl: {
     type: String,
     required: true
   },
 
-  // S3 specific fields (optional, for backward compatibility)
-  bucketName: {
-    type: String
-  },
-
-  region: {
-    type: String
-  },
-
-  storageClass: {
-    type: String,
-    default: "STANDARD"
-  },
-
-  // Cloudinary specific fields (optional)
-  publicId: {
-    type: String
-  },
-
+  // Cloudinary folder path (e.g. crime_saas/evidence/<caseId>)
   folder: {
-    type: String
+    type: String,
+    required: true
   },
 
+  // image | video | raw (Cloudinary's own classification)
   resourceType: {
-    type: String
+    type: String,
+    enum: ["image", "video", "raw"],
+    required: true
   },
 
   // File details
@@ -84,6 +65,7 @@ const EvidenceSchema = new mongoose.Schema({
     required: true
   },
 
+  // Your app-level classification (separate from Cloudinary's resourceType)
   fileType: {
     type: String,
     enum: ["IMAGE", "VIDEO", "AUDIO", "PDF", "DOCUMENT"],
@@ -95,7 +77,7 @@ const EvidenceSchema = new mongoose.Schema({
     required: true
   },
 
-  // Optional integrity check
+  // Integrity check — recommended to verify server-side, see note below
   sha256Hash: {
     type: String
   },
@@ -111,10 +93,8 @@ const EvidenceSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-
-// Indexes
-EvidenceSchema.index({ tenantId: 1 });
-EvidenceSchema.index({ caseId: 1 });
-EvidenceSchema.index({ provider: 1 });
+// // Indexes
+// EvidenceSchema.index({ tenantId: 1 });
+// EvidenceSchema.index({ caseId: 1 });
 
 export default mongoose.model("Evidence", EvidenceSchema);

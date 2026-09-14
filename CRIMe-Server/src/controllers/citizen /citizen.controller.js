@@ -83,6 +83,11 @@ class CitizenController {
         throw new apiError(400, "Valid coordinates [lng, lat] are required");
         }
 
+        // Validate evidenceFileIds if provided
+        if (evidenceFileIds && (!Array.isArray(evidenceFileIds) || evidenceFileIds.length > 10)) {
+        throw new apiError(400, "evidenceFileIds must be an array with maximum 10 items");
+        }
+
         // ───── 2. Resolve station → tenant (never trust client tenantId) ─────
         const station = await PoliceStation.findOne({
         _id: policeStationId,
@@ -106,7 +111,11 @@ class CitizenController {
         // ───── 4. Validate evidence ownership (if attached at submit time) ─────
         let evidenceIds = [];
         if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
-        const evidences = await Evidence.find({ _id: { $in: evidenceFileIds } });
+        const evidences = await Evidence.find(
+            { 
+                _id: { $in: evidenceFileIds }, 
+                uploadedBy: currentUser._id
+            });
 
         if (evidences.length !== evidenceFileIds.length) {
             throw new apiError(400, "One or more evidence files are invalid");
@@ -118,8 +127,21 @@ class CitizenController {
     // Gemini service ALWAYS returns something.
     // Case creation should NEVER fail because of AI.
 
-    const { summary, severity } = await geminiAIService.generateCrimeAnalysis(description, crimeType, address);
-
+    let summary, severity;
+        try {
+          const result = await geminiAIService.generateCrimeAnalysis(
+            description,
+            crimeType,
+            address
+          );
+          summary = result.summary;
+          severity = result.severity;
+        } catch (err) {
+          console.error("AI analysis failed:", err.message);
+          summary = description.substring(0, 200);
+          severity = "MEDIUM";
+        }
+    
 
         // ───── 6. Create case ─────
         const newCase = await Case.create({
@@ -140,7 +162,15 @@ class CitizenController {
         status: "PENDING"
         });
 
-        // ───── 7. Send notification to station head ─────
+        // ───── 7. Link uploaded evidence to this case ─────
+        if (evidenceIds.length > 0) {
+        await Evidence.updateMany(
+            { _id: { $in: evidenceIds } },
+            { $set: { caseId: newCase._id, tenantId: newCase.tenantId } }
+        );
+        }
+
+        // ───── 8. Send notification to station head ─────
         if (station.stationHead) {
             await NotificationService.send({
                 tenantId: station.tenantId,
@@ -152,7 +182,7 @@ class CitizenController {
             });
         }
 
-        // ───── 8. Respond ─────
+        // ───── 9. Respond ─────
         return res.status(201).json(
         new apiResponse(201, newCase, "Crime reported successfully")
         );
@@ -239,6 +269,7 @@ class CitizenController {
                 .populate('assignedTo', 'fullName badgeNumber')
                 .populate('assignedBy', 'fullName')
                 .populate('policeStationId', 'name address')
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean(),
@@ -469,6 +500,15 @@ class CitizenController {
         // Check if citizen updates are allowed
         if (!caseDoc.allowCitizenUpdates) {
             throw new apiError(403, "Investigating officer has disabled public updates for this case");
+        }
+
+        const validEvidence = await Evidence.find({
+            _id: { $in: evidenceFiles },
+            uploadedBy: currentUser._id
+        });
+
+        if (validEvidence.length !== evidenceFiles.length) {
+            throw new apiError(400, "Invalid evidence files");
         }
 
         const updateData = {

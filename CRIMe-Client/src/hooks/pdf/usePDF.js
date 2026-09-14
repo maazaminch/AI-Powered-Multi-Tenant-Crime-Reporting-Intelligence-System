@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { pdfService } from '../services/pdfService';
+import { pdfService } from '../../services/pdfService';
 
 export const usePDF = () => {
   const queryClient = useQueryClient();

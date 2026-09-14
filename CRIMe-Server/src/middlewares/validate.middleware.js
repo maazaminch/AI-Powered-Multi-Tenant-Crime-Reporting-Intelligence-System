@@ -7,23 +7,46 @@ const validate = (schema) => {
 
         try {
 
-            const validatedData = await schema.validateAsync(
-                {
-                    body: req.body,
-                    query: req.query,
-                    params: req.params
-                },
-                {
-                    abortEarly: false,
-                    stripUnknown: true
-                }
-            );
+            const validatedData = {};
 
+            // Validate body
+            if (schema.body) {
+                validatedData.body = await schema.body.validateAsync(
+                    req.body,
+                    {
+                        abortEarly: false,
+                        stripUnknown: true
+                    }
+                );
+            }
 
-            // overwrite request data with validated values
-            req.body = validatedData.body;
-            req.query = validatedData.query;
-            req.params = validatedData.params;
+            // Validate query
+            if (schema.query) {
+                validatedData.query = await schema.query.validateAsync(
+                    req.query,
+                    {
+                        abortEarly: false,
+                        stripUnknown: true
+                    }
+                );
+            }
+
+            // Validate params
+            if (schema.params) {
+                validatedData.params = await schema.params.validateAsync(
+                    req.params,
+                    {
+                        abortEarly: false,
+                        stripUnknown: true
+                    }
+                );
+            }
+
+            // Only overwrite body because Express manages
+            // req.query and req.params internally.
+            if (validatedData.body) {
+                req.body = validatedData.body;
+            }
 
             next();
 
@@ -32,9 +55,13 @@ const validate = (schema) => {
             if (error.details) {
 
                 const errors = error.details.reduce((acc, item) => {
+
                     const field = item.path.join('.');
+
                     acc[field] = item.message;
+
                     return acc;
+
                 }, {});
 
                 return next(
@@ -44,14 +71,10 @@ const validate = (schema) => {
                         { errors }
                     )
                 );
-
             }
 
-
             next(error);
-
         }
-
     };
 };
 

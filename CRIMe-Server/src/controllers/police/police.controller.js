@@ -4,6 +4,7 @@ import apiResponse from "../../utils/apiResponse.js";
 import User from "../../models/user.model.js";
 import Case from "../../models/case.model.js";
 import CaseUpdate from "../../models/caseUpdate.model.js";
+import Evidence from "../../models/evidence.model.js";
 import NotificationService from "../../services/notification.service.js";
 import PoliceStation from "../../models/policeStation.model.js";
 
@@ -199,7 +200,16 @@ class PoliceController {
             updateData.arrest = arrest;
         }
 
-        if (updateType === "EVIDENCE" && evidenceFiles) {
+        if (updateType === "EVIDENCE" && evidenceFiles?.length) {
+            const validEvidence = await Evidence.find({
+                _id: { $in: evidenceFiles },
+                uploadedBy: currentUser._id
+            });
+
+            if (validEvidence.length !== evidenceFiles.length) {
+                throw new apiError(400, "Invalid evidence files");
+            }
+
             updateData.evidenceFiles = evidenceFiles;
         }
 

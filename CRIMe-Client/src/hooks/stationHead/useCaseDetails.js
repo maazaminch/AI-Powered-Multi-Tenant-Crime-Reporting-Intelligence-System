@@ -5,7 +5,7 @@ export const useCaseDetails = (caseId) => {
   const queryClient = useQueryClient()
 
   // Get case details
-  const { data: caseDetails, isLoading: detailsLoading, error: detailsError, refetch: refetchDetails } = useQuery({
+  const { data: caseDetails, isLoading: detailsLoading, error: detailsError } = useQuery({
     queryKey: ['case-details', caseId],
     queryFn: () => stationHeadService.getCaseDetails(caseId),
     enabled: !!caseId,
@@ -13,7 +13,7 @@ export const useCaseDetails = (caseId) => {
   })
 
   // Get case updates
-  const { data: updates, isLoading: updatesLoading, error: updatesError, refetch: refetchUpdates } = useQuery({
+  const { data: updates, isLoading: updatesLoading, error: updatesError } = useQuery({
     queryKey: ['case-updates', caseId],
     queryFn: () => stationHeadService.getCaseUpdates(caseId),
     enabled: !!caseId,
@@ -69,8 +69,6 @@ export const useCaseDetails = (caseId) => {
     updates,
     updatesLoading,
     updatesError,
-    refetchDetails,
-    refetchUpdates,
     closeCase: closeCaseMutation.mutateAsync,
     isClosingCase: closeCaseMutation.isPending,
     addUpdate: addCaseUpdateMutation.mutateAsync,

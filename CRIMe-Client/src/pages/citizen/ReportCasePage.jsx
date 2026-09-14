@@ -7,10 +7,10 @@ import { Badge } from '../../components/ui/Badge'
 import Loader from '../../components/ui/feedback/Loader'
 import ErrorState from '../../components/ui/feedback/ErrorState'
 import { useReportCase, useSuggestNearestStations } from '../../hooks/citizen/useReportCase'
-import { usePDF } from '../../hooks/usePDF'
+import { useEvidence } from '../../hooks/evidence/useEvidence'
+import { usePDF } from '../../hooks/pdf/usePDF'
 import { CaseReportedSuccessModal } from '../../components/features/citizen/modals/CaseReportedSuccessModal'
 import LocationPicker from '../../components/map/LocationPicker'
-import { uploadService } from '../../services/uploadService'
 import {
   AlertTriangle,
   MapPin,
@@ -27,6 +27,7 @@ const ReportCasePage = () => {
   const navigate = useNavigate()
   const reportCase = useReportCase()
   const suggestStations = useSuggestNearestStations()
+  const { uploadStandalone } = useEvidence()
   const { downloadReceipt, isDownloadingReceipt } = usePDF()
 
   const [formData, setFormData] = useState({
@@ -101,37 +102,26 @@ const ReportCasePage = () => {
 
     try {
       for (const file of files) {
-        const filename = `evidence/${Date.now()}-${file.name}`
-        const uploadResponse = await uploadService.getPublicEvidenceUploadUrl(filename, file.type)
+        const formData = new FormData()
+        formData.append('files', file)
+
+        const response = await uploadStandalone.mutateAsync(formData)
         
-        if (!uploadResponse || !uploadResponse.data) {
-          throw new Error('Invalid response from server')
+        if (response && response.data && response.data.evidenceIds) {
+          const newEvidenceIds = response.data.evidenceIds
+          fileIds.push(...newEvidenceIds)
+          
+          newEvidenceIds.forEach(id => {
+            setUploadedFiles(prev => [...prev, { name: file.name, id }])
+          })
         }
-
-        const uploadParams = uploadResponse.data
-        const { key, storageKey, provider } = uploadParams
-
-        // Upload the file using the unified upload method
-        const uploadResult = await uploadService.uploadFile(uploadParams, file)
-
-        // Use the returned public_id for Cloudinary, otherwise use key/storageKey
-        let finalStorageKey = key || storageKey
-        if (provider === 'cloudinary' && uploadResult.public_id) {
-          finalStorageKey = uploadResult.public_id
-        }
-
-        fileIds.push(finalStorageKey)
-        setUploadedFiles(prev => [...prev, { name: file.name, id: finalStorageKey }])
       }
 
       setFormData(prev => ({
         ...prev,
         evidenceFileIds: [...prev.evidenceFileIds, ...fileIds]
       }))
-
-      toast.success('Files uploaded successfully')
     } catch (error) {
-      toast.error('Failed to upload files')
       console.error('Upload error:', error)
     } finally {
       setIsUploading(false)

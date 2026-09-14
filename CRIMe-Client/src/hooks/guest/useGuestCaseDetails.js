@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { publicService } from "../../services/publicService"
 import { toast } from "sonner"
 
-export const usePublicCaseDetails = (caseId, trackingToken) => {
+export const useGuestCaseDetails = (caseId, trackingToken) => {
   const queryClient = useQueryClient()
 
   // Get case details
