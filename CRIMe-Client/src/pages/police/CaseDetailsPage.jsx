@@ -13,7 +13,8 @@ import {
   Plus,
   MessageSquare,
   FileIcon,
-  Shield
+  Shield,
+  Upload
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card'
@@ -23,7 +24,11 @@ import { AddNoteModal } from '../../components/features/shared/modals/AddNoteMod
 import { AddStatementModal } from '../../components/features/shared/modals/AddStatementModal'
 import { AddArrestModal } from '../../components/features/shared/modals/AddArrestModal'
 import { UpdateStatusModal } from '../../components/features/police/modals/UpdateStatusModal'
+import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
 import LocationView from '../../components/map/LocationView'
+import { useEvidence } from '../../hooks/evidence/useEvidence'
+import { Download } from 'lucide-react'
+
 
 const CaseDetailsPage = () => {
   const { caseId } = useParams()
@@ -32,6 +37,8 @@ const CaseDetailsPage = () => {
   const [showAddStatement, setShowAddStatement] = useState(false)
   const [showAddArrest, setShowAddArrest] = useState(false)
   const [showStatusUpdate, setShowStatusUpdate] = useState(false)
+  const [showUploadEvidence, setShowUploadEvidence] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
   const { 
     caseDetails, 
@@ -46,6 +53,9 @@ const CaseDetailsPage = () => {
     updateStatusMutation
   } = useCaseDetails(caseId)
 
+    const { uploadToCase, getCaseEvidence } = useEvidence()
+    const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?._id)
+  
   const getStatusColor = (status) => {
     const colors = {
       'PENDING': 'bg-yellow-100 text-yellow-800',
@@ -101,6 +111,35 @@ const CaseDetailsPage = () => {
       groups[date].push(update)
       return groups
     }, {})
+  }
+
+
+    const handleEvidenceUpload = async (files) => {
+    setIsUploading(true)
+
+    try {
+      for (const file of files) {
+        const formData = new FormData()
+        formData.append('files', file)
+
+        await uploadToCase.mutateAsync({ caseId: caseDetails._id, formData })
+      }
+
+      // Refresh evidence data and case details
+      refetchEvidence()
+      refetchDetails()
+      setShowUploadEvidence(false)
+    } catch (error) {
+      console.error('Upload error:', error)
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDownloadEvidence = (evidence) => {
+    if (evidence.fileUrl) {
+      window.open(evidence.fileUrl, '_blank')
+    }
   }
 
   const handleAddNote = async (data) => {
@@ -245,6 +284,16 @@ const CaseDetailsPage = () => {
                   <p className="text-muted-foreground leading-relaxed">{caseDetails.description}</p>
                 </div>
 
+                {caseDetails.aiSummary && (
+                  <div className="bg-blue-50 border border-slate-200 rounded-lg p-5">
+                    <h3 className="font-semibold mb-3 text-slate-900 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      AI Summary
+                    </h3>
+                    <p className="text-sm text-slate-800 leading-relaxed">{caseDetails.aiSummary}</p>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
                   <MapPin className="w-5 h-5" />
                   <span className="font-medium">Location:</span>
@@ -350,32 +399,60 @@ const CaseDetailsPage = () => {
           )}
 
           {/* Evidence */}
-          {caseDetails.evidenceFiles && caseDetails.evidenceFiles.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-            >
-              <Card className="border border-slate-400">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <FileIcon className="w-5 h-5" />
-                    Evidence Files
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {caseDetails.evidenceFiles.map((file, index) => (
-                      <div key={index} className="flex items-center gap-2 p-2 border rounded-lg">
-                        <FileIcon className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm truncate">{file}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.3 }}
+                    >
+                      <Card className="border border-slate-400">
+                        <CardHeader className="pb-4">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2 text-xl">
+                              <FileIcon className="w-5 h-5" />
+                              Evidence Files
+                            </CardTitle>
+                            {caseDetails.status === 'UNDER_INVESTIGATION' && (
+                              <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
+                                <Upload className="w-4 h-4 mr-1" />
+                                Upload Evidence
+                              </Button>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                          {evidenceLoading ? (
+                            <div className="flex items-center justify-center py-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            </div>
+                          ) : evidenceData && evidenceData.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {evidenceData.map((evidence) => (
+                                <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <FileIcon className="w-4 h-4 text-muted-foreground" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
+                                      <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDownloadEvidence(evidence)}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No evidence files uploaded yet
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
         </div>
           
         {/* Sidebar - Timeline */}
@@ -494,17 +571,26 @@ const CaseDetailsPage = () => {
                               {update.statement && (
                                 <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
                                   <p className="font-medium text-purple-900">Statement:</p>
-                                  <p className="text-purple-800">{update.statement}</p>
-                                  {update.witnessName && (
-                                    <p className="text-xs text-purple-600 mt-1">Witness: {update.witnessName}</p>
+                                  <p className="text-purple-800">{update.statement.text}</p>
+                                  {update.statement.personName && (
+                                    <p className="text-xs text-purple-600 mt-1">Person: {update.statement.personName}</p>
                                   )}
                                 </div>
                               )}
                               {update.arrest && (
                                 <div className="mt-2 p-2 bg-red-50 rounded text-sm">
                                   <p className="font-medium text-red-900">Arrest:</p>
-                                  <p className="text-red-800">{update.arrest.name || update.arrest.arrestedPersonName}</p>
-                                  <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.charges || update.arrest.arrestReason}</p>
+                                  <p className="text-red-800">Name: {update.arrest.personName}</p>
+                                  {update.arrest.personContact && (
+                                    <p className="text-xs text-red-600 mt-1">Contact: {update.arrest.personContact}</p>
+                                  )}
+                                  <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.arrestReason}</p>
+                                  {update.arrest.arrestDate && (
+                                    <p className="text-xs text-red-600 mt-1">Date: {new Date(update.arrest.arrestDate).toLocaleDateString()}</p>
+                                  )}
+                                  {update.arrest.arrestLocation && (
+                                    <p className="text-xs text-red-600 mt-1">Location: {update.arrest.arrestLocation}</p>
+                                  )}
                                 </div>
                               )}
                               {update.previousStatus && update.newStatus && (
@@ -563,6 +649,13 @@ const CaseDetailsPage = () => {
         onUpdateStatus={handleStatusUpdate}
         isUpdating={updateStatusMutation.isPending}
         currentStatus={caseDetails?.status}
+      />
+
+      <UploadEvidenceModal
+        isOpen={showUploadEvidence}
+        onClose={() => setShowUploadEvidence(false)}
+        onUpload={handleEvidenceUpload}
+        isUploading={isUploading}
       />
     </motion.div>
   )

@@ -25,6 +25,7 @@ import { Badge } from '../../components/ui/Badge'
 import { useCaseDetails } from '../../hooks/citizen/useCaseDetails'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
 import { AddNoteModal } from '../../components/features/shared/modals/AddNoteModal'
+import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
 import LocationView from '../../components/map/LocationView'
 import Loader from '@/components/ui/feedback/Loader'
 import ErrorState from '@/components/ui/feedback/ErrorState'
@@ -35,7 +36,6 @@ const CaseDetailsPage = () => {
   const navigate = useNavigate()
   const [showAddNote, setShowAddNote] = useState(false)
   const [showUploadEvidence, setShowUploadEvidence] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState([])
   const [isUploading, setIsUploading] = useState(false)
 
   const { 
@@ -51,7 +51,7 @@ const CaseDetailsPage = () => {
   } = useCaseDetails(caseId)
 
   const { uploadToCase, getCaseEvidence } = useEvidence()
-  const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseId)
+  const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?._id)
 
   const getStatusColor = (status) => {
     const colors = {
@@ -115,35 +115,21 @@ const CaseDetailsPage = () => {
     setShowAddNote(false)
   }
 
-  const handleEvidenceUpload = async (e) => {
-    const files = Array.from(e.target.files)
-    if (files.length === 0) return
-
+  const handleEvidenceUpload = async (files) => {
     setIsUploading(true)
-    const fileIds = []
 
     try {
       for (const file of files) {
         const formData = new FormData()
         formData.append('files', file)
 
-        const response = await uploadToCase.mutateAsync({ caseId, formData })
-        
-        if (response && response.evidenceIds) {
-          const newEvidenceIds = response.evidenceIds
-          fileIds.push(...newEvidenceIds)
-          
-          newEvidenceIds.forEach(id => {
-            setUploadedFiles(prev => [...prev, { name: file.name, id }])
-          })
-        }
+        await uploadToCase.mutateAsync({ caseId: caseDetails._id, formData })
       }
 
       // Refresh evidence data and case details
       refetchEvidence()
       refetchDetails()
       setShowUploadEvidence(false)
-      setUploadedFiles([])
     } catch (error) {
       console.error('Upload error:', error)
     } finally {
@@ -395,7 +381,7 @@ const CaseDetailsPage = () => {
                     <FileIcon className="w-5 h-5" />
                     Evidence Files
                   </CardTitle>
-                  {caseDetails.status === 'UNDER_INVESTIGATION' && caseDetails.allowCitizenUpdates && (
+                  {caseDetails.status === 'UNDER_INVESTIGATION' && (
                     <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
                       <Upload className="w-4 h-4 mr-1" />
                       Upload Evidence
@@ -524,17 +510,26 @@ const CaseDetailsPage = () => {
                               {update.statement && (
                                 <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
                                   <p className="font-medium text-purple-900">Statement:</p>
-                                  <p className="text-purple-800">{update.statement}</p>
-                                  {update.witnessName && (
-                                    <p className="text-xs text-purple-600 mt-1">Witness: {update.witnessName}</p>
+                                  <p className="text-purple-800">{update.statement.text}</p>
+                                  {update.statement.personName && (
+                                    <p className="text-xs text-purple-600 mt-1">Person: {update.statement.personName}</p>
                                   )}
                                 </div>
                               )}
                               {update.arrest && (
                                 <div className="mt-2 p-2 bg-red-50 rounded text-sm">
                                   <p className="font-medium text-red-900">Arrest:</p>
-                                  <p className="text-red-800">{update.arrest.name || update.arrest.arrestedPersonName}</p>
-                                  <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.charges || update.arrest.arrestReason}</p>
+                                  <p className="text-red-800">Name: {update.arrest.personName}</p>
+                                  {update.arrest.personContact && (
+                                    <p className="text-xs text-red-600 mt-1">Contact: {update.arrest.personContact}</p>
+                                  )}
+                                  <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.arrestReason}</p>
+                                  {update.arrest.arrestDate && (
+                                    <p className="text-xs text-red-600 mt-1">Date: {new Date(update.arrest.arrestDate).toLocaleDateString()}</p>
+                                  )}
+                                  {update.arrest.arrestLocation && (
+                                    <p className="text-xs text-red-600 mt-1">Location: {update.arrest.arrestLocation}</p>
+                                  )}
                                 </div>
                               )}
                               {update.previousStatus && update.newStatus && (
@@ -573,53 +568,13 @@ const CaseDetailsPage = () => {
         isAdding={addNote.isPending}
       />
 
-      {/* Upload Evidence Modal */}
-      {showUploadEvidence && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Upload Evidence</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowUploadEvidence(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
-              <input
-                type="file"
-                multiple
-                onChange={handleEvidenceUpload}
-                accept="image/*,.pdf,.doc,.docx"
-                className="hidden"
-                id="evidence-upload-modal"
-                disabled={isUploading}
-              />
-              <label
-                htmlFor="evidence-upload-modal"
-                className="cursor-pointer flex flex-col items-center gap-2"
-              >
-                <Upload className="w-8 h-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  {isUploading ? 'Uploading...' : 'Click to upload evidence files'}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Images, PDF, DOC, DOCX (Max 25MB each, 5 files)
-                </span>
-              </label>
-            </div>
-            {uploadedFiles.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium">Uploaded Files:</p>
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                    <FileIcon className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm truncate">{file.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <UploadEvidenceModal
+        isOpen={showUploadEvidence}
+        onClose={() => setShowUploadEvidence(false)}
+        onUpload={handleEvidenceUpload}
+        isUploading={isUploading}
+      />
+
     </motion.div>
   )
 }

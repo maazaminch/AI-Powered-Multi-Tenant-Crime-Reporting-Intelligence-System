@@ -67,13 +67,15 @@ const CaseUpdateSchema = new mongoose.Schema({
 
   statement: {
     personName: String,
-    statementText: String
+    text: String
   },
 
   arrest: {
-    suspectName: String,
-    details: String,
-    arrestDate: Date
+    personName: String,
+    personContact: String,
+    arrestReason: String,
+    arrestDate: Date,
+    arrestLocation: String,
   },
 
   evidenceFiles: [{

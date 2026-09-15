@@ -7,29 +7,27 @@ import { Label } from '../../../ui/Label'
 import { Loader2 } from 'lucide-react'
 
 export const AddStatementModal = ({ open, onClose, onAddStatement, isAdding }) => {
-  const [statement, setStatement] = useState('')
-  const [witnessName, setWitnessName] = useState('')
-  const [witnessContact, setWitnessContact] = useState('')
+  const [text, setText] = useState('')
+  const [personName, setPersonName] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (statement.trim()) {
+    if (text.trim()) {
       onAddStatement({
         updateType: 'STATEMENT',
-        statement,
-        witnessName,
-        witnessContact
+        statement: {
+          text,
+          personName
+        }
       })
-      setStatement('')
-      setWitnessName('')
-      setWitnessContact('')
+      setText('')
+      setPersonName('')
     }
   }
 
   const handleClose = () => {
-    setStatement('')
-    setWitnessName('')
-    setWitnessContact('')
+    setText('')
+    setPersonName('')
     onClose()
   }
 
@@ -42,30 +40,21 @@ export const AddStatementModal = ({ open, onClose, onAddStatement, isAdding }) =
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="witnessName">Witness Name (Optional)</Label>
+              <Label htmlFor="personName">Person Name (Optional)</Label>
               <Input
-                id="witnessName"
-                placeholder="Enter witness name"
-                value={witnessName}
-                onChange={(e) => setWitnessName(e.target.value)}
+                id="personName"
+                placeholder="Enter person name"
+                value={personName}
+                onChange={(e) => setPersonName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="witnessContact">Witness Contact (Optional)</Label>
-              <Input
-                id="witnessContact"
-                placeholder="Enter witness contact"
-                value={witnessContact}
-                onChange={(e) => setWitnessContact(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="statement">Statement</Label>
+              <Label htmlFor="text">Statement</Label>
               <Textarea
-                id="statement"
+                id="text"
                 placeholder="Enter the statement..."
-                value={statement}
-                onChange={(e) => setStatement(e.target.value)}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
                 rows={5}
                 required
               />
@@ -75,7 +64,7 @@ export const AddStatementModal = ({ open, onClose, onAddStatement, isAdding }) =
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isAdding || !statement.trim()}>
+            <Button type="submit" disabled={isAdding || !text.trim()}>
               {isAdding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Add Statement
             </Button>

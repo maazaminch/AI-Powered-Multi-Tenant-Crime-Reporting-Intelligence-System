@@ -61,22 +61,14 @@ export const reportCaseSchema = {
 // ─────────────── GET CASE DETAILS ───────────────
 export const getCaseDetailsSchema = {
     params: Joi.object({
-        caseId: Joi.string()
-            .required()
-            .messages({
-                'any.required': 'Case ID is required'
-            })
+        caseId: requiredMongoIdSchema
     })
 };
 
 // ─────────────── GET CASE UPDATES ───────────────
 export const getCaseUpdatesSchema = {
     params: Joi.object({
-        caseId: Joi.string()
-            .required()
-            .messages({
-                'any.required': 'Case ID is required'
-            })
+        caseId: requiredMongoIdSchema
     }),
     query: Joi.object({
         ...paginationSchema

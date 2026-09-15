@@ -10,12 +10,8 @@ import {
   Search, 
   Filter, 
   ChevronDown,
-  AlertTriangle,
-  Clock,
   User,
   MapPin,
-  Calendar,
-  ArrowRight,
   X
 } from 'lucide-react'
 
@@ -300,7 +296,7 @@ const CasesPage = () => {
                           <Button size="sm"
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleCaseClick(caseItem.caseId)
+                              handleCaseClick(caseItem._id)
                             }}
                             >
                             Case Details

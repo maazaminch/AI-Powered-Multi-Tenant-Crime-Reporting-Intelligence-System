@@ -114,15 +114,11 @@ class PoliceController {
             ];
         }
 
-        // Build sort object
-        const sortObj = {};
-        sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
         const [cases, totalCases] = await Promise.all([
             Case.find(filter)
                 .populate('assignedTo', 'fullName badgeNumber')
                 .populate('assignedBy', 'fullName')
-                .sort(sortObj)
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean(),
@@ -162,7 +158,7 @@ class PoliceController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,
@@ -286,7 +282,7 @@ class PoliceController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,
@@ -326,7 +322,7 @@ class PoliceController {
         };
 
         const updatedCase = await Case.findOneAndUpdate(
-            { caseId: caseId },
+            { _id: caseId },
             updateData,
             { new: true }
         ).lean();
@@ -407,7 +403,7 @@ class PoliceController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,
@@ -417,7 +413,8 @@ class PoliceController {
         const caseDetails = await Case.findOne(filter)
             .populate('assignedTo', 'fullName badgeNumber email phone')
             .populate('reporter.citizenId', 'fullName email phone')
-            .populate('policeStationId', 'name address')
+            .populate('policeStationId', 'name email contactNumber code')
+            .populate('evidenceFiles', 'fileUrl originalFileName fileType mimeType fileSize resourceType uploadedBy createdAt')
             .lean();
 
         if (!caseDetails) {
@@ -439,7 +436,7 @@ class PoliceController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             assignedTo: currentUser._id,
             isArchived: false,
             ...req.tenantFilter,
@@ -453,7 +450,6 @@ class PoliceController {
 
         const updates = await CaseUpdate.find({ caseId: caseDoc._id })
             .populate('updatedBy', 'fullName badgeNumber')
-            // .populate('evidenceFiles')
             .sort({ createdAt: -1 });
 
         res.status(200).json(

@@ -8,8 +8,8 @@ import { Loader2 } from 'lucide-react'
 
 export const AddArrestModal = ({ open, onClose, onAddArrest, isAdding }) => {
   const [arrest, setArrest] = useState({
-    arrestedPersonName: '',
-    arrestedPersonContact: '',
+    personName: '',
+    personContact: '',
     arrestReason: '',
     arrestDate: new Date().toISOString().split('T')[0],
     arrestLocation: '',
@@ -18,15 +18,15 @@ export const AddArrestModal = ({ open, onClose, onAddArrest, isAdding }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (arrest.arrestedPersonName && arrest.arrestReason) {
+    if (arrest.personName && arrest.arrestReason) {
       onAddArrest({
         updateType: 'ARREST',
         arrest,
-        remarks: arrest.remarks || 'Arrest record added by Station Head'
+        remarks: arrest.remarks || 'Arrest record added'
       })
       setArrest({
-        arrestedPersonName: '',
-        arrestedPersonContact: '',
+        personName: '',
+        personContact: '',
         arrestReason: '',
         arrestDate: new Date().toISOString().split('T')[0],
         arrestLocation: '',
@@ -37,8 +37,8 @@ export const AddArrestModal = ({ open, onClose, onAddArrest, isAdding }) => {
 
   const handleClose = () => {
     setArrest({
-      arrestedPersonName: '',
-      arrestedPersonContact: '',
+      personName: '',
+      personContact: '',
       arrestReason: '',
       arrestDate: new Date().toISOString().split('T')[0],
       arrestLocation: '',
@@ -56,22 +56,22 @@ export const AddArrestModal = ({ open, onClose, onAddArrest, isAdding }) => {
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="arrestedPersonName">Arrested Person Name *</Label>
+              <Label htmlFor="personName">Arrested Person Name *</Label>
               <Input
-                id="arrestedPersonName"
+                id="personName"
                 placeholder="Enter name"
-                value={arrest.arrestedPersonName}
-                onChange={(e) => setArrest({ ...arrest, arrestedPersonName: e.target.value })}
+                value={arrest.personName}
+                onChange={(e) => setArrest({ ...arrest, personName: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="arrestedPersonContact">Contact Number</Label>
+              <Label htmlFor="personContact">Contact Number</Label>
               <Input
-                id="arrestedPersonContact"
+                id="personContact"
                 placeholder="Enter contact number"
-                value={arrest.arrestedPersonContact}
-                onChange={(e) => setArrest({ ...arrest, arrestedPersonContact: e.target.value })}
+                value={arrest.personContact}
+                onChange={(e) => setArrest({ ...arrest, personContact: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -118,7 +118,7 @@ export const AddArrestModal = ({ open, onClose, onAddArrest, isAdding }) => {
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isAdding || !arrest.arrestedPersonName || !arrest.arrestReason}>
+            <Button type="submit" disabled={isAdding || !arrest.personName || !arrest.arrestReason}>
               {isAdding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Record Arrest
             </Button>
