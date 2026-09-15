@@ -304,7 +304,7 @@ class CitizenController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             "reporter.type": "CITIZEN",
             "reporter.citizenId": currentUser._id,
             isArchived: false
@@ -313,7 +313,8 @@ class CitizenController {
         const caseDetails = await Case.findOne(filter)
             .populate('assignedTo', 'fullName badgeNumber email phone')
             .populate('assignedBy', 'fullName email phone')
-            .populate('policeStationId', 'name address')
+            .populate('policeStationId', 'name email contactNumber code')
+            .populate('evidenceFiles', 'fileUrl originalFileName fileType mimeType fileSize resourceType uploadedBy createdAt')
             .lean();
 
         if (!caseDetails) {
@@ -339,7 +340,7 @@ class CitizenController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             "reporter.type": "CITIZEN",
             "reporter.citizenId": currentUser._id,
             isArchived: false
@@ -393,7 +394,7 @@ class CitizenController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             "reporter.type": "CITIZEN",
             "reporter.citizenId": currentUser._id,
             isArchived: false,
@@ -465,106 +466,7 @@ class CitizenController {
         afterResponse().catch(err => console.error("Background notification sending failed", err));
     });
 
-    // POST /citizen/case/:id/upload-evidence - Upload evidence files
-    static uploadEvidence = wrapAsync(async (req, res) => {
-        const { caseId } = req.params;
-        const { evidenceFiles } = req.body;
-        const currentUser = req.user;
 
-        if (currentUser.role !== "CITIZEN") {
-            throw new apiError(403, "Only citizens can access this endpoint");
-        }
-
-        if (!evidenceFiles || evidenceFiles.length === 0) {
-            throw new apiError(400, "Evidence files are required");
-        }
-
-        const filter = {
-            caseId: caseId,
-            "reporter.type": "CITIZEN",
-            "reporter.citizenId": currentUser._id,
-            isArchived: false,
-            ...req.tenantFilter
-        };
-
-        const caseDoc = await Case.findOne(filter).lean();
-        if (!caseDoc) {
-            throw new apiError(404, "Case not found or you don't have access to this case");
-        }
-
-        // Check if case is under investigation
-        if (caseDoc.status !== "UNDER_INVESTIGATION") {
-            throw new apiError(403, `Cannot upload evidence to a ${caseDoc.status} case. Updates only allowed during UNDER_INVESTIGATION`);
-        }
-
-        // Check if citizen updates are allowed
-        if (!caseDoc.allowCitizenUpdates) {
-            throw new apiError(403, "Investigating officer has disabled public updates for this case");
-        }
-
-        const validEvidence = await Evidence.find({
-            _id: { $in: evidenceFiles },
-            uploadedBy: currentUser._id
-        });
-
-        if (validEvidence.length !== evidenceFiles.length) {
-            throw new apiError(400, "Invalid evidence files");
-        }
-
-        const updateData = {
-            tenantId: caseDoc.tenantId,
-            caseId: caseDoc._id,
-            updaterRole: currentUser.role,
-            updatedBy: currentUser._id,
-            updateType: "EVIDENCE",
-            evidenceFiles,
-            ipAddress: req.ip,
-            userAgent: req.headers["user-agent"]
-        };
-
-        await Promise.all([
-            CaseUpdate.create(updateData),
-            Case.findByIdAndUpdate(caseDoc._id, {
-                $push: { evidenceFiles: { $each: evidenceFiles } }
-            })
-        ]);
-
-        res.status(201).json(
-            new apiResponse(201, updateData, "Evidence uploaded successfully")
-        );
-
-        const afterResponse = async () => {
-            const tasks = [];
-
-            // Notify assigned officer
-            if (caseDoc.assignedTo) {
-                tasks.push(NotificationService.send({
-                    tenantId: caseDoc.tenantId,
-                    userId: caseDoc.assignedTo,
-                    type: "citizen_uploaded_evidence",
-                    title: "New Evidence Uploaded",
-                    message: `Citizen has uploaded evidence to case ${caseDoc.caseId}`,
-                    channels: ["inapp"]
-                }));
-            }
-
-            // Notify station head
-            if (caseDoc.assignedBy) {
-                tasks.push(NotificationService.send({
-                    tenantId: caseDoc.tenantId,
-                    userId: caseDoc.assignedBy,
-                    type: "citizen_uploaded_evidence",
-                    title: "New Evidence Uploaded",
-                    message: `Citizen has uploaded evidence to case ${caseDoc.caseId}`,
-                    channels: ["inapp"]
-                }));
-            }
-
-            await Promise.all(tasks);
-        };
-
-        afterResponse().catch(err => console.error("Background notification sending failed", err));
-    });
 
 }
 

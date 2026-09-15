@@ -26,6 +26,6 @@ export const uploadEvidence = multer({
   fileFilter,
   limits: {
     fileSize: 25 * 1024 * 1024, // 25MB per file, adjust as needed
-    files: 5 // max files per request, adjust as needed
+    files: 10 // max files per request, adjust as needed
   }
 });

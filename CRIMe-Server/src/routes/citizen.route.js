@@ -61,12 +61,4 @@ citizenRouter.post(
     CitizenController.addNote
 );
 
-citizenRouter.post(
-    "/upload-evidence/:caseId",
-    verifyJWT,
-    roleGuard(Roles.CITIZEN),
-    auditLog('UPLOAD', 'EVIDENCE'),
-    CitizenController.uploadEvidence
-);
-
 export default citizenRouter;

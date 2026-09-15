@@ -129,8 +129,8 @@ const CaseDetailsPage = () => {
 
         const response = await uploadToCase.mutateAsync({ caseId, formData })
         
-        if (response && response.data && response.data.evidenceIds) {
-          const newEvidenceIds = response.data.evidenceIds
+        if (response && response.evidenceIds) {
+          const newEvidenceIds = response.evidenceIds
           fileIds.push(...newEvidenceIds)
           
           newEvidenceIds.forEach(id => {

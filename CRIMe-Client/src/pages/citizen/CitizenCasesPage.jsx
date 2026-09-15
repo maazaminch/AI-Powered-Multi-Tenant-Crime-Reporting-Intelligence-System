@@ -250,16 +250,28 @@ const CitizenCasesPage = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between gap-8 sm:min-w-[150px]">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(caseItem.createdAt).toLocaleDateString()}</span>
+ 
+                    {/* Assigned Officer */}
+                    <div className="flex items-center justify-between gap-8 sm:min-w-[150px]">
+                      {caseItem.assignedTo ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="w-4 h-4 text-blue-500" />
+                          <div>
+                            <p className="font-medium">{caseItem.assignedTo.fullName}</p>
+                            <p className="text-xs text-muted-foreground">{caseItem.assignedTo.badgeNumber}</p>
                           </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">Unassigned</Badge>
+                        </div>
+                      )}
+                          
 
                           <Button size="sm"
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleCaseClick(caseItem.caseId)
+                              handleCaseClick(caseItem._id)
                             }}
                           >
                             Case Details

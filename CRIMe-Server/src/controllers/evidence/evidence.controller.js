@@ -122,11 +122,15 @@ class EvidenceController {
       ) {
         throw new apiError(403, "You are not allowed to add evidence to this case");
       }
+    } else if (currentUser.role === "POLICE" && currentUser.isStationHead) {
+      if (caseDoc.policeStationId?.toString() !== currentUser.policeStationId?.toString()) {
+        throw new apiError(403, "Case not in your station");
+      }
     } else if (currentUser.role === "POLICE") {
       if (caseDoc.assignedTo?.toString() !== currentUser._id.toString()) {
         throw new apiError(403, "Case not assigned to you");
       }
-    } else if (currentUser.role !== "ADMIN") {
+    } else if (currentUser.role === "ADMIN" || currentUser.isSuperAdmin) {
       throw new apiError(403, "Not allowed to add evidence");
     }
 
@@ -235,7 +239,14 @@ class EvidenceController {
     const { caseId } = req.params;
     const currentUser = req.user;
 
-    const caseDoc = await Case.findOne({ caseId }).lean();
+    // const caseDoc = await Case.findOne({ caseId }).lean();
+
+    const filter = { 
+      _id: caseId,
+      ...req.tenantFilter,
+      ...req.StationFilter
+     };
+    const caseDoc = await Case.findOne(filter).lean();
     if (!caseDoc) {
       throw new apiError(404, "Case not found");
     }
@@ -269,7 +280,9 @@ class EvidenceController {
 
     // Single evidence retrieval after authorization
     const evidence = await Evidence.find({
-      _id: { $in: caseDoc.evidenceFiles || [] }
+      _id: { $in: caseDoc.evidenceFiles || [] },
+      ...req.tenantFilter,
+      ...req.StationFilter
     })
       .populate('uploadedBy', 'fullName email')
       .sort({ createdAt: -1 })
@@ -296,7 +309,7 @@ class EvidenceController {
     }
 
     // SHO: Station access only
-    const caseDoc = await Case.findById({ evidenceFiles: evidenceId }).lean();
+    const caseDoc = await Case.findOne({ evidenceFiles: evidenceId }).lean();
     if (!caseDoc) {
       throw new apiError(404, "Associated case not found");
     }

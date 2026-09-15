@@ -93,8 +93,5 @@ const EvidenceSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-// // Indexes
-// EvidenceSchema.index({ tenantId: 1 });
-// EvidenceSchema.index({ caseId: 1 });
 
 export default mongoose.model("Evidence", EvidenceSchema);

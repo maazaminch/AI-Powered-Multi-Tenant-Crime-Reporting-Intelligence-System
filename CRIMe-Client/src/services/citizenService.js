@@ -35,14 +35,11 @@ export const citizenService = {
         return response.data
     },
 
-    addNote: async (caseId) => {
-        const response = await api.get(`/api/citizen/add-note/${caseId}`)
+    addNote: async (caseId, updateData) => {
+        const response = await api.post(`/api/citizen/add-note/${caseId}`, updateData)
         return response.data
     },
 
-    uploadEvidence: async (caseId) => {
-        const response = await api.get(`/api/citizen/upload-evidence/${caseId}`)
-        return response.data
-    }
+
 
 }

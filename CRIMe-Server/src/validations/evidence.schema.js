@@ -91,13 +91,7 @@ export const getEvidenceSchema = {
 
 export const getCaseEvidenceSchema = {
   params: Joi.object({
-    caseId: Joi.string()
-      .pattern(/^CR-[A-Z0-9]{8}$/)
-      .required()
-      .messages({
-        'string.pattern.base': 'Invalid case ID format',
-        'any.required': 'Case ID is required'
-      })
+    caseId: requiredMongoIdSchema
   })
 };
 
