@@ -16,7 +16,7 @@ import {
   Shield,
   Building2,
   Upload,
-  Download,
+  Eye,
   X
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
@@ -137,7 +137,7 @@ const CaseDetailsPage = () => {
     }
   }
 
-  const handleDownloadEvidence = (evidence) => {
+  const handleOpenEvidence = (evidence) => {
     if (evidence.fileUrl) {
       window.open(evidence.fileUrl, '_blank')
     }
@@ -225,6 +225,16 @@ const CaseDetailsPage = () => {
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">{caseDetails.description}</p>
                 </div>
+
+                {caseDetails.aiSummary && (
+                  <div className="bg-blue-50 border border-slate-200 rounded-lg p-5">
+                    <h3 className="font-semibold mb-3 text-slate-900 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      AI Summary
+                    </h3>
+                    <p className="text-sm text-slate-800 leading-relaxed">{caseDetails.aiSummary}</p>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
                   <MapPin className="w-5 h-5" />
@@ -408,9 +418,9 @@ const CaseDetailsPage = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleDownloadEvidence(evidence)}
+                          onClick={() => handleOpenEvidence(evidence)}
                         >
-                          <Download className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}

@@ -15,7 +15,7 @@ export const useEvidence = (isGuest = false) => {
       return data
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to upload evidence')
+      toast.error(error.backendMessage || 'Failed to upload evidence')
     }
   })
 
@@ -33,7 +33,7 @@ export const useEvidence = (isGuest = false) => {
       return data
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to upload evidence to case')
+      toast.error(error.backendMessage || 'Failed to upload evidence to case')
     }
   })
 
@@ -44,7 +44,7 @@ export const useEvidence = (isGuest = false) => {
       queryFn: () => evidenceService.getCaseEvidence(caseId),
       enabled: !!caseId,
       onError: (error) => {
-        toast.error(error.message || 'Failed to fetch evidence')
+        toast.error(error.backendMessage || 'Failed to fetch evidence')
       }
     })
   }
@@ -56,7 +56,7 @@ export const useEvidence = (isGuest = false) => {
       queryFn: () => evidenceService.getEvidence(evidenceId),
       enabled: !!evidenceId,
       onError: (error) => {
-        toast.error(error.message || 'Failed to fetch evidence details')
+        toast.error(error.backendMessage || 'Failed to fetch evidence details')
       }
     })
   }
@@ -69,7 +69,7 @@ export const useEvidence = (isGuest = false) => {
       return data
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to delete evidence')
+      toast.error(error.backendMessage || 'Failed to delete evidence')
     }
   })
 

@@ -5,7 +5,7 @@ export const useCaseDetails = (caseId) => {
   const queryClient = useQueryClient()
 
   // Get case details
-  const { data: caseDetails, isLoading: detailsLoading, error: detailsError } = useQuery({
+  const { data: caseDetails, isLoading, error, refetch: refetchDetails } = useQuery({
     queryKey: ['case-details', caseId],
     queryFn: () => stationHeadService.getCaseDetails(caseId),
     enabled: !!caseId,
@@ -64,8 +64,9 @@ export const useCaseDetails = (caseId) => {
 
   return {
     caseDetails,
-    isLoading: detailsLoading,
-    error: detailsError,
+    isLoading,
+    error,
+    refetchDetails,
     updates,
     updatesLoading,
     updatesError,

@@ -248,7 +248,7 @@ const StationCasesPage = () => {
                 <div 
                   key={caseItem._id} 
                   className="rounded-lg border bg-card p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => handleCaseClick(caseItem.caseId)}
+                  onClick={() => handleCaseClick(caseItem._id)}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     {/* Case Info */}
@@ -307,7 +307,7 @@ const StationCasesPage = () => {
                       )}
 
                       <Button size="sm"
-                        onClick={() => handleCaseClick(caseItem.caseId)}
+                        onClick={() => handleCaseClick(caseItem._id)}
                         >
                         Case Details
                       </Button>

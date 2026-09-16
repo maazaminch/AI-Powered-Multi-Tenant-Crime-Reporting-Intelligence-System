@@ -14,7 +14,8 @@ import {
   MessageSquare,
   FileIcon,
   Shield,
-  Upload
+  Upload,
+  Eye
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card'
@@ -27,7 +28,6 @@ import { UpdateStatusModal } from '../../components/features/police/modals/Updat
 import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
 import LocationView from '../../components/map/LocationView'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
-import { Download } from 'lucide-react'
 
 
 const CaseDetailsPage = () => {
@@ -136,7 +136,7 @@ const CaseDetailsPage = () => {
     }
   }
 
-  const handleDownloadEvidence = (evidence) => {
+  const handleOpenEvidence = (evidence) => {
     if (evidence.fileUrl) {
       window.open(evidence.fileUrl, '_blank')
     }
@@ -345,7 +345,7 @@ const CaseDetailsPage = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground font-medium">Name</p>
-                    <p className="font-medium text-base">{caseDetails.reporter?.name || 'Anonymous'}</p>
+                    <p className="font-medium text-base">{caseDetails.reporter?.fullName || 'Anonymous'}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground font-medium">Email</p>
@@ -438,9 +438,9 @@ const CaseDetailsPage = () => {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => handleDownloadEvidence(evidence)}
+                                    onClick={() => handleOpenEvidence(evidence)}
                                   >
-                                    <Download className="w-4 h-4" />
+                                    <Eye className="w-4 h-4" />
                                   </Button>
                                 </div>
                               ))}

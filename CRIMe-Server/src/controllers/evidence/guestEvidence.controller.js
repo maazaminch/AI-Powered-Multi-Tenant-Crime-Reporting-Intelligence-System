@@ -32,6 +32,22 @@ class GuestEvidenceController {
             throw new apiError(400, "Maximum 10 files allowed per standalone upload");
         }
 
+        // ---------------- Duplicate detection ----------------
+        const fileHashes = files.map(file =>
+          crypto.createHash('sha256').update(file.buffer).digest('hex')
+        );
+
+        const existingDuplicates = await Evidence.find({
+          guestSessionId,
+          caseId: null,
+          sha256Hash: { $in: fileHashes }
+        }).select('originalFileName').lean();
+
+        if (existingDuplicates.length > 0) {
+          const dupeNames = existingDuplicates.map(d => d.originalFileName).join(', ');
+          throw new apiError(409, `You've already uploaded: ${dupeNames}`);
+        }
+
         const folder = `crime_saas/evidence/pending_guest/${guestSessionId}`;
         const evidenceIds = [];
 
@@ -106,6 +122,22 @@ class GuestEvidenceController {
     const currentEvidenceCount = caseDoc.evidenceFiles?.length || 0;
     if (currentEvidenceCount + files.length > 20) {
       throw new apiError(400, `Maximum 20 evidence files allowed per case. Currently: ${currentEvidenceCount}`);
+    }
+
+
+// ---------------- Duplicate detection ----------------
+    const fileHashes = files.map(file =>
+      crypto.createHash('sha256').update(file.buffer).digest('hex')
+    );
+
+    const existingDuplicates = await Evidence.find({
+      caseId: caseDoc._id,
+      sha256Hash: { $in: fileHashes }
+    }).select('originalFileName').lean();
+
+    if (existingDuplicates.length > 0) {
+      const dupeNames = existingDuplicates.map(d => d.originalFileName).join(', ');
+      throw new apiError(409, `Duplicate file(s) already uploaded to this case: ${dupeNames}`);
     }
 
     const folder = `crime_saas/evidence/${caseDoc.tenantId}/${caseDoc._id}`;

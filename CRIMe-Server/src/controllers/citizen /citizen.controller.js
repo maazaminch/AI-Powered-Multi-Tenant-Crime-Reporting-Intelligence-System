@@ -88,6 +88,19 @@ class CitizenController {
         throw new apiError(400, "evidenceFileIds must be an array with maximum 10 items");
         }
 
+        if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
+        const evidences = await Evidence.find({ 
+            _id: { $in: evidenceFileIds }, 
+            uploadedBy: currentUser._id,
+            caseId: null          // ✅ must still be standalone/unattached
+        });
+
+        if (evidences.length !== evidenceFileIds.length) {
+            throw new apiError(400, "One or more evidence files are invalid or already attached to another case");
+        }
+        evidenceIds = evidences.map((e) => e._id);
+        }
+
         // ───── 2. Resolve station → tenant (never trust client tenantId) ─────
         const station = await PoliceStation.findOne({
         _id: policeStationId,

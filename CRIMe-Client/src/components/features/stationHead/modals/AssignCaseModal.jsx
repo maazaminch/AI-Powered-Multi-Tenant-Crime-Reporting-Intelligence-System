@@ -37,6 +37,9 @@ export const AssignCaseModal = ({ open, onClose, onAssign, isAssigning, policeOf
                 required
                 className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value='' disabled>
+                  Select a police officer
+                </option>
                 {policeOfficers?.map((police) => (
                   <option key={police._id} value={police._id}>
                     {police.fullName} - {police.badgeNumber}

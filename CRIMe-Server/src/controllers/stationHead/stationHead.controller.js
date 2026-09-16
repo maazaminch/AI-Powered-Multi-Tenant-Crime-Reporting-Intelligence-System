@@ -314,7 +314,6 @@ class StationHeadController {
         sortObj[sortField] = sortOrder === 'asc' ? 1 : -1;
 
         const cases = await Case.find(filter)
-            .select('caseId crimeType severity status createdAt assignedTo reporter description addressText')
             .populate('assignedTo', 'fullName badgeNumber')
             .sort(sortObj)
             .skip(skip)
@@ -353,7 +352,7 @@ class StationHeadController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             ...req.tenantFilter,
             ...req.stationFilter
         }
@@ -391,7 +390,7 @@ class StationHeadController {
         
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             ...req.tenantFilter,
             ...req.stationFilter,
             isArchived: false 
@@ -413,7 +412,7 @@ class StationHeadController {
         }
 
         const updatedCase = await Case.findOneAndUpdate(
-            { caseId: caseId, status: "RESOLVED" },
+            { _id: caseId, status: "RESOLVED" },
             {
                 status: newStatus,
                 closureReason: remarks || `Case closed by Station Head: ${currentUser.fullName}`,
@@ -538,7 +537,7 @@ class StationHeadController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             isArchived: false,
             ...req.tenantFilter,
             ...req.stationFilter
@@ -659,7 +658,7 @@ class StationHeadController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             isArchived: false,
             ...req.tenantFilter,
             ...req.stationFilter
@@ -671,7 +670,6 @@ class StationHeadController {
 
         const updates = await CaseUpdate.find({ caseId: caseDoc._id })
             .populate('updatedBy', 'fullName badgeNumber')
-            // .populate('evidenceFiles')
             .sort({ createdAt: -1 });
 
         res.status(200).json(
@@ -690,7 +688,7 @@ class StationHeadController {
         
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             ...req.tenantFilter,
             ...req.stationFilter
         }
@@ -732,7 +730,7 @@ class StationHeadController {
 
         // Update case assignment
         const updatedCase = await Case.findOneAndUpdate(
-            { caseId: caseId, status: "PENDING" },
+            { _id: caseId, status: "PENDING" },
             {
                 assignedTo: policeId,
                 assignedBy: currentUser._id,
@@ -844,7 +842,7 @@ class StationHeadController {
         }
 
         const filter = {
-            caseId: caseId,
+            _id: caseId,
             ...req.tenantFilter,
             ...req.stationFilter
         }
@@ -885,7 +883,7 @@ class StationHeadController {
 
         // Update case assignment
         const updatedCase = await Case.findOneAndUpdate(
-            { caseId: caseId },
+            { _id: caseId },
             {
                 assignedTo: PoliceId,
                 assignedBy: currentUser._id

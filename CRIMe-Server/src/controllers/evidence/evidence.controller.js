@@ -28,6 +28,22 @@ class EvidenceController {
       throw new apiError(400, "Maximum 10 files allowed per standalone upload");
     }
 
+    // ---------------- Duplicate detection ----------------
+    const fileHashes = files.map(file =>
+      crypto.createHash('sha256').update(file.buffer).digest('hex')
+    );
+
+    const existingDuplicates = await Evidence.find({
+      uploadedBy: currentUser._id,
+      caseId: null,
+      sha256Hash: { $in: fileHashes }
+    }).select('originalFileName').lean();
+
+    if (existingDuplicates.length > 0) {
+      const dupeNames = existingDuplicates.map(d => d.originalFileName).join(', ');
+      throw new apiError(409, `You've already uploaded: ${dupeNames}`);
+    }
+
     const folder = `crime_saas/evidence/pending/${currentUser._id}`;
     const evidenceIds = [];
 
@@ -89,7 +105,7 @@ class EvidenceController {
     }
 
     const caseDoc = await Case.findById(caseId)
-      .select("tenantId reporter status assignedTo")
+      .select("tenantId reporter status assignedTo policeStationId")
       .lean();
 
     if (!caseDoc) {
@@ -122,7 +138,7 @@ class EvidenceController {
       ) {
         throw new apiError(403, "You are not allowed to add evidence to this case");
       }
-    } else if (currentUser.role === "POLICE" && currentUser.isStationHead) {
+    } else if (currentUser.isStationHead) {
       if (caseDoc.policeStationId?.toString() !== currentUser.policeStationId?.toString()) {
         throw new apiError(403, "Case not in your station");
       }
@@ -132,6 +148,21 @@ class EvidenceController {
       }
     } else if (currentUser.role === "ADMIN" || currentUser.isSuperAdmin) {
       throw new apiError(403, "Not allowed to add evidence");
+    }
+
+    // ---------------- Duplicate detection ----------------
+    const fileHashes = files.map(file =>
+      crypto.createHash('sha256').update(file.buffer).digest('hex')
+    );
+
+    const existingDuplicates = await Evidence.find({
+      caseId: caseId,
+      sha256Hash: { $in: fileHashes }
+    }).select('originalFileName').lean();
+
+    if (existingDuplicates.length > 0) {
+      const dupeNames = existingDuplicates.map(d => d.originalFileName).join(', ');
+      throw new apiError(409, `Duplicate file(s) already uploaded to this case: ${dupeNames}`);
     }
 
     // ---------------- Upload + persist each file ----------------

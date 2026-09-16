@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, User, FileText, AlertCircle, CheckCircle, Clock, Plus, UserPlus, Archive, MessageSquare, FileText as FileIcon, Shield, Upload, Download, X, Trash2 } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, User, FileText, AlertCircle, CheckCircle, Clock, Plus, UserPlus, Archive, MessageSquare, FileText as FileIcon, Shield, Upload, Download, X  } from 'lucide-react'
+import { Trash2, Eye } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
-import { Separator } from '../../components/ui/Separator'
 import NoData from '../../components/ui/feedback/NoData'
 import Loader from '../../components/ui/feedback/Loader'
 import { useCaseDetails } from '../../hooks/stationHead/useCaseDetails'
-import { useStationCases } from '../../hooks/stationHead/useStationCases'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
 import { AddNoteModal } from '../../components/features/shared/modals/AddNoteModal'
 import { AddStatementModal } from '../../components/features/shared/modals/AddStatementModal'
 import { AddArrestModal } from '../../components/features/shared/modals/AddArrestModal'
 import { AssignCaseModal } from '../../components/features/stationHead/modals/AssignCaseModal'
 import { CloseCaseModal } from '../../components/features/stationHead/modals/CloseCaseModal'
+import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
 import LocationView from '../../components/map/LocationView'
 import { toast } from 'sonner'
 import { useStationPolice } from '../../hooks/stationHead/useStationPolice'
@@ -31,13 +31,13 @@ const CaseDetailsPage = () => {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
   const [showUploadEvidence, setShowUploadEvidence] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState([])
   const [isUploading, setIsUploading] = useState(false)
 
   const { 
     caseDetails, 
     isLoading, 
     error, 
+    refetchDetails,
     updates, 
     updatesLoading,
     updatesError,
@@ -53,7 +53,7 @@ const CaseDetailsPage = () => {
 
 
   const { uploadToCase, getCaseEvidence, deleteEvidence } = useEvidence()
-  const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?.caseId)
+  const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?._id)
   const { police } = useStationPolice()
 
   const getStatusColor = (status) => {
@@ -123,35 +123,21 @@ const CaseDetailsPage = () => {
     }
   }
 
-  const handleEvidenceUpload = async (e) => {
-    const files = Array.from(e.target.files)
-    if (files.length === 0) return
-
+    const handleEvidenceUpload = async (files) => {
     setIsUploading(true)
-    const fileIds = []
 
     try {
       for (const file of files) {
         const formData = new FormData()
         formData.append('files', file)
 
-        const response = await uploadToCase.mutateAsync({ caseId: caseDetails._id, formData })
-        
-        if (response && response.data && response.data.evidenceIds) {
-          const newEvidenceIds = response.data.evidenceIds
-          fileIds.push(...newEvidenceIds)
-          
-          newEvidenceIds.forEach(id => {
-            setUploadedFiles(prev => [...prev, { name: file.name, id }])
-          })
-        }
+        await uploadToCase.mutateAsync({ caseId: caseDetails._id, formData })
       }
 
       // Refresh evidence data and case details
       refetchEvidence()
-      refetchDetails() // Force refresh case details
+      refetchDetails()
       setShowUploadEvidence(false)
-      setUploadedFiles([])
     } catch (error) {
       console.error('Upload error:', error)
     } finally {
@@ -159,7 +145,7 @@ const CaseDetailsPage = () => {
     }
   }
 
-  const handleDownloadEvidence = (evidence) => {
+  const handleOpenEvidence = (evidence) => {
     if (evidence.fileUrl) {
       window.open(evidence.fileUrl, '_blank')
     }
@@ -436,63 +422,65 @@ const CaseDetailsPage = () => {
           )}
 
           {/* Evidence */}
-          <Card className="border border-slate-400">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <FileIcon className="w-5 h-5" />
-                  Evidence Files
-                </CardTitle>
-                {caseDetails.status === 'UNDER_INVESTIGATION' && (
-                  <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
-                    <Upload className="w-4 h-4 mr-1" />
-                    Upload Evidence
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {evidenceLoading ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                </div>
-              ) : evidenceData && evidenceData.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {evidenceData.map((evidence) => (
-                    <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-2 flex-1">
-                        <FileIcon className="w-4 h-4 text-muted-foreground" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
-                          <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDownloadEvidence(evidence)}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteEvidence(evidence._id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No evidence files uploaded yet
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <div>
+            <Card className="border border-slate-400">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <FileIcon className="w-5 h-5" />
+                      Evidence Files
+                                      </CardTitle>
+                                      {caseDetails.status === 'UNDER_INVESTIGATION' && (
+                                        <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
+                                          <Upload className="w-4 h-4 mr-1" />
+                                          Upload Evidence
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent className="pt-4">
+                                    {evidenceLoading ? (
+                                      <div className="flex items-center justify-center py-4">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                      </div>
+                                    ) : evidenceData && evidenceData.length > 0 ? (
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {evidenceData.map((evidence) => (
+                                          <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center gap-2 flex-1">
+                                              <FileIcon className="w-4 h-4 text-muted-foreground" />
+                                              <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
+                                                <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
+                                              </div>
+                                            </div>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => handleOpenEvidence(evidence)}
+                                            >
+                                              <Eye className="w-4 h-4" />
+                                            </Button>
+                                            <button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                              onClick={() => handleDeleteEvidence(evidence._id)}
+                                              disabled={deleteEvidence.isPending}
+                                            >
+                                              <Trash2 className="w-4 h-4" />  
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground text-center py-4">
+                                        No evidence files uploaded yet
+                                      </p>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </div>
         </div>
 
         {/* Timeline Sidebar */}
@@ -627,39 +615,32 @@ const CaseDetailsPage = () => {
                                 </div>
                               )}
 
-                              {update.statement && (
-                                <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
-                                  <p className="font-medium text-purple-900">
-                                    Statement:
-                                  </p>
+                        {update.statement && (
+                          <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
+                            <p className="font-medium text-purple-900">Statement:</p>
+                            <p className="text-purple-800">{update.statement.text}</p>
+                            {update.statement.personName && (
+                              <p className="text-xs text-purple-600 mt-1">By: {update.statement.personName}</p>
+                            )}
+                          </div>
+                        )}
 
-                                  <p className="text-purple-800">
-                                    {update.statement}
-                                  </p>
-
-                                  {update.witnessName && (
-                                    <p className="text-xs text-purple-600 mt-1">
-                                      Witness: {update.witnessName}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-
-                              {update.arrest && (
-                                <div className="mt-2 p-2 bg-red-50 rounded text-sm">
-                                  <p className="font-medium text-red-900">
-                                    Arrest:
-                                  </p>
-
-                                  <p className="text-red-800">
-                                    {update.arrest.arrestedPersonName}
-                                  </p>
-
-                                  <p className="text-xs text-red-600 mt-1">
-                                    Reason: {update.arrest.arrestReason}
-                                  </p>
-                                </div>
-                              )}
+        {update.arrest && (
+          <div className="mt-2 p-2 bg-red-50 rounded text-sm">
+            <p className="font-medium text-red-900">Arrest:</p>
+            <p className="text-red-800">Name: {update.arrest.personName}</p>
+              {update.arrest.personContact && (
+                <p className="text-xs text-red-600 mt-1">Contact: {update.arrest.personContact}</p>
+              )}
+              <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.arrestReason}</p>
+              {update.arrest.arrestDate && (
+                <p className="text-xs text-red-600 mt-1">Date: {new Date(update.arrest.arrestDate).toLocaleDateString()}</p>
+              )}
+              {update.arrest.arrestLocation && (
+                <p className="text-xs text-red-600 mt-1">Location: {update.arrest.arrestLocation}</p>
+              )}
+          </div>
+        )}
 
                               {update.previousStatus &&
                                 update.newStatus && (
@@ -667,7 +648,7 @@ const CaseDetailsPage = () => {
                                     <Badge
                                       className={getStatusColor(
                                         update.previousStatus
-                                      )}
+                                )}
                                     >
                                       {update.previousStatus}
                                     </Badge>
@@ -736,53 +717,12 @@ const CaseDetailsPage = () => {
         isClosing={isClosingCase}
       />
 
-      {/* Upload Evidence Modal */}
-      {showUploadEvidence && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Upload Evidence</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowUploadEvidence(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
-              <input
-                type="file"
-                multiple
-                onChange={handleEvidenceUpload}
-                accept="image/*,.pdf,.doc,.docx"
-                className="hidden"
-                id="evidence-upload-modal"
-                disabled={isUploading}
-              />
-              <label
-                htmlFor="evidence-upload-modal"
-                className="cursor-pointer flex flex-col items-center gap-2"
-              >
-                <Upload className="w-8 h-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  {isUploading ? 'Uploading...' : 'Click to upload evidence files'}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Images, PDF, DOC, DOCX (Max 25MB each, 5 files)
-                </span>
-              </label>
-            </div>
-            {uploadedFiles.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium">Uploaded Files:</p>
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                    <FileIcon className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm truncate">{file.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <UploadEvidenceModal
+        isOpen={showUploadEvidence}
+        onClose={() => setShowUploadEvidence(false)}
+        onUpload={handleEvidenceUpload}
+        isUploading={isUploading}
+      />
     </div>
   )
 }

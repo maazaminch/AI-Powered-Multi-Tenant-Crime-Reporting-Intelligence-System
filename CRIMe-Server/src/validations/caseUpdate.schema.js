@@ -88,7 +88,7 @@ export const addCaseUpdateSchema = {
                     'string.max': 'Person name cannot exceed 200 characters',
                     'any.required': 'Person name is required for statements'
                 }),
-            statementText: Joi.string()
+            text: Joi.string()
                 .min(10)
                 .max(5000)
                 .when('updateType', {
@@ -112,7 +112,7 @@ export const addCaseUpdateSchema = {
             }),
         // Arrest specific fields
         arrest: Joi.object({
-            suspectName: Joi.string()
+            personName: Joi.string()
                 .min(2)
                 .max(200)
                 .trim()
@@ -126,7 +126,21 @@ export const addCaseUpdateSchema = {
                     'string.max': 'Suspect name cannot exceed 200 characters',
                     'any.required': 'Suspect name is required for arrests'
                 }),
-            details: Joi.string()
+            personContact: Joi.string()
+                .min(10)
+                .max(20)
+                .trim()
+                .when('updateType', {
+                    is: Joi.string().valid(UpdateType.ARREST),
+                    then: Joi.string().required(),
+                    otherwise: Joi.string().optional()
+                })
+                .messages({
+                    'string.min': 'Contact number must be at least 10 characters',
+                    'string.max': 'Contact number cannot exceed 20 characters',
+                    'any.required': 'Contact number is required for arrests'
+                }),
+            arrestReason: Joi.string()
                 .min(10)
                 .max(5000)
                 .when('updateType', {
@@ -148,7 +162,21 @@ export const addCaseUpdateSchema = {
                 })
                 .messages({
                     'date.max': 'Arrest date cannot be in the future',
-                    'any.required': '_arrest date is required for arrests'
+                    'any.required': 'Arrest date is required for arrests'
+                }),
+            arrestLocation: Joi.string()
+                .min(2)
+                .max(200)
+                .trim()
+                .when('updateType', {
+                    is: Joi.string().valid(UpdateType.ARREST),
+                    then: Joi.string().required(),
+                    otherwise: Joi.string().optional()
+                })
+                .messages({
+                    'string.min': 'Arrest location must be at least 2 characters',
+                    'string.max': 'Arrest location cannot exceed 200 characters',
+                    'any.required': 'Arrest location is required for arrests'
                 })
         })
             .when('updateType', {
