@@ -16,6 +16,7 @@ import {
   Shield,
   Building2,
   Upload,
+  Download,
   Eye,
   X
 } from 'lucide-react'
@@ -391,7 +392,7 @@ const CaseDetailsPage = () => {
                     <FileIcon className="w-5 h-5" />
                     Evidence Files
                   </CardTitle>
-                  {caseDetails.status === 'UNDER_INVESTIGATION' && (
+                  {caseDetails.status === 'UNDER_INVESTIGATION' && caseDetails.allowCitizenEvidenceUpload && (
                     <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
                       <Upload className="w-4 h-4 mr-1" />
                       Upload Evidence
@@ -408,8 +409,8 @@ const CaseDetailsPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {evidenceData.map((evidence) => (
                       <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-2 flex-1">
-                          <FileIcon className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileIcon className="w-4 h-4 text-muted-foreground shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
                             <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
@@ -420,7 +421,11 @@ const CaseDetailsPage = () => {
                           variant="ghost"
                           onClick={() => handleOpenEvidence(evidence)}
                         >
-                          <Eye className="w-4 h-4" />
+                          {evidence.fileType === 'IMAGE' || evidence.fileType === 'VIDEO' ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     ))}
@@ -445,29 +450,6 @@ const CaseDetailsPage = () => {
             transition={{ duration: 0.4, delay: 0.35 }}
             className="space-y-8"
           >
-            {/* <Card className="border border-slate-400">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 pt-4">
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button
-                      onClick={() => setShowAddNote(true)}
-                      variant="outline"
-                      className="w-full justify-start"
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Add Note
-                    </Button>
-                  </motion.div>
-                </div>
-              </CardContent>
-            </Card>
-           */}
            
             <Card className="border border-slate-400">
               <CardHeader className="pb-4">

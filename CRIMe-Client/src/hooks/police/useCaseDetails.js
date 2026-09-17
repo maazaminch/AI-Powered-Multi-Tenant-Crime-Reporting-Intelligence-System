@@ -49,6 +49,17 @@ export const useCaseDetails = (caseId) => {
     }
   })
 
+  const toggleCitizenEvidenceUploadMutation = useMutation({
+    mutationFn: () => policeService.toggleCitizenEvidenceUpload(caseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['police-case-details', caseId] })
+      toast.success('Citizen evidence upload toggled successfully')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to toggle citizen evidence upload')
+    }
+  })
+
   return {
     caseDetails,
     updates,
@@ -59,6 +70,7 @@ export const useCaseDetails = (caseId) => {
     refetchDetails,
     refetchUpdates,
     addUpdateMutation,
-    updateStatusMutation
+    updateStatusMutation,
+    toggleCitizenEvidenceUpload: toggleCitizenEvidenceUploadMutation
   }
 }

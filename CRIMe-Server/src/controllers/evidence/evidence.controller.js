@@ -53,7 +53,11 @@ class EvidenceController {
         const appFileType = getAppFileType(file.mimetype);
         const sha256Hash = crypto.createHash('sha256').update(file.buffer).digest('hex');
 
-        const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, { folder, resourceType });
+        const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, { 
+          folder, 
+          resourceType, 
+          filename: file.originalname 
+        });
 
         const evidence = await Evidence.create({
           tenantId: currentUser.tenantId || null,
@@ -99,9 +103,9 @@ class EvidenceController {
       throw new apiError(400, "At least one file is required");
     }
 
-    // Evidence count validation - max 5 files per case upload
-    if (files.length > 5) {
-      throw new apiError(400, "Maximum 5 files allowed per case upload");
+    // Evidence count validation - max 10 files per case upload
+    if (files.length > 10) {
+      throw new apiError(400, "Maximum 10 files allowed per case upload");
     }
 
     const caseDoc = await Case.findById(caseId)
@@ -113,13 +117,16 @@ class EvidenceController {
     }
 
     if (caseDoc.status !== "UNDER_INVESTIGATION") {
-      throw new apiError(400, "Cannot add evidence to a closed case");
+      throw new apiError(400, "Cannot add evidence to this case");
+    }
+    if(!caseDoc.allowCitizenEvidenceUpload) {
+      throw new apiError(400, "Officer has disabled citizen evidence uploads for this case");
     }
 
-    // Evidence count validation - max 20 files per case
+    // Evidence count validation - max 10 files per case
     const currentEvidenceCount = caseDoc.evidenceFiles?.length || 0;
-    if (currentEvidenceCount + files.length > 20) {
-      throw new apiError(400, `Maximum 20 evidence files allowed per case. Currently: ${currentEvidenceCount}`);
+    if (currentEvidenceCount + files.length > 10) {
+      throw new apiError(400, `Maximum 10 evidence files allowed per case. Currently: ${currentEvidenceCount}`);
     }
 
     // ---------------- Tenant isolation ----------------
@@ -182,7 +189,8 @@ class EvidenceController {
 
         const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, {
           folder,
-          resourceType
+          resourceType,
+          filename: file.originalname
         });
 
         const evidence = await Evidence.create({

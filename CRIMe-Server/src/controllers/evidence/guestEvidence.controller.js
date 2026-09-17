@@ -57,7 +57,11 @@ class GuestEvidenceController {
                 const appFileType = getAppFileType(file.mimetype);
                 const sha256Hash = crypto.createHash('sha256').update(file.buffer).digest('hex');
 
-                const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, { folder, resourceType });
+                const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, { 
+                  folder, 
+                  resourceType,
+                  filename: file.originalname
+                });
 
                 const evidence = await Evidence.create({
                 tenantId: null,
@@ -114,8 +118,11 @@ class GuestEvidenceController {
       throw new apiError(403, "This upload path is for guest-reported cases only");
     }
 
-    if (caseDoc.status === "CLOSED") {
-      throw new apiError(400, "Cannot add evidence to a closed case");
+    if (caseDoc.status !== "UNDER_INVESTIGATION") {
+      throw new apiError(400, "Cannot add evidence to this case");
+    }
+    if(!caseDoc.allowCitizenEvidenceUpload) {
+      throw new apiError(400, "Officer has disabled citizen evidence uploads for this case");
     }
 
     // Evidence count validation - max 20 files per case
@@ -155,7 +162,8 @@ class GuestEvidenceController {
 
         const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, {
           folder,
-          resourceType
+          resourceType,
+          filename: file.originalname
         });
 
         const evidence = await Evidence.create({

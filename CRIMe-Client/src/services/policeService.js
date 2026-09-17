@@ -30,6 +30,12 @@ export const policeService = {
     updateCaseStatus: async(caseId, statusData) => {
         const response = await api.patch(`/api/police/update-case-status/${caseId}`, statusData)
         return response.data
+    },
+
+    toggleCitizenEvidenceUpload: async(caseId) => {
+        const response = await api.patch(`/api/police/toggle-citizen-evidence/${caseId}`)
+        return response.data
     }
+
 
 }

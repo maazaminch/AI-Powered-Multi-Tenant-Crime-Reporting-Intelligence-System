@@ -30,8 +30,8 @@ export const reportCaseSchema = {
                 'string.max': 'Description cannot exceed 5000 characters',
                 'any.required': 'Description is required'
             }),
-        location: requiredFullLocationSchema.location,
-        locationLabel: requiredFullLocationSchema.locationLabel,
+        location: requiredFullLocationSchema.extract('location'),
+        locationLabel: requiredFullLocationSchema.extract('locationLabel'),        
         address: Joi.string()
             .max(1000)
             .optional()
@@ -221,3 +221,10 @@ export const suggestNearestStationsSchema = {
             })
     })
 };
+
+export const toggleCitizenEvidenceUploadSchema = {
+    params: Joi.object({
+        caseId: requiredMongoIdSchema
+    })
+};
+

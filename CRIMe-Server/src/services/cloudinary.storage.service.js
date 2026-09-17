@@ -13,17 +13,30 @@ import { Readable } from 'stream';
 
 
 
-export function uploadBufferToCloudinary(buffer, { folder, resourceType, filename }) {
+export function uploadBufferToCloudinary(
+  buffer,
+  { folder, resourceType, filename }
+) {
   return new Promise((resolve, reject) => {
+    const uploadOptions = {
+      folder,
+      resource_type: resourceType,
+      unique_filename: true,
+      overwrite: false,
+    };
+
+    if (filename) {
+      if (resourceType === 'raw') {
+        // raw assets need the extension preserved in public_id to be served/downloaded correctly
+        uploadOptions.public_id = filename;
+      } else {
+        // image/video: Cloudinary infers format automatically, strip extension to avoid double-extension URLs
+        uploadOptions.public_id = filename.replace(/\.[^/.]+$/, "");
+      }
+    }
+
     const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: resourceType, // 'image' | 'video' | 'raw'
-        public_id: filename,          // optional: let Cloudinary auto-generate if omitted
-        use_filename: true,
-        unique_filename: true,
-        overwrite: false
-      },
+      uploadOptions,
       (error, result) => {
         if (error) return reject(error);
         resolve(result);
@@ -50,6 +63,7 @@ export async function deleteFromCloudinary(publicId, resourceType = 'image') {
  */
 export function getCloudinaryResourceType(mimeType) {
   if (mimeType.startsWith('image/')) return 'image';
+  // if (mimeType === 'application/pdf') return 'image';
   if (mimeType.startsWith('video/')) return 'video';
   if (mimeType.startsWith('audio/')) return 'video'; // Cloudinary treats audio under 'video'
   return 'raw'; // pdf, zip, docs, etc.

@@ -7,7 +7,7 @@ const UploadEvidenceModal = ({
   onClose, 
   onUpload, 
   isUploading = false,
-  maxFiles = 5,
+  maxFiles = 10,
   acceptedTypes = "image/*,.pdf,.doc,.docx",
   maxSizeMB = 25
 }) => {

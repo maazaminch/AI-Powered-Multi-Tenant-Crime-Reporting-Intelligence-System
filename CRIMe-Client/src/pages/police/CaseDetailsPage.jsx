@@ -15,7 +15,8 @@ import {
   FileIcon,
   Shield,
   Upload,
-  Eye
+  Eye,
+  Download
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card'
@@ -33,6 +34,7 @@ import { useEvidence } from '../../hooks/evidence/useEvidence'
 const CaseDetailsPage = () => {
   const { caseId } = useParams()
   const navigate = useNavigate()
+
   const [showAddNote, setShowAddNote] = useState(false)
   const [showAddStatement, setShowAddStatement] = useState(false)
   const [showAddArrest, setShowAddArrest] = useState(false)
@@ -40,6 +42,7 @@ const CaseDetailsPage = () => {
   const [showUploadEvidence, setShowUploadEvidence] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
 
+ 
   const { 
     caseDetails, 
     updates, 
@@ -50,7 +53,8 @@ const CaseDetailsPage = () => {
     refetchDetails, 
     refetchUpdates,
     addUpdateMutation,
-    updateStatusMutation
+    updateStatusMutation,
+    toggleCitizenEvidenceUpload
   } = useCaseDetails(caseId)
 
     const { uploadToCase, getCaseEvidence } = useEvidence()
@@ -160,6 +164,10 @@ const CaseDetailsPage = () => {
   const handleStatusUpdate = async (data) => {
     await updateStatusMutation.mutateAsync(data)
     setShowStatusUpdate(false)
+  }
+
+  const handleToogleCitizenEvidenceUpload = async () => {
+    await toggleCitizenEvidenceUpload.mutateAsync()
   }
 
   const allowedStatusTransitions = {
@@ -411,6 +419,17 @@ const CaseDetailsPage = () => {
                               <FileIcon className="w-5 h-5" />
                               Evidence Files
                             </CardTitle>
+                            
+                            {caseDetails.status === 'UNDER_INVESTIGATION' && (
+                              <Button
+                                size="sm"
+                                variant={caseDetails.allowCitizenEvidenceUpload === true ? "destructive" : "outline"}
+                                onClick={handleToogleCitizenEvidenceUpload}
+                                disabled={toggleCitizenEvidenceUpload.isPending}
+                              >
+                                {caseDetails.allowCitizenEvidenceUpload === true ? 'Disable Citizen Upload' : 'Enable Citizen Upload'}
+                              </Button>
+                            )}
                             {caseDetails.status === 'UNDER_INVESTIGATION' && (
                               <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
                                 <Upload className="w-4 h-4 mr-1" />
@@ -428,8 +447,8 @@ const CaseDetailsPage = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {evidenceData.map((evidence) => (
                                 <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
-                                  <div className="flex items-center gap-2 flex-1">
-                                    <FileIcon className="w-4 h-4 text-muted-foreground" />
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <FileIcon className="w-4 h-4 text-muted-foreground shrink-0" />
                                     <div className="flex-1 min-w-0">
                                       <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
                                       <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
@@ -440,7 +459,11 @@ const CaseDetailsPage = () => {
                                     variant="ghost"
                                     onClick={() => handleOpenEvidence(evidence)}
                                   >
-                                    <Eye className="w-4 h-4" />
+                                    {evidence.fileType === 'IMAGE' || evidence.fileType === 'VIDEO' ? (
+                                      <Eye className="w-4 h-4" />
+                                    ) : (
+                                      <Download className="w-4 h-4" />
+                                    )}
                                   </Button>
                                 </div>
                               ))}

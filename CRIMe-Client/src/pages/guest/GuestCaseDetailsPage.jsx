@@ -408,7 +408,7 @@ const GuestCaseDetailsPage = () => {
                     <FileIcon className="w-5 h-5" />
                     Evidence Files
                   </CardTitle>
-                  {caseDetails.status === 'UNDER_INVESTIGATION' && (
+                  {caseDetails.status === 'UNDER_INVESTIGATION' && caseDetails.allowCitizenEvidenceUpload && (
                     <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
                       <Upload className="w-4 h-4 mr-1" />
                       Upload Evidence

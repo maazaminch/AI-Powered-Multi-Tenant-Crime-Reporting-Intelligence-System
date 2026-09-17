@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, User, FileText, AlertCircle, CheckCircle, Clock, Plus, UserPlus, Archive, MessageSquare, FileText as FileIcon, Shield } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, User, FileText, AlertCircle, CheckCircle, Clock, Eye, Download, MessageSquare, FileText as FileIcon, Shield } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
@@ -10,6 +10,7 @@ import LocationView from '../../components/map/LocationView'
 import Loader from '@/components/ui/feedback/Loader'
 import ErrorState from '@/components/ui/feedback/ErrorState'
 import NoData from '@/components/ui/feedback/NoData'
+import { useEvidence } from '../../hooks/evidence/useEvidence'
 
 
 const CaseDetailsPage = () => {
@@ -26,6 +27,8 @@ const CaseDetailsPage = () => {
     updatesError
   } = useCaseDetails(caseId)
 
+    const { uploadToCase, getCaseEvidence, deleteEvidence } = useEvidence()
+    const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?._id)
 
   const getStatusColor = (status) => {
     const colors = {
@@ -83,6 +86,43 @@ const CaseDetailsPage = () => {
       return groups
     }, {})
   }
+
+  const handleOpenEvidence = (evidence) => {
+  if (!evidence.fileUrl) {
+    console.error("Evidence file URL is missing");
+    return;
+  }
+
+  const mimeType = evidence.mimeType?.toLowerCase();
+
+  const officeMimeTypes = [
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ];
+
+  if (officeMimeTypes.includes(mimeType)) {
+    const viewerUrl =
+      `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(
+        evidence.fileUrl
+      )}`;
+
+    window.open(viewerUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  // Images, PDF, audio, video
+  window.open(evidence.fileUrl, "_blank", "noopener,noreferrer");
+};
+
+  // const handleOpenEvidence = (evidence) => {
+  //   if(evidence.fileUrl) {
+  //     window.open(evidence.fileUrl, '_blank')
+  //   }
+  // }
 
   if (detailsLoading) {
     return (
@@ -270,26 +310,54 @@ const CaseDetailsPage = () => {
           )}
 
           {/* Evidence */}
-          {caseDetails.evidenceFiles && caseDetails.evidenceFiles.length > 0 && (
-            <Card className="border border-slate-400">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <FileIcon className="w-5 h-5" />
-                  Evidence Files
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {caseDetails.evidenceFiles.map((file, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 border rounded-lg">
-                      <FileIcon className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm truncate">{file}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+           <div>
+                      <Card className="border border-slate-400">
+                        <CardHeader className="pb-4">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2 text-xl">
+                              <FileIcon className="w-5 h-5" />
+                                Evidence Files
+                                                </CardTitle>
+                                              </div>
+                                            </CardHeader>
+                                            <CardContent className="pt-4">
+                                              {evidenceLoading ? (
+                                                <div className="flex items-center justify-center py-4">
+                                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                </div>
+                                              ) : evidenceData && evidenceData.length > 0 ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                  {evidenceData.map((evidence) => (
+                                                    <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <FileIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                                                        <div className="flex-1 min-w-0">
+                                                          <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
+                                                          <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
+                                                        </div>
+                                                      </div>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleOpenEvidence(evidence)}
+                                                      >
+                                                        {evidence.fileType === 'IMAGE' || evidence.fileType === 'VIDEO' ? (
+                                                          <Eye className="w-4 h-4" />
+                                                        ) : (
+                                                          <Download className="w-4 h-4" />
+                                                        )}
+                                                      </Button>
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              ) : (
+                                                <p className="text-sm text-muted-foreground text-center py-4">
+                                                  No evidence files uploaded yet
+                                                </p>
+                                              )}
+                                            </CardContent>
+                                          </Card>
+                                        </div>
         </div>
 
       <div className="lg:col-span-1">
@@ -380,38 +448,31 @@ const CaseDetailsPage = () => {
                             )}
 
                             {update.statement && (
-                              <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
-                                <p className="font-medium text-purple-900">
-                                  Statement:
-                                </p>
-
-                                <p className="text-purple-800">
-                                  {update.statement}
-                                </p>
-
-                                {update.witnessName && (
-                                  <p className="text-xs text-purple-600 mt-1">
-                                    Witness: {update.witnessName}
-                                  </p>
-                                )}
-                              </div>
+                          <div className="mt-2 p-2 bg-purple-50 rounded text-sm">
+                            <p className="font-medium text-purple-900">Statement:</p>
+                            <p className="text-purple-800">{update.statement.text}</p>
+                            {update.statement.personName && (
+                              <p className="text-xs text-purple-600 mt-1">By: {update.statement.personName}</p>
                             )}
+                          </div>
+                        )}
 
-                            {update.arrest && (
-                              <div className="mt-2 p-2 bg-red-50 rounded text-sm">
-                                <p className="font-medium text-red-900">
-                                  Arrest:
-                                </p>
-
-                                <p className="text-red-800">
-                                  {update.arrest.arrestedPersonName}
-                                </p>
-
-                                <p className="text-xs text-red-600 mt-1">
-                                  Reason: {update.arrest.arrestReason}
-                                </p>
-                              </div>
-                            )}
+        {update.arrest && (
+          <div className="mt-2 p-2 bg-red-50 rounded text-sm">
+            <p className="font-medium text-red-900">Arrest:</p>
+            <p className="text-red-800">Name: {update.arrest.personName}</p>
+              {update.arrest.personContact && (
+                <p className="text-xs text-red-600 mt-1">Contact: {update.arrest.personContact}</p>
+              )}
+              <p className="text-xs text-red-600 mt-1">Reason: {update.arrest.arrestReason}</p>
+              {update.arrest.arrestDate && (
+                <p className="text-xs text-red-600 mt-1">Date: {new Date(update.arrest.arrestDate).toLocaleDateString()}</p>
+              )}
+              {update.arrest.arrestLocation && (
+                <p className="text-xs text-red-600 mt-1">Location: {update.arrest.arrestLocation}</p>
+              )}
+          </div>
+        )}
 
                             {update.previousStatus &&
                               update.newStatus && (

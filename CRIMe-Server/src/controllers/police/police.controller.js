@@ -456,6 +456,35 @@ class PoliceController {
             new apiResponse(200, updates, "Case updates fetched successfully")
         );
     });
+
+    static toggleCitizenEvidenceUpload = wrapAsync(async (req, res) => {
+        const { caseId } = req.params;
+        const currentUser = req.user;
+
+        const caseDoc = await Case.findById(caseId)
+            .select("assignedTo allowCitizenEvidenceUpload status")
+            .lean();
+
+        if (!caseDoc) throw new apiError(404, "Case not found");
+
+        if (currentUser.role !== "POLICE") {
+            throw new apiError(403, "Only police officers can change this setting");
+        }
+
+        if (!caseDoc.assignedTo || caseDoc.assignedTo.toString() !== currentUser._id.toString()) {
+            throw new apiError(403, "Only the officer assigned to this case can change this setting");
+        }
+
+        const updated = await Case.findByIdAndUpdate(
+            caseId,
+            { allowCitizenEvidenceUpload: !caseDoc.allowCitizenEvidenceUpload },
+            { new: true }
+        ).select("allowCitizenEvidenceUpload");
+
+        res.status(200).json(
+            new apiResponse(200, { allowCitizenEvidenceUpload: updated.allowCitizenEvidenceUpload }, "Setting updated successfully")
+        );
+    });
 }
 
 export default PoliceController;

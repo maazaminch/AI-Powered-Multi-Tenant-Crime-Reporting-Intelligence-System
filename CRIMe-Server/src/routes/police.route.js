@@ -5,6 +5,8 @@ import roleGuard from "../middlewares/roleGuard.middleware.js";
 import auditLog from "../middlewares/auditLog.middleware.js";
 import PoliceController from "../controllers/police/police.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
+import validate from "../middlewares/validate.middleware.js";
+import { toggleCitizenEvidenceUploadSchema } from "../validations/case.schema.js";
 
 const policeRouter = express.Router();
 
@@ -61,5 +63,12 @@ policeRouter.get(
     roleGuard({ roles: [Roles.POLICE] }),
     PoliceController.getCaseUpdates
 )
+
+policeRouter.patch(
+  '/toggle-citizen-evidence/:caseId',
+  verifyJWT,
+  validate(toggleCitizenEvidenceUploadSchema),
+  PoliceController.toggleCitizenEvidenceUpload
+);
 
 export default policeRouter;
