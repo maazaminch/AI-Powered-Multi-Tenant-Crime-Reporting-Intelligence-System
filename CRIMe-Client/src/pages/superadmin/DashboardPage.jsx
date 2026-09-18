@@ -4,37 +4,45 @@ import { useDashboardStats } from '../../hooks/superadmin/useDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import StatCard from '../../components/common/StatCard'
+import {useRecentActivity} from '../../hooks/auditLog/useAuditLog'
 
-// function StatCard({
-//   title,
-//   value,
-//   color,
-//   bg,
-//   path,
-// }) {
-//     const navigate = useNavigate()
-//   return (
-//     <Card
-//       onClick={() => navigate(path)}
-//       className={`cursor-pointer transition hover:shadow-lg ${bg}`}
-//     >
-//       <CardContent className="flex flex-col items-center justify-center p-6">
-//         <h2 className={`text-3xl font-bold ${color}`}>
-//           {value}
-//         </h2>
 
-//         <p className="mt-2 text-sm text-muted-foreground">
-//           {title}
-//         </p>
-//       </CardContent>
-//     </Card>
-//   )
-// }
+import Loader from '../../components/ui/feedback/Loader'
+import ErrorState from '../../components/ui/feedback/ErrorState'
 
 const SuperAdminDashboard = () => {
 
   const { stats, isLoading, error } = useDashboardStats()
   const navigate = useNavigate()
+
+  const {recentActivities, isLoading: isLoadingActivity, error: errorActivity} = useRecentActivity()
+
+
+  function formatRelativeTime(date) {
+  const diff = (Date.now() - new Date(date)) / 1000
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return new Date(date).toLocaleDateString()
+}
+
+  if(isLoading) {
+    return (
+      <Loader 
+        text="Loading dashboard..."
+        fullScreen
+      />
+    )
+  }
+
+  if(error) {
+    return (
+      <ErrorState 
+        title="Failed to load dashboard."
+        description="Please try again later."
+      />
+    )
+  }
 
   return (
     <div className="space-y-6" >
@@ -55,7 +63,7 @@ const SuperAdminDashboard = () => {
             title="Total Tenants"
             value={stats?.totalTenants ?? '...'}
             color="text-white"
-            bg="bg-indigo-900"
+            bg="bg-indigo-900 hover:bg-indigo-700"
             path="/superadmin/tenants"
           />
 
@@ -63,7 +71,7 @@ const SuperAdminDashboard = () => {
             title="Total Admins"
             value={stats?.approvedAdmins ?? '...'}
             color="text-white"
-            bg="bg-emerald-900"
+            bg="bg-emerald-900 hover:bg-emerald-700"
             path="/superadmin/admins"
           />
 
@@ -71,7 +79,7 @@ const SuperAdminDashboard = () => {
             title="Pending Requests"
             value={stats?.pendingAdmins ?? '...'}
             color="text-white"
-            bg="bg-amber-900"
+            bg="bg-amber-900 hover:bg-amber-700"
             path="/superadmin/pending-requests"
           />
 
@@ -79,7 +87,7 @@ const SuperAdminDashboard = () => {
             title="Total Cases"
             value={stats?.totalCases ?? '...'}
             color="text-white"
-            bg="bg-rose-900"
+            bg="bg-rose-900 hover:bg-rose-700"
             path="/super-admin/cases"
           />
 
@@ -125,6 +133,17 @@ const SuperAdminDashboard = () => {
       </Card>
 
       {/* Recent Activity */}
+      {isLoadingActivity ? (
+        <Loader
+          text='Loading recent activities...'
+          size='md'
+        />
+      ) : errorActivity ? (
+        <ErrorState
+          title="Failed to load recent activities"
+          description={errorActivity.message}
+        />
+      ) : (
       <Card className="border border-slate-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
@@ -132,14 +151,32 @@ const SuperAdminDashboard = () => {
             Latest system events and actions
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600">No recent activity</div>
-            </div>
-          </div>
+         <CardContent className="space-y-1">
+          {recentActivities?.length > 0 ? (
+            recentActivities.map((log) => (
+              <div key={log._id} className="flex items-start gap-3 py-3 border-b last:border-0">
+                <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${log.success ? 'bg-green-500' : 'bg-red-500'}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900">
+                    {log.targetType} - {log.action.replace(/_/g, ' ')} 
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {log.actor?.userId?.fullName || 'System'} - {log.actor?.role || 'System'}
+          
+                  </p>
+                </div>
+                <p className="text-xs text-slate-400">{log.description}</p>
+                <span className="text-xs text-slate-400 whitespace-nowrap">
+                  {formatRelativeTime(log.createdAt)}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-500 text-center py-6">No recent activity</p>
+          )}
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }

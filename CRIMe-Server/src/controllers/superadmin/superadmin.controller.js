@@ -2,9 +2,11 @@ import wrapAsync from "../../utils/wrapAsync.js";
 import apiError from "../../utils/apiError.js";
 import apiResponse from "../../utils/apiResponse.js";
 import User from "../../models/user.model.js";
+import PoliceStation from "../../models/policeStation.model.js";
 import Tenant from "../../models/tenant.model.js";
 import Invite from "../../models/invite.model.js"
 import Case from "../../models/case.model.js";
+import CaseUpdate from "../../models/caseUpdate.model.js";
 import NotificationService from "../../services/notification.service.js";
 
 class SuperAdminController {
@@ -280,84 +282,6 @@ class SuperAdminController {
         );
     });
 
-    static getAdminPerformanceController = wrapAsync(async (req, res) => {
-        const currentUser = req.user;
-
-        if (!currentUser.isSuperAdmin) {
-            throw new apiError(403, "Only SuperAdmin can access admin performance data");
-        }
-
-        const { adminId, startDate, endDate } = req.query;
-
-        // Validate admin exists
-        const admin = await User.findById(adminId);
-        if (!admin) {
-            throw new apiError(404, "Admin not found");
-        }
-
-        if (admin.role !== "ADMIN") {
-            throw new apiError(400, "User is not an admin");
-        }
-
-        // Get performance metrics
-        const dateFilter = {};
-        if (startDate || endDate) {
-            dateFilter.createdAt = {};
-            if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
-            if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
-        }
-
-        const [
-            totalCases,
-            resolvedCases,
-            pendingPolice,
-            activePolice,
-            totalStations
-        ] = await Promise.all([
-            Case.countDocuments({
-                tenantId: admin.tenantId,
-                ...dateFilter
-            }),
-            Case.countDocuments({
-                tenantId: admin.tenantId,
-                status: "RESOLVED",
-                ...dateFilter
-            }),
-            User.countDocuments({
-                tenantId: admin.tenantId,
-                role: "POLICE",
-                status: "PENDING",
-                ...dateFilter
-            }),
-            User.countDocuments({
-                tenantId: admin.tenantId,
-                role: "POLICE",
-                status: "APPROVED",
-                ...dateFilter
-            }),
-            PoliceStation.countDocuments({
-                tenantId: admin.tenantId,
-                ...dateFilter
-            })
-        ]);
-
-        const performance = {
-            adminId: admin._id,
-            adminName: admin.fullName,
-            tenantId: admin.tenantId,
-            totalCases,
-            resolvedCases,
-            pendingPolice,
-            activePolice,
-            totalStations,
-            resolutionRate: totalCases > 0 ? ((resolvedCases / totalCases) * 100).toFixed(2) : 0
-        };
-
-        res.status(200).json(
-            new apiResponse(200, performance, "Admin performance fetched successfully")
-        );
-    });
-
     static dashboardStatsController = wrapAsync(async (req, res) => {
         const currentUser = req.user;
 
@@ -402,6 +326,7 @@ class SuperAdminController {
 
             totalUsers,
             totalAdmins,
+            totalStationHeads,
             totalPolice,
             totalCitizens,
 
@@ -424,7 +349,8 @@ class SuperAdminController {
 
             User.countDocuments({isSuperAdmin: false}),
             User.countDocuments({ role: "ADMIN", isSuperAdmin: false }),
-            User.countDocuments({ role: "POLICE" }),
+            User.countDocuments({ role: "POLICE", isStationHead: true }),
+            User.countDocuments({ role: "POLICE", isStationHead: false }),
             User.countDocuments({ role: "CITIZEN" }),
 
             Case.countDocuments({}),
@@ -514,6 +440,7 @@ class SuperAdminController {
             users: {
                 total: totalUsers,
                 admins: totalAdmins,
+                stationHeads: totalStationHeads,
                 police: totalPolice,
                 citizens: totalCitizens
             },
@@ -717,95 +644,303 @@ class SuperAdminController {
         );
     });
     
-    static getTenantAnalyticsController = wrapAsync(async (req, res) => {
-            const currentUser = req.user;
+
+
+    // Cases
+    static systemCases = wrapAsync(async (req, res) => {
     
-            if (!currentUser.isSuperAdmin) {
-                throw new apiError(403, "Only SuperAdmin can access tenant analytics");
+        const {
+    
+            page = 1,
+            limit = 10,
+    
+            search,
+    
+            status,
+            crimeType,
+            severity,
+    
+            policeStationId,
+            tenantId,
+            assignedTo,
+    
+            reporterType,
+    
+            startDate,
+            endDate,
+    
+            sortBy = "createdAt",
+            sortOrder = "desc"
+    
+        } = req.query;
+    
+    
+        const skip = (page - 1) * limit;
+    
+        const filter = {};
+
+        // Status
+        if (status) {
+            filter.status = status;
+        }
+    
+    
+        // Crime Type
+    
+        if (crimeType) {
+            filter.crimeType = crimeType;
+        }
+    
+    
+        // Severity
+    
+        if (severity) {
+            filter.severity = severity;
+        }
+    
+    
+        // Police Station
+    
+        if (policeStationId) {
+            filter.policeStationId = policeStationId;
+        }
+        if (tenantId) {
+            filter.tenantId = tenantId;
+        }
+    
+    
+        // Assigned Police Officer
+    
+        if (assignedTo) {
+            filter.assignedTo = assignedTo;
+        }
+    
+    
+        // Reporter Type
+    
+        if (reporterType) {
+            filter["reporter.type"] = reporterType;
+        }
+    
+    
+        // Date Filters
+    
+        if (startDate || endDate) {
+    
+            filter.createdAt = {};
+    
+            if (startDate) {
+                filter.createdAt.$gte = new Date(startDate);
             }
     
-            const { limit = 10, sortBy = "totalCases", order = -1 } = req.query;
+            if (endDate) {
+                filter.createdAt.$lte = new Date(endDate);
+            }
     
-            const topTenants = await Tenant.aggregate([
+        }
+    
+    
+        // Search
+    
+        if (search) {
+    
+            filter.$or = [
+    
                 {
-                    $match: {
-                        isActive: true
+                    caseId: {
+                        $regex: search,
+                        $options: "i"
                     }
                 },
+    
                 {
-                    $lookup: {
-                        from: "cases",
-                        localField: "_id",
-                        foreignField: "tenantId",
-                        as: "cases"
+                    "reporter.name": {
+                        $regex: search,
+                        $options: "i"
                     }
                 },
+    
                 {
-                    $lookup: {
-                        from: "users",
-                        localField: "_id",
-                        foreignField: "tenantId",
-                        as: "users"
+                    description: {
+                        $regex: search,
+                        $options: "i"
                     }
                 },
+    
                 {
-                    $project: {
-                        name: 1,
-                        code: 1,
-                        region: 1,
-                        totalCases: { $size: "$cases" },
-                        resolvedCases: {
-                            $size: {
-                                $filter: {
-                                    input: "$cases",
-                                    cond: { $eq: ["$$this.status", "RESOLVED"] }
-                                }
-                            }
-                        },
-                        totalUsers: { $size: "$users" },
-                        activeAdmins: {
-                            $size: {
-                                $filter: {
-                                    input: "$users",
-                                    cond: { $eq: ["$$this.role", "ADMIN", "$this.status", "APPROVED"] }
-                                }
-                            }
-                        },
-                        activePolice: {
-                            $size: {
-                                $filter: {
-                                    input: "$users",
-                                    cond: { $eq: ["$$this.role", "POLICE", "$this.status", "APPROVED"] }
-                                }
-                            }
-                        }
+                    addressText: {
+                        $regex: search,
+                        $options: "i"
                     }
-                },
-                {
-                    $addFields: {
-                        resolutionRate: {
-                            $cond: {
-                                if: { $gt: ["$totalCases", 0] },
-                                then: { $multiply: [{ $divide: ["$resolvedCases", "$totalCases"] }, 100] },
-                                else: 0
-                            }
-                        }
-                    }
-                },
-                {
-                    $sort: { [sortBy]: parseInt(order) }
-                },
-                {
-                    $limit: parseInt(limit)
                 }
-            ]);
     
-            res.status(200).json(
-                new apiResponse(200, topTenants, "Tenant analytics fetched successfully")
-            );
-        });
+            ];
     
+        }
+    
+    
+        // Sorting
+    
+        const validSortFields = [
+    
+            "createdAt",
+            "severity",
+            "status",
+            "crimeType",
+            "caseId"
+    
+        ];
+    
+    
+        const sortField = validSortFields.includes(sortBy)
+            ? sortBy
+            : "createdAt";
+    
+    
+        const sortObject = {
+    
+            [sortField]: sortOrder === "asc" ? 1 : -1
+    
+        };
+    
+    
+        const cases = await Case.find(filter)
+    
+            .select(
+                `
+                caseId
+                crimeType
+                severity
+                status
+                description
+                createdAt
+                reporter
+                assignedTo
+                policeStationId
+                tenantId
+                `
+            )
+    
+            .populate(
+                "assignedTo",
+                "fullName badgeNumber"
+            )
+    
+            .populate(
+                "policeStationId",
+                "name"
+            )
+    
+            .populate(
+                "tenantId",
+                "name"
+            )
+    
+            .sort(sortObject)
+    
+            .skip(skip)
+    
+            .limit(parseInt(limit))
+    
+            .lean();
+    
+    
+    
+        const totalCases = await Case.countDocuments(filter);
+    
+        const policeStations = await PoliceStation.find({}).select("name").lean();
+        const tenants = await Tenant.find({}).select("name").lean();
+    
+        res.status(200).json(
+            new apiResponse( 200,
+                {
+                    cases,
+                    policeStations,
+                    tenants,
+                    pagination: {
+                        currentPage: parseInt(page),
+                        totalPages: Math.ceil( totalCases / limit ),
+                        totalCases,
+                        hasNextPage: page * limit < totalCases,
+                        hasPrevPage: page > 1
+                    }
+                },
+    
+                "System cases fetched successfully"
+    
+            )
+    
+        );
+    
+    
+    });
+    
+    static caseDetails = wrapAsync(async (req,res)=>{
+        const { caseId } = req.params;
+    
+        const filter = {
+            _id: caseId
+        };
+    
+        const caseDetails = await Case.findOne(filter)
+            .populate(
+                "assignedTo",
+                "fullName email phone badgeNumber"
+            )
+            .populate(
+                "reporter.citizenId",
+                "fullName email phone"
+            )
+            .populate(
+                "policeStationId",
+                "name address city contactNumber"
+            )
+            .populate('evidenceFiles')
+            .populate('tenantId')
+            .lean();
+    
+    
+        if (!caseDetails) {
+            throw new apiError(404, "Case not found");
+        }
+    
+        res.status(200).json(
+            new apiResponse(
+                200, caseDetails, "Case details fetched successfully" ));
+    });
 
+    static caseUpdates = wrapAsync(async (req, res) => {
+                const { caseId } = req.params;
+                const currentUser = req.user;
+        
+                if (!currentUser.isSuperAdmin) {
+                    throw new apiError(403, "Only super admin can access this endpoint");
+                }
+        
+                const filter = {
+                    _id: caseId
+                };
+                const caseDoc = await Case.findOne(filter).lean();
+                if (!caseDoc) {
+                    throw new apiError(404, "Case not found");
+                }
+        
+                const updates = await CaseUpdate.find({ caseId: caseDoc._id })
+                    .populate('updatedBy', 'fullName badgeNumber')
+                    .sort({ createdAt: -1 });
+        
+                res.status(200).json(
+                    new apiResponse(200, updates, "Case updates fetched successfully")
+                );
+    });
+
+    // its to show all stations
+    static policeStations = wrapAsync(async (req, res) => {
+        const stations = await PoliceStation.find().lean();
+        res.status(200).json(
+            new apiResponse(200, stations, "Police stations fetched successfully")
+        );
+    });
 
 
 

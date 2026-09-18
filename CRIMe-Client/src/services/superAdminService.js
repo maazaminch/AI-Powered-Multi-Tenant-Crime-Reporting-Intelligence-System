@@ -68,16 +68,23 @@ export const superAdminService = {
     return response.data
   },
 
-//   getAdminPerformance: async () => {
-//     const response = await api.get('/api/superadmin/admin-performance')
-//     return response.data
-//   },
+  // System Case
+  systemCases: async (filters = {}) => {
+    const response = await api.get('/api/superadmin/system-cases', { params: filters })
+    return response.data
+  },
+  caseDetails: async (caseId) => {
+    const response = await api.get(`/api/superadmin/case-details/${caseId}`)
+    return response.data
+  },
+  caseUpdates: async (caseId) => {
+    const response = await api.get(`/api/superadmin/case-updates/${caseId}`)
+    return response.data
+  },
+  policeStations: async () => {
+    const response = await api.get('/api/superadmin/police-stations')
+    return response.data
+  }
 
-
-
-//   getTenantAnalytics: async () => {
-//     const response = await api.get('/api/superadmin/tenant-analytics')
-//     return response
-//   }
 }
 

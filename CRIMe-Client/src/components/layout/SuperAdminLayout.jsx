@@ -36,6 +36,7 @@ const SuperAdminLayout = () => {
     { path: '/superadmin/tenants', label: 'Tenants' },
     { path: '/superadmin/admins', label: 'Admins' },
     { path: '/superadmin/pending-requests', label: 'Pending Requests' },
+    { path: '/superadmin/system-cases', label: 'System Cases' },
     { path: '/superadmin/system-analytics', label: 'System Analytics' },
     { path: '/superadmin/audit-logs', label: 'Audit Logs' },
     { path: '/superadmin/notifications', label: 'Notifications' }

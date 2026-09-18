@@ -6,11 +6,7 @@ import User from "../../models/user.model.js";
 import { Roles, UserFlags } from "../../constants/roles.js";
 
 class AuditController {
-  /**
-   * Get audit logs with role-based access control
-   * Super Admin: Can see all tenant logs, filter by tenant
-   * Regular Admin: Can only see their own tenant logs
-   */
+  
   static getAuditLogs = wrapAsync(async (req, res) => {
     const {
       tenantId,
@@ -121,33 +117,7 @@ class AuditController {
     );
   });
 
-  // /**
-  //  * Get audit log by ID with access control
-  //  */
-  // static getAuditLogById = wrapAsync(async (req, res) => {
-  //   const { id } = req.params;
-
-  //   const log = await AuditLog.findById(id)
-  //     .populate('actor.userId', 'fullName email')
-  //     .populate('tenantId', 'name');
-
-  //   if (!log) {
-  //     throw new apiError(404, 'Audit log not found');
-  //   }
-
-  //   // Access Control
-  //   if (!req.user.isSuperAdmin && log.tenantId?.toString() !== req.user.tenantId?.toString()) {
-  //     throw new apiError(403, 'Access denied - cannot view logs from other tenants');
-  //   }
-
-  //   res.status(200).json(
-  //     new apiResponse(200, log, 'Audit log fetched successfully')
-  //   );
-  // });
-
-  /**
-   * Get audit statistics
-   */
+  
   static getAuditStats = wrapAsync(async (req, res) => {
     let filter = {};
 
@@ -164,19 +134,6 @@ class AuditController {
     });
     const errorRate = totalLogs > 0 ? Math.round((errorLogs / totalLogs) * 100) : 0;
 
-    // // Logs by action type
-    // const logsByAction = await AuditLog.aggregate([
-    //   { $match: filter },
-    //   { $group: { _id: '$action', count: { $sum: 1 } } },
-    //   { $sort: { count: -1 } }
-    // ]);
-
-    // // Logs by target type
-    // const logsByTarget = await AuditLog.aggregate([
-    //   { $match: filter },
-    //   { $group: { _id: '$targetType', count: { $sum: 1 } } },
-    //   { $sort: { count: -1 } }
-    // ]);
 
     res.status(200).json(
       new apiResponse(200, 
@@ -184,66 +141,35 @@ class AuditController {
           totalLogs,
           errorLogs,
           recentLogs,
-          errorRate,
-          // logsByAction,
-          // logsByTarget
+          errorRate
         }, 
         "Audit statistics fetched successfully")
     );
   });
 
-//   /**
-//    * Get user activity logs
-//    */
-//   static getUserActivity = wrapAsync(async (req, res) => {
-//     const { userId } = req.params;
-//     const { page = 1, limit = 20 } = req.query;
+  static recentActivities = wrapAsync(async (req, res) => {
+    let filter = {};
 
-//     let filter = { 'actor.userId': userId };
+    // Access Control
+    if (!req.user.isSuperAdmin) {
+      filter.tenantId = req.user.tenantId;
+    }
 
-//     // Access Control
-//     if (!req.user.isSuperAdmin) {
-//       // Regular admin can only see users from their tenant
-//       const userInTenant = await AuditLog.findOne({
-//         'actor.userId': userId,
-//         tenantId: req.user.tenantId
-//       });
+    const recentActivities = await AuditLog.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('actor.userId', 'fullName email')
+      .populate('tenantId', 'name');
 
-//       if (!userInTenant) {
-//         throw new apiError(403, 'Access denied - user not in your tenant');
-//       }
-//       filter.tenantId = req.user.tenantId;
-//     }
+    res.status(200).json(
+      new apiResponse(200, 
+        {
+          recentActivities
+        }, 
+        "Recent activity fetched successfully")
+    );
+  });
 
-//     const parsedPage = parseInt(page);
-//     const parsedLimit = parseInt(limit);
-//     const skip = (parsedPage - 1) * parsedLimit;
-
-//     const logs = await AuditLog.find(filter)
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(parsedLimit)
-//       .populate('actor.userId', 'fullName email');
-
-//     const total = await AuditLog.countDocuments(filter);
-//     const totalPages = Math.ceil(total / parsedLimit);
-
-//     res.status(200).json(
-//       new apiResponse(200, 
-//         {
-//           logs,
-//           pagination: {
-//             total,
-//             currentPage: parsedPage,
-//             limit: parsedLimit,
-//             totalPages,
-//             hasNextPage: parsedPage < totalPages,
-//             hasPrevPage: parsedPage > 1
-//           }
-//         }, 
-//         "User activity fetched successfully")
-//     );
-//   });
 }
 
 export default AuditController;

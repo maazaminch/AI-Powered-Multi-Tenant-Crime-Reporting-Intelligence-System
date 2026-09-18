@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Separator } from '../../components/ui/Separator'
-import { useCaseDetails } from '../../hooks/admin/useCaseDetails'
+import { useCaseDetails } from '../../hooks/superadmin/useCaseDetails'
 import LocationView from '../../components/map/LocationView'
 import Loader from '@/components/ui/feedback/Loader'
 import ErrorState from '@/components/ui/feedback/ErrorState'
@@ -27,8 +27,8 @@ const CaseDetailsPage = () => {
     updatesError
   } = useCaseDetails(caseId)
 
-    const { uploadToCase, getCaseEvidence, deleteEvidence } = useEvidence()
-    const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?._id)
+    const { getCaseEvidence } = useEvidence()
+    const { data: evidenceData, isLoading: evidenceLoading } = getCaseEvidence(caseDetails?._id)
 
   const getStatusColor = (status) => {
     const colors = {
@@ -115,7 +115,7 @@ const CaseDetailsPage = () => {
               <p className="text-muted-foreground mb-4">
                 {detailsError?.message || 'Case not found'}
               </p>
-              <Button onClick={() => navigate('/admin/tenant-cases')}>
+              <Button onClick={() => navigate('/superadmin/system-cases')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Cases
               </Button>
@@ -131,7 +131,7 @@ const CaseDetailsPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col gap-10">
-          <Button variant="default" onClick={() => navigate('/admin/tenant-cases')} className="w-fit">
+          <Button variant="default" onClick={() => navigate('/superadmin/system-cases')} className="w-fit">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>

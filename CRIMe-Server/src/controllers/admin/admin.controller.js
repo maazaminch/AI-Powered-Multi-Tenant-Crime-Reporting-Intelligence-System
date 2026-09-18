@@ -793,7 +793,7 @@ class AdminController {
     const { caseId } = req.params;
 
     const filter = {
-        caseId: caseId,
+        _id: caseId,
         ...req.tenantFilter
     };
 
@@ -832,7 +832,7 @@ class AdminController {
             }
     
             const filter = {
-                caseId: caseId,
+                _id: caseId,
                 ...req.tenantFilter
             };
             const caseDoc = await Case.findOne(filter).lean();
@@ -842,7 +842,7 @@ class AdminController {
     
             const updates = await CaseUpdate.find({ caseId: caseDoc._id })
                 .populate('updatedBy', 'fullName badgeNumber')
-                // .populate('evidenceFiles')
+                .populate('evidenceFiles')
                 .sort({ createdAt: -1 });
     
             res.status(200).json(
@@ -898,7 +898,7 @@ class AdminController {
             inactiveStations,
 
             totalPolice,
-            totalCitizens,
+            totalStationHeads,
             pendingPolice,
 
             totalCases,
@@ -919,8 +919,8 @@ class AdminController {
             PoliceStation.countDocuments({ ...req.tenantFilter, isActive: true }),
             PoliceStation.countDocuments({ ...req.tenantFilter, isActive: false }),
 
-            User.countDocuments({ ...req.tenantFilter, role: "POLICE", status: "APPROVED" }),
-            User.countDocuments({ ...req.tenantFilter, role: "CITIZEN" }),
+            User.countDocuments({ ...req.tenantFilter, role: "POLICE", status: "APPROVED", isStationHead: false }),
+            User.countDocuments({ ...req.tenantFilter, role: "POLICE", status: "APPROVED", isStationHead: true }),
             User.countDocuments({ ...req.tenantFilter, role: "POLICE", status: "PENDING" }),
 
             Case.countDocuments({ ...req.tenantFilter }),
@@ -1048,9 +1048,9 @@ class AdminController {
                 inactive: inactiveStations
             },
             users: {
-                total: totalPolice + totalCitizens,
+                total: totalPolice + totalStationHeads,
                 police: totalPolice,
-                citizens: totalCitizens,
+                stationHeads: totalStationHeads,
                 pendingPolice
             },
             cases: {

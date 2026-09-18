@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTenantCases } from '../../hooks/admin/useTenantCases'
-import { usePoliceStationManagement } from '../../hooks/admin/usePoliceStation'
+import { useSystemCases } from '../../hooks/superadmin/useSystemCases'
+import { useTenantManagement } from '../../hooks/superadmin/useTenantManagement'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { formatError } from '../../lib/utils'
+import SearchDropdown from '../../components/common/SearchDropdown'
+
 import { 
   FileText, 
   Search, 
@@ -18,7 +20,7 @@ import {
   Calendar
 } from 'lucide-react'
 
-const TenantCasesPage = () => {
+const SystemCasesPage = () => {
   const navigate = useNavigate()
 
 
@@ -32,6 +34,7 @@ const TenantCasesPage = () => {
     severity: '',
 
     policeStationId: '',
+    tenantId: '',
     assignedTo: '',
 
     reporterType: '',
@@ -44,8 +47,37 @@ const TenantCasesPage = () => {
   })
   const [showFilters, setShowFilters] = useState(false)
 
-  const { cases, pagination, isLoading, error } = useTenantCases(filters)
-  const { stations } = usePoliceStationManagement()
+  const { 
+    cases, 
+    pagination, 
+    isLoading, 
+    error,
+    stations
+  } = useSystemCases(filters)
+  const { tenants } = useTenantManagement()
+
+  const tenantOptions = [
+      {
+        value: "",
+        label: "All Tenants",
+      },
+      ...tenants.map((tenant) => ({
+        value: tenant._id,
+        label: tenant.name
+      })),
+    ];
+
+    const stationOptions = [
+      {
+        value: "",
+        label: "All Stations",
+      },
+      ...stations.map((station) => ({
+        value: station._id,
+        label: station.name
+      })),
+    ];
+    
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ 
@@ -56,7 +88,7 @@ const TenantCasesPage = () => {
   }
 
   const handleCaseClick = (caseId) => {
-    navigate(`/admin/case-details/${caseId}`)
+    navigate(`/superadmin/case-details/${caseId}`)
   }
 
   const getSeverityColor = (severity) => {
@@ -96,10 +128,10 @@ const TenantCasesPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-6 h-6" />
-            Tenant Cases
+            System Cases
           </CardTitle>
           <CardDescription>
-            Command Center - Overview of all cases in your tenant
+            Command Center - Overview of all cases in your system
           </CardDescription>
         </CardHeader>
       </Card>
@@ -140,7 +172,7 @@ const TenantCasesPage = () => {
                   <select
                     value={filters.reporterType}
                     onChange={(e) => handleFilterChange('reporterType', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All</option>
                     <option value="CITIZEN">Citizen</option>
@@ -153,7 +185,7 @@ const TenantCasesPage = () => {
                   <select
                     value={filters.status}
                     onChange={(e) => handleFilterChange('status', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Statuses</option>
                     {statuses.map(status => (
@@ -167,7 +199,7 @@ const TenantCasesPage = () => {
                   <select
                     value={filters.crimeType}
                     onChange={(e) => handleFilterChange('crimeType', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Types</option>
                     {crimeTypes.map(type => (
@@ -181,7 +213,7 @@ const TenantCasesPage = () => {
                   <select
                     value={filters.severity}
                     onChange={(e) => handleFilterChange('severity', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Severities</option>
                     {severities.map(severity => (
@@ -191,17 +223,27 @@ const TenantCasesPage = () => {
                 </div>
 
                 <div>
+                  <label className="text-sm font-medium mb-1 block">Tenants</label>    
+                <SearchDropdown
+                    value={filters.tenantId}
+                    options={tenantOptions}
+                    onChange={(value) => handleFilterChange("tenantId", value)}
+                    placeholder="All Tenants"
+                    searchPlaceholder="Search tenants..."
+                    emptyMessage="No tenant found."
+                />
+                </div>
+
+                <div>
                   <label className="text-sm font-medium mb-1 block">Police Stations</label>
-                  <select
+                  <SearchDropdown
                     value={filters.policeStationId}
-                    onChange={(e) => handleFilterChange('policeStationId', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">All</option>
-                    {stations?.map(station => (
-                      <option key={station._id} value={station._id}>{station.name}</option>
-                    ))}
-                  </select>
+                    options={stationOptions}
+                    onChange={(value) => handleFilterChange("policeStationId", value)}
+                    placeholder="All Stations"
+                    searchPlaceholder="Search stations..."
+                    emptyMessage="No station found."
+                />
                 </div>    
 
                 <div>
@@ -209,7 +251,7 @@ const TenantCasesPage = () => {
                   <select
                     value={filters.assignedTo}
                     onChange={(e) => handleFilterChange('assignedTo', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All</option>
                     <option value="UNASSIGNED">Unassigned</option>
@@ -221,7 +263,7 @@ const TenantCasesPage = () => {
                   <select
                     value={filters.sortBy}
                     onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="createdAt">Date Created</option>
                     <option value="severity">Severity</option>
@@ -236,7 +278,7 @@ const TenantCasesPage = () => {
                   <select
                     value={filters.sortOrder}
                     onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="desc">Descending</option>
                     <option value="asc">Ascending</option>
@@ -253,6 +295,7 @@ const TenantCasesPage = () => {
                       severity: '',
                       assignedTo: '',
                       search: '',
+                      tenantId: '',
                       policeStationId: '',
                       reporterType: '',
                       startDate: '',
@@ -359,7 +402,7 @@ const TenantCasesPage = () => {
                       )}
 
                       <Button size="sm"
-                        onClick={() => handleCaseClick(caseItem.caseId)}
+                        onClick={() => handleCaseClick(caseItem._id)}
                         >
                         Case Details
                       </Button>
@@ -409,4 +452,4 @@ const TenantCasesPage = () => {
   )
 }
 
-export default TenantCasesPage
+export default SystemCasesPage

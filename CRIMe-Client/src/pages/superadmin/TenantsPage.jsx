@@ -148,9 +148,6 @@ const TenantsPage = () => {
             {/* Expandable Filters */}
             {showFilters && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
-                
-               
-
                 <div>
                   <select
                     value={filters.type}
@@ -169,7 +166,7 @@ const TenantsPage = () => {
                     onChange={(e) => handleFilterChange('isActive', e.target.value)}
                     className="w-full px-3 py-2 h-10 border bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">All</option>
+                    <option value="">All Statuses</option>
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
                   </select>

@@ -9,11 +9,7 @@ import { getAuditLogsSchema, getAuditLogByIdSchema, getUserActivitySchema, getUs
 
 const auditRouter = express.Router();
 
-/**
- * Get audit logs with role-based access control
- * Super Admin: Can see all tenant logs, filter by tenant
- * Regular Admin: Can only see their own tenant logs
- */
+
 auditRouter.get(
   "/logs",
   verifyJWT,
@@ -23,9 +19,6 @@ auditRouter.get(
   AuditController.getAuditLogs
 );
 
-
-
-
 //  Get audit statistics
 auditRouter.get(
   "/stats",
@@ -33,6 +26,14 @@ auditRouter.get(
   tenantGuard,
   roleGuard({ roles: [Roles.ADMIN] }),
   AuditController.getAuditStats
+);
+
+auditRouter.get(
+  "/recent-activities",
+  verifyJWT,
+  tenantGuard,
+  roleGuard({ roles: [Roles.ADMIN] }),
+  AuditController.recentActivities
 );
 
 export default auditRouter;

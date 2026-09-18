@@ -44,7 +44,7 @@ const SearchDropdown = ({
           variant="outline"
           role="combobox"
           disabled={disabled}
-          className={cn("w-full h-10 justify-between bg-white px-3 font-normal", className)}
+          className={cn("w-full justify-between bg-white px-3 py-2 font-normal", className)}
         >
           {selectedOption?.label || placeholder}
 

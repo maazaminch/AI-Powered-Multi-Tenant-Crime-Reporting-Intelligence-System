@@ -124,19 +124,33 @@ superAdminRouter.get(
     superAdminController.getSystemAnalyticsController
 );
 
+// System Cases Routes
 superAdminRouter.get(
-    "/admin-performance",
+    "/system-cases",
     verifyJWT,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
-    superAdminController.getAdminPerformanceController
+    superAdminController.systemCases
 );
 
-
 superAdminRouter.get(
-    "/tenant-analytics",
+    "/case-details/:caseId",
     verifyJWT,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
-    superAdminController.getTenantAnalyticsController
+    superAdminController.caseDetails
+);
+
+superAdminRouter.get(
+    "/case-updates/:caseId",
+    verifyJWT,
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    superAdminController.caseUpdates
+);
+
+superAdminRouter.get(
+    "/police-stations",
+    verifyJWT,
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    superAdminController.policeStations
 );
 
 export default superAdminRouter;

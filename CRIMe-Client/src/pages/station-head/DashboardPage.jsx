@@ -56,7 +56,7 @@ const StationHeadDashboard = () => {
             title="Station Police"
             value={stats?.stationPolice ?? '...'}
             color="text-white"
-            bg="bg-indigo-900"
+            bg="bg-indigo-900 hover:bg-indigo-700"
             path="/station-head/station-police"
           />
 
@@ -64,7 +64,7 @@ const StationHeadDashboard = () => {
             title="Total Cases"
             value={stats?.totalCases ?? '...'}
             color="text-white"
-            bg="bg-emerald-900"
+            bg="bg-emerald-900 hover:bg-emerald-700"
             path="/station-head/station-cases"
           />
 
@@ -72,7 +72,7 @@ const StationHeadDashboard = () => {
             title="Pending Cases"
             value={stats?.pendingCases ?? '...'}
             color="text-white"
-            bg="bg-amber-900"
+            bg="bg-amber-900 hover:bg-amber-700"
             path="/station-head/pending-cases"
           />
 
@@ -80,7 +80,7 @@ const StationHeadDashboard = () => {
             title="Under Investigation Cases"
             value={stats?.underInvestigationCases ?? '...'}
             color="text-white"
-            bg="bg-rose-900"
+            bg="bg-rose-900 hover:bg-rose-700"
             path="/station-head/under-investigation-cases"
           />
 

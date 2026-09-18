@@ -32,3 +32,19 @@ export const useAuditStats = () => {
     error
   }
 }
+
+
+  export const useRecentActivity = () => {
+    const { data, isLoading, error } = useQuery({
+      queryKey: ['recent-activity'],
+      queryFn: auditService.recentActivities,
+      staleTime: 1000 * 60 // 1 minute
+    })
+
+    return {
+      recentActivities: data?.recentActivities || [],
+      isLoading,
+      error
+    }
+  }
+

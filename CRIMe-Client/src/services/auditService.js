@@ -12,6 +12,11 @@ export const auditService = {
   getAuditStats: async () => {
     const response = await api.get('/api/audit/stats')
     return response.data
+  },
+
+  recentActivities: async () => {
+    const response = await api.get('/api/audit/recent-activities')
+    return response.data
   }
 
 }

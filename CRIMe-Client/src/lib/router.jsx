@@ -29,6 +29,8 @@ import PendingRequestsPage from '../pages/superadmin/PendingRequestsPage'
 import SystemAnalyticsPage from '../pages/superadmin/SystemAnalyticsPage'
 import AuditLogsPage from '../pages/superadmin/AuditLogsPage'
 import NotificationsPage from '../pages/superadmin/NotificationsPage'
+import SystemCasesPage from '../pages/superadmin/SystemCasesPage'
+import SuperAdminCaseDetailsPage from '../pages/superadmin/caseDetailsPage'
 
 // Importing Admin pages
 import AdminDashboard from '../pages/admin/DashboardPage'
@@ -155,6 +157,14 @@ export const router = createBrowserRouter([
       {
         path: 'pending-requests',
         element: <PendingRequestsPage />
+      },
+      {
+        path: 'system-cases',
+        element: <SystemCasesPage />
+      },
+      {
+        path: 'case-details/:caseId',
+        element: <SuperAdminCaseDetailsPage />
       },
       {
         path: 'system-analytics',

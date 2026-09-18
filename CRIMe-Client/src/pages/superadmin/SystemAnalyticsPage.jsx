@@ -28,6 +28,7 @@ const SystemAnalyticsPage = () => {
   // Data mapping for charts
   const userPieData = [
     { name: "Admins", value: analytics.users.admins },
+    { name: "Station Heads", value: analytics.users.stationHeads },
     { name: "Police", value: analytics.users.police },
     { name: "Citizens", value: analytics.users.citizens }
   ];
@@ -48,7 +49,7 @@ const SystemAnalyticsPage = () => {
     ? analytics.trends.newCasesThisMonth
     : [{ month: "This Month", count: analytics.trends?.newCasesThisMonth ?? 0 }];
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
+  const COLORS = ["#fe1100b7", "#00C49F", "#00c40acc","#ffbb28c4"];
 
   return (
     <div className="space-y-6 p-6">

@@ -147,10 +147,9 @@ function generateDescription(action, targetType, targetId) {
 
 function extractTargetName(req) {
   // Try to extract a human-readable name from the request
-  if (req.body?.name) return req.body.name;
+  if (req.body?.fullName) return req.body.fullName;
   if (req.body?.title) return req.body.title;
-  if (req.body?.username) return req.body.username;
-  if (req.body?.email) return req.body.email;
+  if (req.body?.name) return req.body.name;
   return undefined;
 }
 

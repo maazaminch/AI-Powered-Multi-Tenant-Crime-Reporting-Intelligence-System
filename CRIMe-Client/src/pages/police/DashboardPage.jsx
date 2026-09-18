@@ -13,42 +13,9 @@ import {
   Bell,
   FileText
 } from 'lucide-react'
+import StatCard from '../../components/common/StatCard'
 
 
-function StatCard({
-  title,
-  value,
-  color,
-  bg,
-  path,
-  icon: Icon
-}) {
-  const navigate = useNavigate()
-  return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card
-        onClick={() => navigate(path)}
-        className={`cursor-pointer transition-all duration-300 hover:shadow-xl ${bg} border-2`}
-      >
-        <CardContent className="flex flex-col items-center justify-center p-6">
-          <Icon className={`w-8 h-8 mb-2 ${color}`} />
-          <h2 className={`text-4xl font-bold ${color}`}>
-            {value}
-          </h2>
-          <p className="mt-2 text-sm font-medium text-muted-foreground">
-            {title}
-          </p>
-        </CardContent>
-      </Card>
-    </motion.div>
-  )
-}
 
 const PoliceDashboard = () => {
 
@@ -114,8 +81,8 @@ const PoliceDashboard = () => {
               <StatCard
                 title="Assigned Cases"
                 value={stats?.assignedCases ?? '...'}
-                color="text-blue-600"
-                bg="bg-blue-50 hover:bg-blue-100"
+                color="text-white"
+                bg="bg-indigo-900 hover:bg-indigo-700"
                 path="/police/cases"
                 icon={Briefcase}
               />
@@ -123,8 +90,8 @@ const PoliceDashboard = () => {
               <StatCard
                 title="Under Investigation"
                 value={stats?.underInvestigationCases ?? '...'}
-                color="text-orange-600"
-                bg="bg-orange-50 hover:bg-orange-100"
+                color="text-white"
+                bg="bg-emerald-900 hover:bg-emerald-700"
                 path="/police/cases?status=UNDER_INVESTIGATION"
                 icon={Clock}
               />
@@ -132,8 +99,8 @@ const PoliceDashboard = () => {
               <StatCard
                 title="Resolved Cases"
                 value={stats?.resolvedCases ?? '...'}
-                color="text-green-600"
-                bg="bg-green-50 hover:bg-green-100"
+                color="text-white"
+                bg="bg-amber-900 hover:bg-amber-700"
                 path="/police/cases?status=RESOLVED"
                 icon={CheckCircle}
               />
@@ -141,8 +108,8 @@ const PoliceDashboard = () => {
               <StatCard
                 title="Resolution Rate"
                 value={`${stats?.resolutionRate ?? '...'}%`}
-                color="text-purple-600"
-                bg="bg-purple-50 hover:bg-purple-100"
+                color="text-white"
+                bg="bg-rose-900 hover:bg-rose-700"
                 path="/police/cases"
                 icon={TrendingUp}
               />

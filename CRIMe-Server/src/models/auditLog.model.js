@@ -19,14 +19,12 @@ actor: {
 
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    index: true,
-    default: null
+    ref: "User"
   },
 
   role: {
     type: String,
-    enum: ["ADMIN", "POLICE", "CITIZEN", null],
+    enum: ["ADMIN", "POLICE", "CITIZEN"],
     default: null,
     index: true
   },

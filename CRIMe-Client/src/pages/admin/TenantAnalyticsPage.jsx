@@ -26,7 +26,7 @@ const TenantAnalyticsPage = () => {
   // Data mapping for charts
   const userPieData = [
     { name: "Police", value: analytics.users?.police || 0 },
-    { name: "Citizens", value: analytics.users?.citizens || 0 }
+    { name: "Station Heads", value: analytics.users?.stationHeads || 0 }
   ];
 
   const caseBarData = [

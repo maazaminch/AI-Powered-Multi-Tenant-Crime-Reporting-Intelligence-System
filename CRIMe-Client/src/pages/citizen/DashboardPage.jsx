@@ -69,7 +69,7 @@ const CitizenDashboard = () => {
                 title="Pending Cases"
                 value={stats?.pendingCases ?? '...'}
                 color="text-white"
-                bg="bg-indigo-900"
+                bg="bg-indigo-900 hover:bg-indigo-700"
                 path="/citizen/cases"
                 icon={Clock}
               />
@@ -78,7 +78,7 @@ const CitizenDashboard = () => {
                 title="Assigned Cases"
                 value={stats?.assignedCases ?? '...'}
                 color="text-white"
-                bg="bg-emerald-900"
+                bg="bg-emerald-900 hover:bg-emerald-700"
                 path="/citizen/cases"
                 icon={Briefcase}
               />
@@ -87,7 +87,7 @@ const CitizenDashboard = () => {
                 title="Under Investigation"
                 value={stats?.underInvestigationCases ?? '...'}
                 color="text-white"
-                bg="bg-amber-900"
+                bg="bg-amber-900 hover:bg-amber-700"
                 path="/citizen/cases"
                 icon={Clock}
               />
@@ -96,7 +96,7 @@ const CitizenDashboard = () => {
                 title="Resolved Cases"
                 value={stats?.resolvedCases ?? '...'}
                 color="text-white"
-                bg="bg-rose-900"
+                bg="bg-rose-900 hover:bg-rose-700"
                 path="/citizen/cases"
                 icon={CheckCircle}
               />
