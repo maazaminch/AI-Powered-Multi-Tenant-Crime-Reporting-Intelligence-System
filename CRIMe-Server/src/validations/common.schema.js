@@ -302,7 +302,6 @@ export const paginationSchema = {
         .integer()
         .min(1)
         .default(1)
-        .optional()
         .messages({
             'number.min': 'Page must be at least 1'
         }),
@@ -310,8 +309,7 @@ export const paginationSchema = {
         .integer()
         .min(1)
         .max(100)
-        .default(10)
-        .optional()
+        .default(20)
         .messages({
             'number.min': 'Limit must be at least 1',
             'number.max': 'Limit cannot exceed 100'

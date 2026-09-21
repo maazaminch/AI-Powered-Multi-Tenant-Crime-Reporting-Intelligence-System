@@ -109,7 +109,7 @@ class EvidenceController {
     }
 
     const caseDoc = await Case.findById(caseId)
-      .select("tenantId reporter status assignedTo policeStationId")
+      .select("tenantId reporter status assignedTo policeStationId allowCitizenEvidenceUpload")
       .lean();
 
     if (!caseDoc) {
@@ -118,9 +118,6 @@ class EvidenceController {
 
     if (caseDoc.status !== "UNDER_INVESTIGATION") {
       throw new apiError(400, "Cannot add evidence to this case");
-    }
-    if(!caseDoc.allowCitizenEvidenceUpload) {
-      throw new apiError(400, "Officer has disabled citizen evidence uploads for this case");
     }
 
     // Evidence count validation - max 10 files per case
@@ -139,6 +136,11 @@ class EvidenceController {
 
     // ---------------- Authorization ----------------
     if (currentUser.role === "CITIZEN") {
+      // Check if officer has disabled citizen evidence uploads for this case
+      if (!caseDoc.allowCitizenEvidenceUpload) {
+        throw new apiError(400, "Officer has disabled citizen evidence uploads for this case");
+      }
+      
       if (
         !caseDoc.reporter?.citizenId ||
         caseDoc.reporter.citizenId.toString() !== currentUser._id.toString()
@@ -329,6 +331,42 @@ class EvidenceController {
 
     res.status(200).json(
       new apiResponse(200, evidence, "Case evidence fetched successfully")
+    );
+  });
+
+  // Delete standalone evidence (for citizens removing files before case submission)
+  static deleteStandaloneEvidence = wrapAsync(async (req, res) => {
+    const { evidenceId } = req.params;
+    const currentUser = req.user;
+
+    const evidence = await Evidence.findById(evidenceId).lean();
+    if (!evidence) {
+      throw new apiError(404, "Evidence not found");
+    }
+
+    // Authorization check - only the uploader can delete their standalone evidence
+    if (evidence.uploadedBy?.toString() !== currentUser._id.toString()) {
+      throw new apiError(403, "You can only delete evidence you uploaded");
+    }
+
+    // Only allow deletion of standalone evidence (not attached to a case)
+    if (evidence.caseId !== null) {
+      throw new apiError(400, "Cannot delete evidence that is already attached to a case");
+    }
+
+    // Delete from Cloudinary
+    try {
+      await deleteFromCloudinary(evidence.publicId, evidence.resourceType);
+    } catch (cloudinaryError) {
+      console.error('Cloudinary deletion failed:', cloudinaryError.message);
+      // Continue with database deletion even if Cloudinary fails
+    }
+
+    // Delete from database
+    await Evidence.findByIdAndDelete(evidenceId);
+
+    res.status(200).json(
+      new apiResponse(200, null, "Standalone evidence deleted successfully")
     );
   });
 

@@ -135,7 +135,8 @@ const CaseSchema = new mongoose.Schema({
 
   // PDF references
   receiptPdf: String,   // generated on submission
-  fullPdf: String,      // generated after resolution
+  citizenPdf: String,   // citizen version of final report (redacted)
+  fullPdf: String,      // full version of final report (internal)
 
 
   // ───── Hotspot & Cold Storage ─────

@@ -33,6 +33,11 @@ export const auditLogFiltersSchema = {
     .messages({
       'date.base': 'Invalid end date format'
     }),
+  search: Joi.string()
+    .optional()
+    .messages({
+      'string.base': 'Search must be a string'
+    }),
   ...paginationSchema
 };
 

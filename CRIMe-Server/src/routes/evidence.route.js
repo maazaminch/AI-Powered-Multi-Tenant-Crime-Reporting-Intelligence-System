@@ -19,17 +19,17 @@ import {
 const evidenceRouter = Router();
 
 // Stricter rate limiting for upload endpoints
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // 10 uploads per hour
-  message: 'Too many upload attempts, please try again later'
-});
+// const uploadLimiter = rateLimit({
+//   windowMs: 60 * 60 * 1000, // 1 hour
+//   max: 10, // 10 uploads per hour
+//   message: 'Too many upload attempts, please try again later'
+// });
 
-const guestUploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 uploads per hour for guests
-  message: 'Too many upload attempts, please try again later'
-});
+// const guestUploadLimiter = rateLimit({
+//   windowMs: 60 * 60 * 1000, // 1 hour
+//   max: 5, // 5 uploads per hour for guests
+//   message: 'Too many upload attempts, please try again later'
+// });
 
 // Evidence retrieval and deletion (must come before parameterized routes)
 evidenceRouter.get(
@@ -46,6 +46,15 @@ evidenceRouter.get(
   EvidenceController.getEvidence
 );
 
+// Delete standalone evidence (for citizens removing files before case submission)
+// This must come before the general delete route to avoid route conflicts
+evidenceRouter.delete(
+  '/standalone/:evidenceId',
+  verifyJWT,
+  validate(deleteEvidenceSchema),
+  EvidenceController.deleteStandaloneEvidence
+);
+
 evidenceRouter.delete(
   '/:evidenceId',
   verifyJWT,
@@ -57,7 +66,7 @@ evidenceRouter.delete(
 evidenceRouter.post(
     '/upload-standalone',
     verifyJWT,
-    uploadLimiter,
+    // uploadLimiter,
     uploadEvidence.array('files', 10),
     validate(uploadStandaloneEvidenceSchema),
     EvidenceController.uploadStandaloneEvidence
@@ -66,7 +75,7 @@ evidenceRouter.post(
 evidenceRouter.post(
   '/upload-evidence/:caseId',
   verifyJWT,
-  uploadLimiter,
+  // uploadLimiter,
   uploadEvidence.array('files', 5),
   validate(uploadEvidenceSchema),
   EvidenceController.uploadEvidence
@@ -75,7 +84,7 @@ evidenceRouter.post(
 // Guest evidence routes
 evidenceRouter.post(
   '/guest/upload-standalone',
-  guestUploadLimiter,
+  // guestUploadLimiter,
   uploadEvidence.array('files', 10),
   validate(uploadGuestStandaloneEvidenceSchema),
   GuestEvidenceController.uploadGuestStandaloneEvidence
@@ -83,10 +92,16 @@ evidenceRouter.post(
 
 evidenceRouter.post(
   '/guest/upload-evidence/:trackingToken',
-  guestUploadLimiter,
+  // guestUploadLimiter,
   uploadEvidence.array('files', 5),
   validate(uploadGuestEvidenceSchema),
   GuestEvidenceController.uploadGuestEvidence
+);
+
+// Delete standalone evidence for guests
+evidenceRouter.delete(
+  '/guest/standalone/:evidenceId',
+  GuestEvidenceController.deleteGuestStandaloneEvidence
 );
 
 export default evidenceRouter;

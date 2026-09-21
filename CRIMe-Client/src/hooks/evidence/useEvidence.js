@@ -73,11 +73,38 @@ export const useEvidence = (isGuest = false) => {
     }
   })
 
+  // Delete standalone evidence (for citizens removing files before case submission)
+  const deleteStandaloneEvidence = useMutation({
+    mutationFn: (evidenceId) => evidenceService.deleteStandaloneEvidence(evidenceId),
+    onSuccess: (data) => {
+      toast.success('Evidence removed successfully')
+      return data
+    },
+    onError: (error) => {
+      toast.error(error.backendMessage || 'Failed to remove evidence')
+    }
+  })
+
+  // Delete standalone evidence for guests
+  const deleteGuestStandaloneEvidence = useMutation({
+    mutationFn: ({ evidenceId, guestSessionId }) => 
+      evidenceService.deleteGuestStandaloneEvidence(evidenceId, guestSessionId),
+    onSuccess: (data) => {
+      toast.success('Evidence removed successfully')
+      return data
+    },
+    onError: (error) => {
+      toast.error(error.backendMessage || 'Failed to remove evidence')
+    }
+  })
+
   return {
     uploadStandalone,
     uploadToCase,
     getCaseEvidence,
     getEvidence,
-    deleteEvidence
+    deleteEvidence,
+    deleteStandaloneEvidence,
+    deleteGuestStandaloneEvidence
   }
 }

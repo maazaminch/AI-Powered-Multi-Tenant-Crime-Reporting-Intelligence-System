@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { stationHeadService } from '../../services/stationHeadService'
+import { toast } from 'sonner'
 
 export const useCaseDetails = (caseId) => {
   const queryClient = useQueryClient()
@@ -27,7 +28,11 @@ export const useCaseDetails = (caseId) => {
       queryClient.invalidateQueries({ queryKey: ['case-details', caseId] })
       queryClient.invalidateQueries({ queryKey: ['case-updates', caseId] })
       queryClient.invalidateQueries({ queryKey: ['station-cases'] })
+      toast.success('Case closed successfully')
     },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to close case')
+    }
   })
 
   // Add case update
@@ -39,7 +44,11 @@ export const useCaseDetails = (caseId) => {
       // Also refetch immediately to ensure fresh data
       queryClient.refetchQueries({ queryKey: ['case-updates', caseId] })
       queryClient.refetchQueries({ queryKey: ['case-details', caseId] })
+      toast.success('Case update added successfully')
     },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to add case update')
+    }
   })
 
   // Assign case to police
@@ -49,7 +58,11 @@ export const useCaseDetails = (caseId) => {
       queryClient.invalidateQueries({ queryKey: ['case-details', caseId] })
       queryClient.invalidateQueries({ queryKey: ['case-updates', caseId] })
       queryClient.invalidateQueries({ queryKey: ['station-cases'] })
+      toast.success('Case assigned successfully')
     },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to assign case')
+    }
   })
 
   // Reassign case
@@ -59,7 +72,11 @@ export const useCaseDetails = (caseId) => {
       queryClient.invalidateQueries({ queryKey: ['case-details', caseId] })
       queryClient.invalidateQueries({ queryKey: ['case-updates', caseId] })
       queryClient.invalidateQueries({ queryKey: ['station-cases'] })
+      toast.success('Case reassigned successfully')
     },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to reassign case')
+    }
   })
 
   return {

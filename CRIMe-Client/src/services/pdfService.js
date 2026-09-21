@@ -32,7 +32,8 @@ export const pdfService = {
         responseType: 'blob'
       })
 
-      const url = window.URL.createObjectURL(new Blob([response]))
+      // const url = window.URL.createObjectURL(new Blob([response.data]))
+      const url = window.URL.createObjectURL(response)
       const link = document.createElement('a')
       link.href = url
       link.setAttribute('download', `receipt-${caseId}.pdf`)
@@ -53,10 +54,12 @@ export const pdfService = {
     try {
       const response = await api.get(
         `/api/pdf/final-report/${caseId}?version=${version}`,
-        { responseType: 'blob' }
+        {
+          responseType: 'blob',
+        }
       )
 
-      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const url = window.URL.createObjectURL(response)
       const link = document.createElement('a')
       link.href = url
       link.setAttribute('download', `final-report-${version}-${caseId}.pdf`)

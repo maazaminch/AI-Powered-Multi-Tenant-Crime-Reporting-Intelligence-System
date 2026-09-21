@@ -88,6 +88,8 @@ class CitizenController {
         throw new apiError(400, "evidenceFileIds must be an array with maximum 10 items");
         }
 
+        // ───── 4. Validate evidence ownership (if attached at submit time) ─────
+        let evidenceIds = [];
         if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
         const evidences = await Evidence.find({ 
             _id: { $in: evidenceFileIds }, 
@@ -120,21 +122,6 @@ class CitizenController {
             phone: currentUser.phone,
             isVerified: true
         };
-
-        // ───── 4. Validate evidence ownership (if attached at submit time) ─────
-        let evidenceIds = [];
-        if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
-        const evidences = await Evidence.find(
-            { 
-                _id: { $in: evidenceFileIds }, 
-                uploadedBy: currentUser._id
-            });
-
-        if (evidences.length !== evidenceFileIds.length) {
-            throw new apiError(400, "One or more evidence files are invalid");
-        }
-        evidenceIds = evidences.map((e) => e._id);
-        }
 
         // ───── 5. AI Classification ─────
     // Gemini service ALWAYS returns something.

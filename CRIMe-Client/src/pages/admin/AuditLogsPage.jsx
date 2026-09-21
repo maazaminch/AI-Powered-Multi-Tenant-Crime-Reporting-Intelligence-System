@@ -17,7 +17,7 @@ import {
 const AdminAuditLogsPage = () => {
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 50,
+    limit: 20,
     search: '',
     action: '',
     targetType: '',
@@ -42,7 +42,7 @@ const AdminAuditLogsPage = () => {
   const handleResetFilters = () => {
     setFilters({
       page: 1,
-      limit: 50,
+      limit: 20,
       search: '',
       action: '',
       targetType: '',

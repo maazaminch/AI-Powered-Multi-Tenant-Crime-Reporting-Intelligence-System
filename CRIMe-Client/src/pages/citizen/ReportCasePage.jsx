@@ -27,7 +27,7 @@ const ReportCasePage = () => {
   const navigate = useNavigate()
   const reportCase = useReportCase()
   const suggestStations = useSuggestNearestStations()
-  const { uploadStandalone } = useEvidence()
+  const { uploadStandalone, deleteStandaloneEvidence } = useEvidence()
   const { downloadReceipt, isDownloadingReceipt } = usePDF()
 
   const [formData, setFormData] = useState({
@@ -128,12 +128,26 @@ const ReportCasePage = () => {
     }
   }
 
-  const removeFile = (fileId) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
-    setFormData(prev => ({
-      ...prev,
-      evidenceFileIds: prev.evidenceFileIds.filter(id => id !== fileId)
-    }))
+  const removeFile = async (fileId) => {
+    try {
+      // Delete from backend/Cloudinary
+      await deleteStandaloneEvidence.mutateAsync(fileId)
+      
+      // Remove from local state
+      setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
+      setFormData(prev => ({
+        ...prev,
+        evidenceFileIds: prev.evidenceFileIds.filter(id => id !== fileId)
+      }))
+    } catch (error) {
+      console.error('Failed to remove evidence:', error)
+      // Still remove from local state even if backend fails to avoid UI inconsistency
+      setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
+      setFormData(prev => ({
+        ...prev,
+        evidenceFileIds: prev.evidenceFileIds.filter(id => id !== fileId)
+      }))
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -156,8 +170,8 @@ const ReportCasePage = () => {
     try {
       const result = await reportCase.mutateAsync(formData)
       console.log('Report case result:', result)
-      console.log('Case ID from result:', result.data?.caseId || result.caseId)
-      setSubmittedCaseId(result.data?.caseId || result.caseId)
+      console.log('Case ID from result:', result.data?._id || result._id)
+      setSubmittedCaseId(result.data?._id || result._id)
       setShowSuccessDialog(true)
     } catch (error) {
       // Error handled by mutation
@@ -345,6 +359,7 @@ const ReportCasePage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeFile(file.id)}
+                          disabled={deleteStandaloneEvidence.isPending}
                         >
                           <X className="w-4 h-4" />
                         </Button>

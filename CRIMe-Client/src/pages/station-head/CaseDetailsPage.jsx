@@ -9,6 +9,7 @@ import NoData from '../../components/ui/feedback/NoData'
 import Loader from '../../components/ui/feedback/Loader'
 import { useCaseDetails } from '../../hooks/stationHead/useCaseDetails'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
+import { usePDF } from '../../hooks/pdf/usePDF'
 import { AddNoteModal } from '../../components/features/shared/modals/AddNoteModal'
 import { AddStatementModal } from '../../components/features/shared/modals/AddStatementModal'
 import { AddArrestModal } from '../../components/features/shared/modals/AddArrestModal'
@@ -55,6 +56,8 @@ const CaseDetailsPage = () => {
   const { uploadToCase, getCaseEvidence, deleteEvidence } = useEvidence()
   const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?._id)
   const { police } = useStationPolice()
+  const { downloadFinalReport, isDownloadingFinalReport } = usePDF()
+
 
   const getStatusColor = (status) => {
     const colors = {
@@ -114,16 +117,11 @@ const CaseDetailsPage = () => {
   }
 
   const handleAddNote = async (data) => {
-    try {
-      await addUpdate(data)
-      setShowNoteModal(false)
-      toast.success('Note added successfully')
-    } catch (error) {
-      toast.error(error.backendMessage || 'Failed to add note')
-    }
+    await addUpdate(data)
+    setShowNoteModal(false)
   }
 
-    const handleEvidenceUpload = async (files) => {
+  const handleEvidenceUpload = async (files) => {
     setIsUploading(true)
 
     try {
@@ -162,53 +160,35 @@ const CaseDetailsPage = () => {
   }
 
   const handleAddStatement = async (data) => {
-    try {
-      await addUpdate(data)
-      setShowStatementModal(false)
-      toast.success('Statement added successfully')
-    } catch (error) {
-      toast.error(error.backendMessage || 'Failed to add statement')
-    }
+    await addUpdate(data)
+    setShowStatementModal(false)
   }
 
   const handleAddArrest = async (data) => {
-    try {
-      await addUpdate(data)
-      setShowArrestModal(false)
-      toast.success('Arrest recorded successfully')
-    } catch (error) {
-      toast.error(error.backendMessage || 'Failed to record arrest')
-    }
+    await addUpdate(data)
+    setShowArrestModal(false)
   }
 
   const handleAssignCase = async (policeId) => {
-    try {
-      await assignCase(policeId)
-      setShowAssignModal(false)
-      toast.success('Case assigned successfully')
-    } catch (error) {
-      toast.error(error.backendMessage || 'Failed to assign case')
-    }
+    await assignCase(policeId)
+    setShowAssignModal(false)
   }
 
   const handleCloseCase = async (remarks) => {
-    try {
-      await closeCase({ remarks })
-      setShowCloseModal(false)
-      toast.success('Case closed successfully')
-    } catch (error) {
-      toast.error(error.backendMessage || 'Failed to close case')
-    }
+    await closeCase({ remarks })
+    setShowCloseModal(false)
   }
 
   const handleReassignCase = async (policeId) => {
-    try {
-      await reassignCase(policeId)
-      toast.success('Case reassigned successfully')
-    } catch (error) {
-      toast.error(error.backendMessage || 'Failed to reassign case')
-    }
+    await reassignCase(policeId)
+    setShowAssignModal(false)
   }
+
+
+  const handleDownloadPdf = () => {
+    downloadFinalReport({ caseId: caseDetails._id, version: 'full' })
+  }
+
 
   if (isLoading) {
     return (
@@ -246,6 +226,7 @@ const CaseDetailsPage = () => {
   const canAssign = caseDetails.status === 'PENDING'
   const canReassign = caseDetails.status === 'ASSIGNED'
   const canClose = caseDetails.status === 'RESOLVED'
+  const canDownloadFullPdf = caseDetails.status === 'CLOSED'
   const canAddUpdates = ['ASSIGNED', 'UNDER_INVESTIGATION'].includes(caseDetails.status)
 
   return (
@@ -282,6 +263,25 @@ const CaseDetailsPage = () => {
             <Button variant="destructive" onClick={() => setShowCloseModal(true)}>
               <Archive className="w-4 h-4 mr-2" />
               Close Case
+            </Button>
+          )}
+          {canDownloadFullPdf && (
+            <Button 
+              variant="default" 
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingFinalReport}
+            >
+              {isDownloadingFinalReport ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Full PDF
+                </>
+              )}
             </Button>
           )}
         </div>

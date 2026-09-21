@@ -23,6 +23,16 @@ export const evidenceService = {
         const response = await api.delete(`/api/evidence/${evidenceId}`)
         return response.data
     },
+    deleteStandaloneEvidence: async (evidenceId) => {
+        const response = await api.delete(`/api/evidence/standalone/${evidenceId}`)
+        return response.data
+    },
+    deleteGuestStandaloneEvidence: async (evidenceId, guestSessionId) => {
+        const response = await api.delete(`/api/evidence/guest/standalone/${evidenceId}`, {
+            data: { guestSessionId }
+        })
+        return response.data
+    },
     // Guest evidence endpoints
     uploadGuestStandalone: async (formData) => {
         const response = await api.post('/api/evidence/guest/upload-standalone', formData)

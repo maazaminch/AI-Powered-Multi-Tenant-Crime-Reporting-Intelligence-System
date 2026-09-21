@@ -32,7 +32,7 @@ const GuestReportPage = () => {
   const reportCase = useGuestReportCase()
   const suggestStations = useGuestSuggestStations()
   const { guestDownloadReceipt, isGuestDownloadingReceipt } = usePDF()
-  const { uploadStandalone } = useEvidence(true) // true for guest
+  const { uploadStandalone, deleteGuestStandaloneEvidence } = useEvidence(true) // true for guest
 
   const [step, setStep] = useState(1)
   const [sessionId, setSessionId] = useState('')
@@ -175,12 +175,29 @@ const GuestReportPage = () => {
     }
   }
 
-  const removeFile = (fileId) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
-    setCaseData(prev => ({
-      ...prev,
-      evidenceFileIds: prev.evidenceFileIds.filter(id => id !== fileId)
-    }))
+  const removeFile = async (fileId) => {
+    try {
+      // Delete from backend/Cloudinary
+      await deleteGuestStandaloneEvidence.mutateAsync({ 
+        evidenceId: fileId, 
+        guestSessionId: sessionId 
+      })
+      
+      // Remove from local state
+      setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
+      setCaseData(prev => ({
+        ...prev,
+        evidenceFileIds: prev.evidenceFileIds.filter(id => id !== fileId)
+      }))
+    } catch (error) {
+      console.error('Failed to remove evidence:', error)
+      // Still remove from local state even if backend fails to avoid UI inconsistency
+      setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
+      setCaseData(prev => ({
+        ...prev,
+        evidenceFileIds: prev.evidenceFileIds.filter(id => id !== fileId)
+      }))
+    }
   }
 
   // Step 3: Submit Case
@@ -549,6 +566,7 @@ const GuestReportPage = () => {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => removeFile(file.id)}
+                                    disabled={deleteGuestStandaloneEvidence.isPending}
                                   >
                                     <X className="w-4 h-4" />
                                   </Button>

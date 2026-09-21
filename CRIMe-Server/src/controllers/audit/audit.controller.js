@@ -20,6 +20,8 @@ class AuditController {
       search
     } = req.query;
 
+    const skip = (page - 1) * limit;
+    
     let filter = {};
 
     // Access Control: Super Admin vs Regular Admin
@@ -85,32 +87,27 @@ class AuditController {
       };
     }
 
-    // Pagination
-    const parsedPage = parseInt(page);
-    const parsedLimit = parseInt(limit);
-    const skip = (parsedPage - 1) * parsedLimit;
     
     const logs = await AuditLog.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parsedLimit)
+      .limit(limit)
       .populate('actor.userId', 'fullName email')
       .populate('tenantId', 'name');
 
-    const total = await AuditLog.countDocuments(filter);
-    const totalPages = Math.ceil(total / parsedLimit);
+    const totalLogs = await AuditLog.countDocuments(filter);
+    const totalPages = Math.ceil(totalLogs / limit);
 
     res.status(200).json(
       new apiResponse(200, 
         {
           logs,
           pagination: {
-            total,
-            currentPage: parsedPage,
-            limit: parsedLimit,
+            totalLogs,
+            currentPage: page,
             totalPages,
-            hasNextPage: parsedPage < totalPages,
-            hasPrevPage: parsedPage > 1
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
           }
         }, 
         "Audit logs fetched successfully")

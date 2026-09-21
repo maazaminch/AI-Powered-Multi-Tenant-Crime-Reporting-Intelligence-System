@@ -8,7 +8,8 @@ import Evidence from '../../models/evidence.model.js';
 import {
   uploadBufferToCloudinary,
   getCloudinaryResourceType,
-  getAppFileType
+  getAppFileType,
+  deleteFromCloudinary
 } from '../../services/cloudinary.storage.service.js';
 
 class GuestEvidenceController {
@@ -107,7 +108,7 @@ class GuestEvidenceController {
     }
 
     const caseDoc = await Case.findOne({ trackingToken })
-      .select("tenantId reporter status")
+      .select("tenantId reporter status allowCitizenEvidenceUpload")
       .lean();
 
     if (!caseDoc) {
@@ -121,7 +122,9 @@ class GuestEvidenceController {
     if (caseDoc.status !== "UNDER_INVESTIGATION") {
       throw new apiError(400, "Cannot add evidence to this case");
     }
-    if(!caseDoc.allowCitizenEvidenceUpload) {
+
+    // Check if officer has disabled citizen evidence uploads for this case
+    if (!caseDoc.allowCitizenEvidenceUpload) {
       throw new apiError(400, "Officer has disabled citizen evidence uploads for this case");
     }
 
@@ -198,6 +201,46 @@ class GuestEvidenceController {
       new apiResponse(201, { evidenceIds }, "Evidence uploaded successfully")
     );
     });
+
+  // Delete standalone evidence for guests (before case submission)
+  static deleteGuestStandaloneEvidence = wrapAsync(async (req, res) => {
+    const { evidenceId } = req.params;
+    const { guestSessionId } = req.body;
+
+    if (!guestSessionId) {
+      throw new apiError(400, "guestSessionId is required");
+    }
+
+    const evidence = await Evidence.findById(evidenceId).lean();
+    if (!evidence) {
+      throw new apiError(404, "Evidence not found");
+    }
+
+    // Authorization check - only the guest session owner can delete their standalone evidence
+    if (evidence.guestSessionId !== guestSessionId) {
+      throw new apiError(403, "You can only delete evidence you uploaded");
+    }
+
+    // Only allow deletion of standalone evidence (not attached to a case)
+    if (evidence.caseId !== null) {
+      throw new apiError(400, "Cannot delete evidence that is already attached to a case");
+    }
+
+    // Delete from Cloudinary
+    try {
+      await deleteFromCloudinary(evidence.publicId, evidence.resourceType);
+    } catch (cloudinaryError) {
+      console.error('Cloudinary deletion failed:', cloudinaryError.message);
+      // Continue with database deletion even if Cloudinary fails
+    }
+
+    // Delete from database
+    await Evidence.findByIdAndDelete(evidenceId);
+
+    res.status(200).json(
+      new apiResponse(200, null, "Standalone evidence deleted successfully")
+    );
+  });
 
 }
 

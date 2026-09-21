@@ -28,9 +28,8 @@ import { useEvidence } from '../../hooks/evidence/useEvidence'
 import { AddNoteModal } from '../../components/features/shared/modals/AddNoteModal'
 import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
 import LocationView from '../../components/map/LocationView'
-import Loader from '@/components/ui/feedback/Loader'
-import ErrorState from '@/components/ui/feedback/ErrorState'
-import { toast } from 'sonner'
+import Loader from '../../components/ui/feedback/Loader'
+import ErrorState from '../../components/ui/feedback/ErrorState'
 
 const CaseDetailsPage = () => {
   const { caseId } = useParams()

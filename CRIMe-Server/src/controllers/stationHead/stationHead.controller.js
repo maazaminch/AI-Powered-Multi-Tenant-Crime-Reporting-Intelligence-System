@@ -420,7 +420,7 @@ class StationHeadController {
                 closedAt: new Date()
             },
             { new: true }
-        ).lean();
+        ).populate('assignedTo', 'fullName email phone badgeNumber').lean();
         if (!updatedCase) {
             throw new apiError(409, "Case was modified by another request. Please retry.");
         }
@@ -440,11 +440,15 @@ class StationHeadController {
                 // Get evidence count
                 const evidenceCount = await Evidence.countDocuments({ caseId: caseDoc._id });
 
-                // Generate full case report PDF
+                // Generate both citizen and full versions of the final report PDF
+                const citizenPdfPath = await PDFService.generateFullCase(updatedCase, updates, evidenceCount, false);
                 const fullPdfPath = await PDFService.generateFullCase(updatedCase, updates, evidenceCount, true);
 
-                // Save PDF path to case
-                await Case.findByIdAndUpdate(caseDoc._id, { fullPdf: fullPdfPath });
+                // Save PDF paths to case
+                await Case.findByIdAndUpdate(caseDoc._id, {
+                    citizenPdf: citizenPdfPath,
+                    fullPdf: fullPdfPath
+                });
             } catch (pdfError) {
                 console.error('Final report PDF generation failed:', pdfError);
                 // Case closure still succeeds even if PDF fails

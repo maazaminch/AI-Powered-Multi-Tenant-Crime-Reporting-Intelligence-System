@@ -20,7 +20,7 @@ class PDFController {
         }
 
         const caseDoc = await Case.findOne({
-            caseId,
+            _id: caseId,
             trackingToken,
             "reporter.type": "GUEST"
         });
@@ -61,7 +61,7 @@ class PDFController {
         const { caseId } = req.params;
         const currentUser = req.user;
 
-        const caseDoc = await Case.findOne({ caseId });
+        const caseDoc = await Case.findOne({ _id: caseId });
         if (!caseDoc) {
             throw new apiError(404, "Case not found");
         }
@@ -92,7 +92,9 @@ class PDFController {
         const currentUser = req.user;
         const { version = "citizen" } = req.query; // "citizen" or "full"
 
-        const caseDoc = await Case.findOne({ caseId });
+        const caseDoc = await Case.findOne({ _id: caseId })
+        .populate('assignedTo', 'fullName email phone badgeNumber');
+        
         if (!caseDoc) {
             throw new apiError(404, "Case not found");
         }
@@ -125,13 +127,28 @@ class PDFController {
         }
 
         // STRICT: PDF must exist (generated at case closure)
-        if (!caseDoc.fullPdf || !fs.existsSync(caseDoc.fullPdf)) {
-            throw new apiError(404, "Final report PDF not found. This is a system error - please contact support.");
+        let pdfPath = isFullVersion ? caseDoc.fullPdf : caseDoc.citizenPdf;
+
+        // If PDF doesn't exist, generate it on-demand (for cases closed before this feature)
+        if (!pdfPath || !fs.existsSync(pdfPath)) {
+            const updates = await CaseUpdate.find({ caseId: caseDoc._id })
+                .sort({ createdAt: 1 })
+                .lean();
+            const evidenceCount = await Evidence.countDocuments({ caseId: caseDoc._id });
+
+            pdfPath = await PDFService.generateFullCase(caseDoc, updates, evidenceCount, isFullVersion);
+
+            // Save the generated PDF path
+            if (isFullVersion) {
+                await Case.findByIdAndUpdate(caseDoc._id, { fullPdf: pdfPath });
+            } else {
+                await Case.findByIdAndUpdate(caseDoc._id, { citizenPdf: pdfPath });
+            }
         }
 
         // Send file - no regeneration, immutable document
-        const fileName = isFullVersion ? `final-report-full-${caseId}.pdf` : `final-report-citizen-${caseId}.pdf`;
-        res.download(caseDoc.fullPdf, fileName);
+        const fileName = isFullVersion ? `final-report-full-${caseDoc.caseId}.pdf` : `final-report-citizen-${caseDoc.caseId}.pdf`;
+        res.download(pdfPath, fileName);
     });
 }
 
