@@ -17,6 +17,7 @@ import {
   Building2,
   Upload,
   Download,
+  Eye,
   X
 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
@@ -52,7 +53,7 @@ const GuestCaseDetailsPage = () => {
   } = useGuestCaseDetails(caseId, trackingToken)
 
   const { uploadToCase, getCaseEvidence } = useEvidence(true) // true for guest
-  const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseId)
+  const { data: evidenceData, isLoading: evidenceLoading, refetch: refetchEvidence } = getCaseEvidence(caseDetails?._id)
 
   const getStatusColor = (status) => {
     const colors = {
@@ -131,8 +132,8 @@ const GuestCaseDetailsPage = () => {
 
         const response = await uploadToCase.mutateAsync({ trackingToken, formData })
         
-        if (response && response.data && response.data.evidenceIds) {
-          const newEvidenceIds = response.data.evidenceIds
+        if (response && response.evidenceIds) {
+          const newEvidenceIds = response.evidenceIds
           fileIds.push(...newEvidenceIds)
           
           newEvidenceIds.forEach(id => {
@@ -153,7 +154,7 @@ const GuestCaseDetailsPage = () => {
     }
   }
 
-  const handleDownloadEvidence = (evidence) => {
+  const handleOpenEvidence = (evidence) => {
     if (evidence.fileUrl) {
       window.open(evidence.fileUrl, '_blank')
     }
@@ -396,61 +397,65 @@ const GuestCaseDetailsPage = () => {
           )}
 
           {/* Evidence */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <Card className="border border-slate-400">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <FileIcon className="w-5 h-5" />
-                    Evidence Files
-                  </CardTitle>
-                  {caseDetails.status === 'UNDER_INVESTIGATION' && caseDetails.allowCitizenEvidenceUpload && (
-                    <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
-                      <Upload className="w-4 h-4 mr-1" />
-                      Upload Evidence
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                {evidenceLoading ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : evidenceData && evidenceData.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {evidenceData.map((evidence) => (
-                      <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-2 flex-1">
-                          <FileIcon className="w-4 h-4 text-muted-foreground" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
-                            <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.3 }}
+                    >
+                      <Card className="border border-slate-400">
+                        <CardHeader className="pb-4">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2 text-xl">
+                              <FileIcon className="w-5 h-5" />
+                              Evidence Files
+                            </CardTitle>
+                            {caseDetails.status === 'UNDER_INVESTIGATION' && caseDetails.allowCitizenEvidenceUpload && (
+                              <Button size="sm" variant="outline" onClick={() => setShowUploadEvidence(true)}>
+                                <Upload className="w-4 h-4 mr-1" />
+                                Upload Evidence
+                              </Button>
+                            )}
                           </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDownloadEvidence(evidence)}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                          {evidenceLoading ? (
+                            <div className="flex items-center justify-center py-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            </div>
+                          ) : evidenceData && evidenceData.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {evidenceData.map((evidence) => (
+                                <div key={evidence._id} className="flex items-center justify-between p-3 border rounded-lg">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <FileIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{evidence.originalFileName}</p>
+                                      <p className="text-xs text-muted-foreground">{evidence.fileType}</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleOpenEvidence(evidence)}
+                                  >
+                                    {evidence.fileType === 'IMAGE' || evidence.fileType === 'VIDEO' ? (
+                                      <Eye className="w-4 h-4" />
+                                    ) : (
+                                      <Download className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No evidence files uploaded yet
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No evidence files uploaded yet
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
 
         {/* Sidebar - Timeline */}
         <motion.div

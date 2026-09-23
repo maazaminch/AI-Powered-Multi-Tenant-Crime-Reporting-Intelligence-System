@@ -117,19 +117,19 @@ export const router = createBrowserRouter([
         element: <GuestReportPage />
       },
       {
-        path: 'public/report',
+        path: 'guest/report',
         element: <GuestReportPage />
       },
       {
-        path: 'public/success',
+        path: 'guest/success',
         element: <GuestSuccessPage />
       },
       {
-        path: 'public/track',
+        path: 'guest/track',
         element: <GuestTrackPage />
       },
       {
-        path: 'public/case-details/:caseId',
+        path: 'guest/case-details/:caseId',
         element: <GuestCaseDetailsPage />
       }
     ]

@@ -3,7 +3,7 @@ import { Button } from '../../../ui/Button'
 import { CheckCircle2, Download, Copy, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export const GuestCaseReportedSuccessModal = ({ open, onClose, onDownloadReceipt, caseId, trackingToken, isDownloading }) => {
+export const GuestCaseReportedSuccessModal = ({ open, onClose, onDownloadReceipt, caseId, displayCaseId, trackingToken, isDownloading }) => {
   const handleCopyTrackingToken = () => {
     navigator.clipboard.writeText(trackingToken)
     toast.success('Tracking token copied to clipboard')
@@ -15,7 +15,7 @@ export const GuestCaseReportedSuccessModal = ({ open, onClose, onDownloadReceipt
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-green-600">
             <CheckCircle2 className="h-6 w-6" />
@@ -30,7 +30,7 @@ export const GuestCaseReportedSuccessModal = ({ open, onClose, onDownloadReceipt
           </div>
           <div className="space-y-3">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Case ID: {caseId}</p>
+              <p className="text-sm font-medium">Case ID: {displayCaseId}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Tracking Token:</p>

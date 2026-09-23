@@ -58,7 +58,7 @@ stationHeadRouter.patch(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    auditLog('UPDATE', 'CASE'),
+    auditLog('CLOSE', 'CASE'),
     StationHeadController.closeCaseStatus
 );
 
@@ -67,7 +67,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    auditLog('CREATE', 'CASE_UPDATE'),
+    auditLog('ADD', 'CASE_UPDATE'),
     StationHeadController.addCaseUpdate
 );
 
@@ -84,7 +84,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    auditLog('UPDATE', 'CASE'),
+    auditLog('ASSIGN', 'CASE'),
     StationHeadController.assignCaseToPolice
 );
 
@@ -93,7 +93,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
-    auditLog('UPDATE', 'CASE'),
+    auditLog('REASSIGN', 'CASE'),
     StationHeadController.reassignCase
 );
 

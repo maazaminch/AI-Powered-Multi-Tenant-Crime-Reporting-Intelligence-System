@@ -22,6 +22,11 @@ actor: {
     ref: "User"
   },
 
+  name: {
+    type: String,
+    default: null
+  },
+
   role: {
     type: String,
     enum: ["ADMIN", "POLICE", "CITIZEN"],
@@ -48,15 +53,23 @@ actor: {
     enum: [
       "CASE",
       "CASE_UPDATE",
+      "CASE_STATUS",
+      "CASE_RECEIPT",
+      "CASE_REPORT",
       "EVIDENCE",
       "USER",
+      "USER_STATUS",
+      "ADMIN",
+      "SHO",
+      "POLICE",
+      "CITIZEN",
       "TENANT",
       "POLICE_STATION",
       "NOTIFICATION",
       "ROLE_PERMISSION",
       "AUTH",
       "PROFILE",
-      "STATION_ASSIGNMENT"
+      "PASSWORD"
     ],
     required: true,
     index: true

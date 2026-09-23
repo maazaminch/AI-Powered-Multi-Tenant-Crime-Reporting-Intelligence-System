@@ -380,7 +380,7 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
       }
       this.drawInfoBox(doc, { title: 'CASE DETAILS', rows: caseDetailRows });
 
-      this.drawParagraphSection(doc, { title: 'CASE SUMMARY', text: caseData.description });
+      this.drawParagraphSection(doc, { title: 'CASE SUMMARY', text: caseData.aiSummary || caseData.description });
 
       const timelineLines = (updates || []).map((update) => {
         const dateStr = new Date(update.createdAt).toLocaleString();

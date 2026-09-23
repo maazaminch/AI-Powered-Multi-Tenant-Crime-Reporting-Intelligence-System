@@ -9,6 +9,7 @@ import NotificationService from '../../services/notification.service.js'
 import { verifyGoogleIdToken } from '../../services/googleOAuth.service.js';
 import crypto from "crypto";
 import Invite from "../../models/invite.model.js";
+import PoliceStation from "../../models/policeStation.model.js";
 
 class authController {
 

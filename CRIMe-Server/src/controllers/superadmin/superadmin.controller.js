@@ -893,10 +893,10 @@ class SuperAdminController {
             )
             .populate(
                 "policeStationId",
-                "name address city contactNumber"
+                "name code locationLabel contactNumber"
             )
             .populate('evidenceFiles')
-            .populate('tenantId')
+            .populate('tenantId', 'name region code type')
             .lean();
     
     

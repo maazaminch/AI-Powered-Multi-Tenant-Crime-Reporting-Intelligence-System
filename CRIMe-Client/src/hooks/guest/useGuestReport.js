@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query'
-import { publicService } from '../../services/publicService'
+import { guestService } from '../../services/guestService'
 import { toast } from 'sonner'
 
 export const useSendOTP = () => {
   return useMutation({
-    mutationFn: (email) => publicService.sendOTP(email),
+    mutationFn: (email) => guestService.sendOTP(email),
     onSuccess: (data) => {
       toast.success('OTP sent to your email')
       return data
@@ -18,7 +18,7 @@ export const useSendOTP = () => {
 
 export const useVerifyOTP = () => {
   return useMutation({
-    mutationFn: ({ sessionId, otp }) => publicService.verifyOTP(sessionId, otp),
+    mutationFn: ({ sessionId, otp }) => guestService.verifyOTP(sessionId, otp),
     onSuccess: (data) => {
       toast.success('OTP verified successfully')
       return data
@@ -32,7 +32,7 @@ export const useVerifyOTP = () => {
 
 export const useGuestReportCase = () => {
   return useMutation({
-    mutationFn: (caseData) => publicService.reportCase(caseData),
+    mutationFn: (caseData) => guestService.reportCase(caseData),
     onSuccess: (data) => {
       toast.success('Case reported successfully')
       return data
@@ -46,7 +46,7 @@ export const useGuestReportCase = () => {
 
 export const useTrackCase = () => {
   return useMutation({
-    mutationFn: ({ caseId, trackingToken }) => publicService.trackCase(caseId, trackingToken),
+    mutationFn: ({ caseId, trackingToken }) => guestService.trackCase(caseId, trackingToken),
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to track case')
       throw error
@@ -56,7 +56,7 @@ export const useTrackCase = () => {
 
 export const useGuestSuggestStations = () => {
   return useMutation({
-    mutationFn: ({ lng, lat }) => publicService.suggestNearestStations(lng, lat),
+    mutationFn: ({ lng, lat }) => guestService.suggestNearestStations(lng, lat),
     onError: (error) => {
       toast.error('Failed to fetch nearby stations')
       throw error

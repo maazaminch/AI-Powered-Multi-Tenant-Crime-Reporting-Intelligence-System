@@ -11,7 +11,7 @@ const citizenRouter = express.Router();
 citizenRouter.get(
     "/dashboard-stats",
     verifyJWT,
-    roleGuard(Roles.CITIZEN),
+    roleGuard({ roles: [Roles.CITIZEN] }),
     CitizenController.dashboardStats
 );
 
@@ -20,8 +20,8 @@ citizenRouter.get(
 citizenRouter.post(
     "/report-case-citizen",
     verifyJWT,
-    roleGuard(Roles.CITIZEN),
-    auditLog('CREATE', 'CASE'),
+    roleGuard({ roles: [Roles.CITIZEN] }),
+    auditLog('REPORT', 'CASE'),
     CitizenController.reportCase
 );
 
@@ -35,29 +35,29 @@ citizenRouter.get(
 citizenRouter.get(
     "/citizen-cases",
     verifyJWT,
-    roleGuard(Roles.CITIZEN),
+    roleGuard({ roles: [Roles.CITIZEN] }),
     CitizenController.citizenCases
 );
 
 citizenRouter.get(
     "/case-details/:caseId",
     verifyJWT,
-    roleGuard(Roles.CITIZEN),
+    roleGuard({ roles: [Roles.CITIZEN] }),
     CitizenController.caseDetails
 );
 
 citizenRouter.get(
     "/case-updates/:caseId",
     verifyJWT,
-    roleGuard(Roles.CITIZEN),
+    roleGuard({ roles: [Roles.CITIZEN] }),
     CitizenController.caseUpdates
 );
 
 citizenRouter.post(
     "/add-note/:caseId",
     verifyJWT,
-    roleGuard(Roles.CITIZEN),
-    auditLog('CREATE', 'CASE_UPDATE'),
+    roleGuard({ roles: [Roles.CITIZEN] }),
+    auditLog('ADD', 'CASE_UPDATE'),
     CitizenController.addNote
 );
 

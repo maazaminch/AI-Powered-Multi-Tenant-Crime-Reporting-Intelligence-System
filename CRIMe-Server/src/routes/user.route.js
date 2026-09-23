@@ -25,7 +25,7 @@ userRouter.put(
     "/update-profile",
     verifyJWT,
     // validate(updateProfileSchema),
-    auditLog('UPDATE', 'USER'),
+    auditLog('UPDATE', 'PROFILE'),
     userController.updateProfile
 );
 
@@ -34,7 +34,7 @@ userRouter.put(
     "/change-password",
     verifyJWT,
     // validate(changePasswordSchema),
-    auditLog('UPDATE', 'USER'),
+    auditLog('CHANGE', 'PASSWORD'),
     userController.changePassword
 );
 
@@ -44,7 +44,7 @@ userRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
-    auditLog('UPDATE', 'USER'),
+    auditLog('UPDATE', 'USER_STATUS'),
     userController.updateUserStatus
 );
 

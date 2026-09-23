@@ -10,7 +10,8 @@ const pdfRouter = express.Router();
 
 // Guest download receipt (no auth, one-time only)
 pdfRouter.get(
-    "/guest/receipt",
+    "/guest-receipt/:caseId",
+    // auditLog('DOWNLOAD', 'CASE_RECEIPT'),
     PDFController.guestDownloadReceipt
 );
 
@@ -18,7 +19,7 @@ pdfRouter.get(
 pdfRouter.get(
     "/receipt/:caseId",
     verifyJWT,
-    auditLog('DOWNLOAD', 'CASE'),
+    auditLog('DOWNLOAD', 'CASE_RECEIPT'),
     PDFController.downloadReceipt
 );
 
@@ -26,7 +27,7 @@ pdfRouter.get(
 pdfRouter.get(
     "/final-report/:caseId",
     verifyJWT,
-    auditLog('DOWNLOAD', 'CASE'),
+    auditLog('DOWNLOAD', 'CASE_REPORT'),
     PDFController.downloadFinalReport
 );
 

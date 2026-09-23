@@ -20,14 +20,14 @@ authRouter.post(
 
 authRouter.post(
     "/register-with-invite-link",
-    auditLog('CREATE', 'USER'),
+    auditLog('REGISTER_WITH_INVITE', 'USER'),
     authController.registerWithInviteController
 );
 
 //tested
 authRouter.post(
     "/register-citizen",
-    auditLog('CREATE', 'USER'),
+    auditLog('REGISTER', 'USER'),
     authController.registerCitizenController
 );
 
@@ -50,7 +50,7 @@ authRouter.post(
 
 authRouter.post(
     "/google-register-citizen",
-    auditLog('CREATE', 'USER'),
+    auditLog('GOOGLE_REGISTER', 'USER'),
     authController.googleRegisterCitizenController
 );
 

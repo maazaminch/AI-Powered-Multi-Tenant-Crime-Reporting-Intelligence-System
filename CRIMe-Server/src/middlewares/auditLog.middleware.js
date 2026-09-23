@@ -72,6 +72,7 @@ const auditLog = (action, targetType) => {
               actor: {
                 type: req.user ? "USER" : "GUEST",
                 userId: req.user?._id || null,
+                name: req.user?.fullName || null,
                 role: req.user?.role || null,
                 flags: {
                   isSuperAdmin: req.user?.isSuperAdmin || false,

@@ -34,7 +34,7 @@ policeRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
-    auditLog('CREATE', 'CASE_UPDATE'),
+    auditLog('ADD', 'CASE_UPDATE'),
     PoliceController.addCaseUpdate
 )
 
@@ -44,7 +44,7 @@ policeRouter.patch(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
-    auditLog('UPDATE', 'CASE'),
+    auditLog('UPDATE', 'CASE_STATUS'),
     PoliceController.updateCaseStatus
 )
 
@@ -67,7 +67,10 @@ policeRouter.get(
 policeRouter.patch(
   '/toggle-citizen-evidence/:caseId',
   verifyJWT,
+  tenantGuard,
+  roleGuard({ roles: [Roles.POLICE] }),  
   validate(toggleCitizenEvidenceUploadSchema),
+  auditLog('TOGGLE', 'EVIDENCE'),
   PoliceController.toggleCitizenEvidenceUpload
 );
 

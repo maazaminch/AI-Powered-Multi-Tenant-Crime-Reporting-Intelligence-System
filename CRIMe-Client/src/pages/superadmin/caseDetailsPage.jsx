@@ -216,6 +216,71 @@ const CaseDetailsPage = () => {
             </CardContent>
           </Card>
 
+          {/* Assigned Officer */}
+          {caseDetails.tenantId && (
+            <Card className="border border-slate-400">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Shield className="w-5 h-5" />
+                  Tenant
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-medium text-lg">Name</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.tenantId?.name}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Region</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.tenantId?.region}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Code</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.tenantId?.code}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Type</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.tenantId?.type}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Assigned Officer */}
+          {caseDetails.policeStationId && (
+            <Card className="border border-slate-400">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Shield className="w-5 h-5" />
+                  Police Station
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-medium text-lg">Name</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.policeStationId?.name}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Code</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.policeStationId?.code}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Contact</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.policeStationId?.contactNumber}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-lg">Location Label</p>
+                    <p className="text-sm text-muted-foreground">{caseDetails.policeStationId?.locationLabel}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+
           {/* Reporter Info */}
           <Card className="border border-slate-400">
             <CardHeader className="pb-4">

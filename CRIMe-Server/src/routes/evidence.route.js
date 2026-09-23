@@ -6,6 +6,7 @@ import validate from '../middlewares/validate.middleware.js';
 import EvidenceController from '../controllers/evidence/evidence.controller.js';
 import GuestEvidenceController from '../controllers/evidence/guestEvidence.controller.js';
 import rateLimit from 'express-rate-limit';
+import auditLog from '../middlewares/auditLog.middleware.js'
 import {
   uploadEvidenceSchema,
   uploadStandaloneEvidenceSchema,
@@ -59,6 +60,7 @@ evidenceRouter.delete(
   '/:evidenceId',
   verifyJWT,
   validate(deleteEvidenceSchema),
+  auditLog('DELETE', 'EVIDENCE'),
   EvidenceController.deleteEvidence
 );
 
@@ -78,6 +80,7 @@ evidenceRouter.post(
   // uploadLimiter,
   uploadEvidence.array('files', 5),
   validate(uploadEvidenceSchema),
+  auditLog('UPLOAD', 'EVIDENCE'),
   EvidenceController.uploadEvidence
 );
 
@@ -95,6 +98,7 @@ evidenceRouter.post(
   // guestUploadLimiter,
   uploadEvidence.array('files', 5),
   validate(uploadGuestEvidenceSchema),
+  auditLog('UPLOAD', 'EVIDENCE'),
   GuestEvidenceController.uploadGuestEvidence
 );
 

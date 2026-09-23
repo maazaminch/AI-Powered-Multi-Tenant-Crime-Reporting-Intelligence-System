@@ -5,11 +5,12 @@ export const pdfService = {
   guestDownloadReceipt: async (caseId, trackingToken) => {
     try {
       const response = await api.get(
-        `/api/pdf/guest/receipt?caseId=${caseId}&trackingToken=${trackingToken}`,
+        `/api/pdf/guest-receipt/${caseId}?trackingToken=${trackingToken}`,
         { responseType: 'blob' }
       )
 
-      const url = window.URL.createObjectURL(new Blob([response.data]))
+      // const url = window.URL.createObjectURL(new Blob([response.data]))
+      const url = window.URL.createObjectURL(response)
       const link = document.createElement('a')
       link.href = url
       link.setAttribute('download', `receipt-${caseId}.pdf`)

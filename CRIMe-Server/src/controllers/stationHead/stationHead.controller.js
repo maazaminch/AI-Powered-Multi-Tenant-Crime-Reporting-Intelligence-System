@@ -838,7 +838,7 @@ class StationHeadController {
 
     static reassignCase = wrapAsync(async (req, res) => {
         const { caseId } = req.params;
-        const { PoliceId } = req.body;
+        const { policeId } = req.body;
         const currentUser = req.user;
 
         if (!currentUser.isStationHead) {
@@ -857,7 +857,7 @@ class StationHeadController {
         }
 
         // Validate new police
-        const newPolice = await User.findById(PoliceId);
+        const newPolice = await User.findById(policeId);
         if (!newPolice) {
             throw new apiError(404, "Police officer not found");
         }
@@ -889,7 +889,7 @@ class StationHeadController {
         const updatedCase = await Case.findOneAndUpdate(
             { _id: caseId },
             {
-                assignedTo: PoliceId,
+                assignedTo: policeId,
                 assignedBy: currentUser._id
             },
             { new: true }

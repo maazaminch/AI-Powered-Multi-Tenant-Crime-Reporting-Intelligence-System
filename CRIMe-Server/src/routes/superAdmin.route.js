@@ -4,6 +4,7 @@ import tenantGuard from "../middlewares/tenantGuard.middleware.js";
 import roleGuard from "../middlewares/roleGuard.middleware.js";
 import superAdminController from "../controllers/superadmin/superadmin.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
+import auditLog from "../middlewares/auditLog.middleware.js";
 
 const superAdminRouter = express.Router();
 
@@ -31,6 +32,7 @@ superAdminRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }), 
+    auditLog('CREATE', 'TENANT'),
     superAdminController.createTenantController   
 );
 
@@ -40,6 +42,7 @@ superAdminRouter.delete(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }), 
+    auditLog('DELETE', 'TENANT'),
     superAdminController.deleteTenantController
 )
 
@@ -48,7 +51,8 @@ superAdminRouter.put(
     "/activate-or-deactivate-tenant/:tenantId",
     verifyJWT,
     tenantGuard,
-    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }), 
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    auditLog('UPDATE', 'TENANT'),
     superAdminController.activateOrDeactivateTenantController
 );
 
@@ -94,7 +98,8 @@ superAdminRouter.post(
     "/assign-admin/:adminId",
     verifyJWT,
     tenantGuard,
-    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }), 
+    roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    auditLog('ASSIGN', 'ADMIN'), 
     superAdminController.assignAdminToTenantController   
 );
 
@@ -104,6 +109,7 @@ superAdminRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_SUPER_ADMIN] }),
+    auditLog('TRANSFER', 'ADMIN'),
     superAdminController.transferAdminController
 );
 

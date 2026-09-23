@@ -17,7 +17,7 @@ import {
 import { useTrackCase } from '../../hooks/guest/useGuestReport'
 import { toast } from 'sonner'
 
-const PublicTrackPage = () => {
+const GuestTrackPage = () => {
   const navigate = useNavigate()
   const trackCase = useTrackCase()
 
@@ -26,23 +26,27 @@ const PublicTrackPage = () => {
     trackingToken: ''
   })
 
-  const handleTrack = async () => {
-    if (!formData.caseId.trim() || !formData.trackingToken.trim()) {
-      toast.error('Please enter Case ID and Tracking Token')
-      return
-    }
 
-    try {
-      await trackCase.mutateAsync({
-        caseId: formData.caseId.trim(),
-        trackingToken: formData.trackingToken.trim()
-      })
-      // Navigate to case details page with caseId and token as query params
-      navigate(`/public/case-details/${formData.caseId.trim()}?token=${formData.trackingToken.trim()}`)
-    } catch (error) {
-      // Error handled by mutation
-    }
+  const handleTrack = async () => {
+  if (!formData.caseId.trim() || !formData.trackingToken.trim()) {
+    toast.error('Please enter Case ID and Tracking Token')
+    return
   }
+
+  try {
+    const result = await trackCase.mutateAsync({
+      caseId: formData.caseId.trim(),
+      trackingToken: formData.trackingToken.trim()
+    })
+
+    navigate(
+      `/guest/case-details/${result._id}?trackingToken=${formData.trackingToken.trim()}`
+    )
+  } catch (error) {
+    // Error handled by mutation
+  }
+}
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -146,7 +150,7 @@ const PublicTrackPage = () => {
               <div className="text-center">
                 <Button
                   variant="link"
-                  onClick={() => navigate('/public/report')}
+                  onClick={() => navigate('/guest/report')}
                   className="text-sm"
                 >
                   Report a new case
@@ -160,4 +164,4 @@ const PublicTrackPage = () => {
   )
 }
 
-export default PublicTrackPage
+export default GuestTrackPage

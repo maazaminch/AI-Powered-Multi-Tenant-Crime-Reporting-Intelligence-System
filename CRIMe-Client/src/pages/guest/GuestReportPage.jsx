@@ -154,8 +154,8 @@ const GuestReportPage = () => {
 
         const response = await uploadStandalone.mutateAsync(formData)
         
-        if (response && response.data && response.data.evidenceIds) {
-          const newEvidenceIds = response.data.evidenceIds
+        if (response && response.evidenceIds) {
+          const newEvidenceIds = response.evidenceIds
           fileIds.push(...newEvidenceIds)
           
           newEvidenceIds.forEach(id => {
@@ -226,15 +226,18 @@ const GuestReportPage = () => {
     try {
       const result = await reportCase.mutateAsync({
         sessionId,
+        guestSessionId: sessionId,
         otp,
         name: guestInfo.name,
         phone: guestInfo.phone,
         email,
         ...caseData
       })
+      console.log(result)
 
       setSubmittedCaseData({
-        caseId: result.caseId,
+        id: result._id,                 // Mongo _id — use for receipt download
+        caseId: result.caseId,          // business caseId — for display / tracking page
         trackingToken: result.trackingToken
       })
       setShowSuccessModal(true)
@@ -244,18 +247,30 @@ const GuestReportPage = () => {
     }
   }
 
-  const handleDownloadReceipt = () => {
-    if (submittedCaseData.caseId && submittedCaseData.trackingToken) {
-      guestDownloadReceipt({
-        caseId: submittedCaseData.caseId,
-        trackingToken: submittedCaseData.trackingToken
-      })
+  // const handleDownloadReceipt = () => {
+  //   if (submittedCaseData.id && submittedCaseData.trackingToken) {
+  //     guestDownloadReceipt({
+  //       caseId: submittedCaseData.id, // This is now the MongoDB _id
+  //       trackingToken: submittedCaseData.trackingToken
+  //     })
+  //   }
+  // }
+
+//   const handleDownloadReceipt = ({ caseId, trackingToken }) => {
+//   if (caseId && trackingToken) {
+//     guestDownloadReceipt({ caseId, trackingToken })
+//   }
+// }
+  const handleDownloadReceipt = ({ caseId, trackingToken }) => {
+    if (isGuestDownloadingReceipt) return
+    if (caseId && trackingToken) {
+      guestDownloadReceipt({ caseId, trackingToken })
     }
   }
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false)
-    navigate('/public')
+    navigate('/')
   }
 
   const steps = [
@@ -549,7 +564,7 @@ const GuestReportPage = () => {
                               {isUploading ? 'Uploading...' : 'Click to upload evidence files'}
                             </span>
                           </label>
-
+                        </div>
                           {uploadedFiles.length > 0 && (
                             <div className="mt-3 space-y-2">
                               {uploadedFiles.map((file) => (
@@ -574,7 +589,6 @@ const GuestReportPage = () => {
                               ))}
                             </div>
                           )}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -607,7 +621,8 @@ const GuestReportPage = () => {
           open={showSuccessModal}
           onClose={handleSuccessModalClose}
           onDownloadReceipt={handleDownloadReceipt}
-          caseId={submittedCaseData.caseId}
+          caseId={submittedCaseData.id}
+          displayCaseId={submittedCaseData.caseId}
           trackingToken={submittedCaseData.trackingToken}
           isDownloading={isGuestDownloadingReceipt}
         />

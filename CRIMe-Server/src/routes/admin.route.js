@@ -34,7 +34,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    auditLog('UPDATE', 'POLICE_STATION'),
+    auditLog('TOGGLE', 'POLICE_STATION'),
     AdminController.activateOrDeactivateStation   
 );  
 
@@ -94,7 +94,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    auditLog('UPDATE', 'STATION_ASSIGNMENT'),
+    auditLog('ASSIGN', 'POLICE'),
     AdminController.assignPoliceToStation
 );
 adminRoutes.post(
@@ -102,7 +102,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    auditLog('UPDATE', 'STATION_ASSIGNMENT'),
+    auditLog('TRANSFER', 'POLICE'),
     AdminController.transferPolice
 );
 
@@ -115,7 +115,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    auditLog('UPDATE', 'STATION_ASSIGNMENT'),
+    auditLog('ASSIGN', 'SHO'),
     AdminController.assignOrChangeStationHead
 );
 
@@ -124,7 +124,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
-    auditLog('UPDATE', 'STATION_ASSIGNMENT'),
+    auditLog('REMOVE', 'SHO'),
     AdminController.removeStationHead
 );
 
