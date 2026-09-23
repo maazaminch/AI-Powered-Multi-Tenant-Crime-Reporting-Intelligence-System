@@ -103,10 +103,10 @@ UserSchema.index({ tenantId: 1, policeStationId: 1 });      // station police li
 UserSchema.index({ isStationHead: 1 }); 
 
 
-UserSchema.index({ refreshTokenExpiresAt: 1 }, { 
-  expireAfterSeconds: 0,
-  partialFilterExpression: { refreshTokenExpiresAt: { $exists: true } }
-});
+// UserSchema.index({ refreshTokenExpiresAt: 1 }, { 
+//   expireAfterSeconds: 0,
+//   partialFilterExpression: { refreshTokenExpiresAt: { $exists: true } }
+// });
 
 UserSchema.pre("save", function() {
   if (!this.dateOfBirth) return 

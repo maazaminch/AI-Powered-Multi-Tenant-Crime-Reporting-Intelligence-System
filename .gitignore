@@ -1,26 +1,77 @@
+# ============================================
+# Dependencies
+# ============================================
 
-CRIMe-Client/node_modules
-CRIMe-Server/node_modules
+CRIMe-Client/node_modules/
+CRIMe-Server/node_modules/
 
-# Environment variables
+
+# ============================================
+# Environment variables / secrets
+# ============================================
+
 CRIMe-Client/.env
+CRIMe-Client/.env.*
+!CRIMe-Client/.env.example
+
 CRIMe-Server/.env
+CRIMe-Server/.env.*
+!CRIMe-Server/.env.example
 
-# Build folders
-CRIMe-Client/dist
-CRIMe-Client/build
-CRIMe-Server/dist
-CRIMe-Server/build
 
+# ============================================
+# Build output
+# ============================================
+
+CRIMe-Client/dist/
+CRIMe-Client/build/
+
+CRIMe-Server/dist/
+CRIMe-Server/build/
+
+
+# ============================================
+# Runtime / uploaded files
+# ============================================
+
+CRIMe-Server/uploads/
+
+
+# ============================================
 # Logs
-*.log
+# ============================================
 
+*.log
+logs/
+
+
+# ============================================
+# Test / coverage
+# ============================================
+
+coverage/
+.nyc_output/
+
+
+# ============================================
 # OS files
+# ============================================
+
 .DS_Store
 Thumbs.db
 
-# Coverage
-coverage
 
-# VS Code settings
-.vscode
+# ============================================
+# IDE / editor
+# ============================================
+
+.vscode/
+.idea/
+
+
+# ============================================
+# Temporary files
+# ============================================
+
+*.tmp
+*.temp
