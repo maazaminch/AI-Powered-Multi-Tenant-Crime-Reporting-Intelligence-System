@@ -588,65 +588,120 @@ class authController {
     });
 
 
+    
+    static loginController = wrapAsync(async (req, res) => {
 
-    static loginController = wrapAsync(async(req, res) => {
+    const { email, password } = req.body;
 
-    const {email, password} = req.body;
+    const user = await User.findOne({ email });
 
-    const user = await User.findOne({email});
-     if(!user) throw new apiError(400, 'Email not registered')
+    if (!user) {
+        throw new apiError(400, "Email not registered");
+    }
 
-    const comparePassword = await bcrypt.compare(password, user.password)
-    if(!comparePassword) throw new apiError(400, 'Wrong Password')
+    const comparePassword = await bcrypt.compare(password, user.password);
 
-        if(user.status !== "APPROVED") {
-            throw new apiError(403, 'Account not approved');
-        }
+    if (!comparePassword) {
+        throw new apiError(400, "Wrong Password");
+    }
 
-    // ─────────────── Generate Access Token (30 mins) ───────────────
+    if (user.status !== "APPROVED") {
+        throw new apiError(403, "Account not approved");
+    }
+
+    // ─────────────────────────────────────────
+    // Access Token
+    // ─────────────────────────────────────────
+
     const accessToken = jwt.sign(
         {
             id: user._id,
             tenantId: user.tenantId
         },
         process.env.JWT_SECRET,
-        { expiresIn: '30m' })
+        {
+            expiresIn: "30m"
+        }
+    );
 
-    // ─────────────── Generate Refresh Token (7 days) ───────────────
-    const refreshToken = crypto.randomBytes(32).toString('hex');
-    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
-    const refreshTokenFamily = crypto.randomBytes(16).toString('hex');
-    const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // ─────────────────────────────────────────
+    // Refresh Token
+    // ─────────────────────────────────────────
 
-    // ─────────────── Store Refresh Token in MongoDB ───────────────
+    const refreshTokenId = crypto.randomBytes(16).toString("hex");
+
+    const refreshTokenSecret = crypto.randomBytes(32).toString("hex");
+
+    const refreshToken = `${refreshTokenId}.${refreshTokenSecret}`;
+
+    const refreshTokenHash = await bcrypt.hash(
+        refreshTokenSecret,
+        10
+    );
+
+    const refreshTokenFamily = crypto.randomBytes(16).toString("hex");
+
+    const refreshTokenExpiresAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+    );
+
+    user.refreshTokenId = refreshTokenId;
     user.refreshTokenHash = refreshTokenHash;
     user.refreshTokenExpiresAt = refreshTokenExpiresAt;
     user.refreshTokenFamily = refreshTokenFamily;
     user.lastLogin = new Date();
+
     await user.save();
 
-    // ─────────────── Cookie Options ───────────────
-    const cookieOptions = {
+    // ─────────────────────────────────────────
+    // Cookies
+    // ─────────────────────────────────────────
+
+    const accessCookieOptions = {
         httpOnly: true,
-        secure: false, //for localhost is false for prod its true
-        sameSite: "lax"
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production"
+            ? "none"
+            : "lax",
+        maxAge: 30 * 60 * 1000
     };
 
-    const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
+    const refreshCookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production"
+            ? "none"
+            : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+    };
 
-    req.user = user;
-    
-    return res.status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new apiResponse(
-        200,
-        {
-            user: userSafe,
-        },
-        'User loggedin successfully'
-    ))
-    })
+    // ─────────────────────────────────────────
+    // Safe User
+    // ─────────────────────────────────────────
+
+    const userObject = user.toObject();
+
+    delete userObject.password;
+    delete userObject.nationalIdHash;
+    delete userObject.refreshTokenId;
+    delete userObject.refreshTokenHash;
+    delete userObject.refreshTokenExpiresAt;
+    delete userObject.refreshTokenFamily;
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, accessCookieOptions)
+        .cookie("refreshToken", refreshToken, refreshCookieOptions)
+        .json(
+            new apiResponse(
+                200,
+                {
+                    user: userObject
+                },
+                "User loggedin successfully"
+            )
+        );
+    });
 
     static logoutController = wrapAsync(async (req, res) => {
 
@@ -723,12 +778,17 @@ class authController {
         );
 
         // ─────────────── Generate Refresh Token (7 days) ───────────────
-        const refreshToken = crypto.randomBytes(32).toString('hex');
-        const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
-        const refreshTokenFamily = crypto.randomBytes(16).toString('hex');
+        const refreshTokenId = crypto.randomBytes(16).toString("hex");
+        const refreshTokenSecret = crypto.randomBytes(32).toString("hex");
+
+        const refreshToken = `${refreshTokenId}.${refreshTokenSecret}`;
+
+        const refreshTokenHash = await bcrypt.hash(refreshTokenSecret, 10);
+        const refreshTokenFamily = crypto.randomBytes(16).toString("hex");
         const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
         // ─────────────── Store Refresh Token in MongoDB ───────────────
+        user.refreshTokenId = refreshTokenId;
         user.refreshTokenHash = refreshTokenHash;
         user.refreshTokenExpiresAt = refreshTokenExpiresAt;
         user.refreshTokenFamily = refreshTokenFamily;
@@ -738,8 +798,8 @@ class authController {
         // ─────────────── Cookie Options ───────────────
         const cookieOptions = {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",   
         };
 
         const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
@@ -818,12 +878,17 @@ class authController {
         );
 
         // ─────────────── Generate Refresh Token (7 days) ───────────────
-        const refreshToken = crypto.randomBytes(32).toString('hex');
-        const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
-        const refreshTokenFamily = crypto.randomBytes(16).toString('hex');
+        const refreshTokenId = crypto.randomBytes(16).toString("hex");
+        const refreshTokenSecret = crypto.randomBytes(32).toString("hex");
+
+        const refreshToken = `${refreshTokenId}.${refreshTokenSecret}`;
+
+        const refreshTokenHash = await bcrypt.hash(refreshTokenSecret, 10);
+        const refreshTokenFamily = crypto.randomBytes(16).toString("hex");
         const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
         // ─────────────── Store Refresh Token in MongoDB ───────────────
+        user.refreshTokenId = refreshTokenId;
         user.refreshTokenHash = refreshTokenHash;
         user.refreshTokenExpiresAt = refreshTokenExpiresAt;
         user.refreshTokenFamily = refreshTokenFamily;
@@ -833,8 +898,8 @@ class authController {
         // ─────────────── Cookie Options ───────────────
         const cookieOptions = {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         };
 
         const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
@@ -862,75 +927,141 @@ class authController {
     });
 
 
-
     static refreshAccessTokenController = wrapAsync(async (req, res) => {
-        const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-        if (!refreshToken) {
-            throw new apiError(401, "Refresh token missing");
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+    if (!refreshToken) {
+        throw new apiError(401, "Refresh token missing");
+    }
+
+    const separatorIndex = refreshToken.indexOf(".");
+
+    if (separatorIndex === -1) {
+        throw new apiError(401, "Invalid refresh token");
+    }
+
+    const refreshTokenId = refreshToken.slice(0, separatorIndex);
+    const refreshTokenSecret = refreshToken.slice(separatorIndex + 1);
+
+    if (!refreshTokenId || !refreshTokenSecret) {
+        throw new apiError(401, "Invalid refresh token");
+    }
+
+    // Direct lookup instead of scanning all users
+    const user = await User.findOne({ refreshTokenId })
+        .select("+refreshTokenHash +refreshTokenFamily");
+
+    if (!user) {
+        throw new apiError(401, "Invalid or expired refresh token");
+    }
+
+    // Check expiration
+    if (
+        !user.refreshTokenExpiresAt ||
+        user.refreshTokenExpiresAt <= new Date()
+    ) {
+        throw new apiError(401, "Invalid or expired refresh token");
+    }
+
+    // Verify the secret against the stored hash
+    const isMatch = await bcrypt.compare(
+        refreshTokenSecret,
+        user.refreshTokenHash
+    );
+
+    if (!isMatch) {
+        throw new apiError(401, "Invalid or expired refresh token");
+    }
+
+    if (user.status !== "APPROVED") {
+        throw new apiError(403, "Account not approved");
+    }
+
+    // Rotate Refresh Token
+    const newRefreshTokenId = crypto.randomBytes(16).toString("hex");
+
+    const newRefreshTokenSecret = crypto.randomBytes(32).toString("hex");
+
+    const newRefreshToken =
+        `${newRefreshTokenId}.${newRefreshTokenSecret}`;
+
+    const newRefreshTokenHash = await bcrypt.hash(
+        newRefreshTokenSecret,
+        10
+    );
+
+    const newRefreshTokenExpiresAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+    );
+
+    // Keep the same family during rotation
+    const refreshTokenFamily =
+        user.refreshTokenFamily || crypto.randomBytes(16).toString("hex");
+
+    user.refreshTokenId = newRefreshTokenId;
+    user.refreshTokenHash = newRefreshTokenHash;
+    user.refreshTokenExpiresAt = newRefreshTokenExpiresAt;
+    user.refreshTokenFamily = refreshTokenFamily;
+
+    await user.save();
+    
+    // New Access Token
+    const newAccessToken = jwt.sign(
+        {
+            id: user._id,
+            tenantId: user.tenantId
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "30m"
         }
+    );
 
-        // ─────────────── Find User by Refresh Token ───────────────
-        const users = await User.find({
-            refreshTokenExpiresAt: { $gt: new Date() }
-        }).select('+refreshTokenHash +refreshTokenFamily');
 
-        let matchedUser = null;
-        for (const user of users) {
-            const isMatch = await bcrypt.compare(refreshToken, user.refreshTokenHash);
-            if (isMatch) {
-                matchedUser = user;
-                break;
-            }
-        }
+    // Cookies
+    const accessCookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production"
+            ? "none"
+            : "lax",
+        maxAge: 30 * 60 * 1000
+    };
 
-        if (!matchedUser) {
-            throw new apiError(401, "Invalid or expired refresh token");
-        }
+    const refreshCookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production"
+            ? "none"
+            : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+    };
 
-        // ─────────────── Check User Status ───────────────
-        if (matchedUser.status !== "APPROVED") {
-            throw new apiError(403, "Account not approved");
-        }
 
-        // ─────────────── Token Rotation ───────────────
-        const newRefreshToken = crypto.randomBytes(32).toString('hex');
-        const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
-        const newRefreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // Safe User
+    const userObject = user.toObject();
 
-        // ─────────────── Update MongoDB ───────────────
-        matchedUser.refreshTokenHash = newRefreshTokenHash;
-        matchedUser.refreshTokenExpiresAt = newRefreshTokenExpiresAt;
-        await matchedUser.save();
+    delete userObject.password;
+    delete userObject.nationalIdHash;
+    delete userObject.refreshTokenId;
+    delete userObject.refreshTokenHash;
+    delete userObject.refreshTokenExpiresAt;
+    delete userObject.refreshTokenFamily;
 
-        // ─────────────── Generate New Access Token ───────────────
-        const newAccessToken = jwt.sign(
-            {
-                id: matchedUser._id,
-                tenantId: matchedUser.tenantId
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: '30m' }
-        );
-
-        const cookieOptions = {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax"
-        };
-
-        const userSafe = await User.findById(matchedUser._id).select('-password -nationalIdHash');
-
-        return res.status(200)
-            .cookie("accessToken", newAccessToken, cookieOptions)
-            .cookie("refreshToken", newRefreshToken, cookieOptions)
-            .json(new apiResponse(
+    return res
+        .status(200)
+        .cookie("accessToken", newAccessToken, accessCookieOptions)
+        .cookie("refreshToken", newRefreshToken, refreshCookieOptions)
+        .json(
+            new apiResponse(
                 200,
                 {
-                    user: userSafe,
+                    user: userObject
                 },
-                'Access token refreshed successfully'
-            ));
+                "Access token refreshed successfully"
+            )
+        );
     });
 
     static revokeRefreshTokenController = wrapAsync(async (req, res) => {
@@ -939,16 +1070,17 @@ class authController {
         // ─────────────── Clear from MongoDB ───────────────
         await User.findByIdAndUpdate(userId, {
             $unset: {
-                refreshTokenHash: 1,
-                refreshTokenExpiresAt: 1,
-                refreshTokenFamily: 1
+                refreshTokenId: "",
+                refreshTokenHash: "",
+                refreshTokenExpiresAt: "",
+                refreshTokenFamily: ""
             }
         });
 
         const options = {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
         };
 
         return res

@@ -56,6 +56,11 @@ const UserSchema = new mongoose.Schema({
 
 
   // Refresh Token
+  refreshTokenId: {
+    type: String,
+    index: true,
+    select: false
+  },
   refreshTokenHash: { type: String, select: false },
   refreshTokenExpiresAt: { type: Date },
   refreshTokenFamily: { type: String }, // for token rotation tracking

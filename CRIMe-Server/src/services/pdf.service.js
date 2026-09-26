@@ -1,8 +1,11 @@
 import PDFDocument from "pdfkit";
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
 import apiError from "../utils/apiError.js";
+import { uploadBufferToCloudinary } from "./cloudinary.storage.service.js";
+
+// for local pdf storage 
+// import fs from "fs";
+// import path from "path";
 
 const PAGE_WIDTH = 495;
 const PAGE_LEFT = 50;
@@ -39,15 +42,31 @@ const SEVERITY_COLORS = {
 
 class PDFService {
 
-  static generateFilePath(caseId, type) {
-    const dir = path.join("uploads", "pdfs");
+  // for local pdf storage
+  // static generateFilePath(caseId, type) {
+  //   const dir = path.join("uploads", "pdfs");
 
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+  //   if (!fs.existsSync(dir)) {
+  //     fs.mkdirSync(dir, { recursive: true });
+  //   }
 
-    return path.join(dir, `${caseId}-${type}.pdf`);
-  }
+  //   return path.join(dir, `${caseId}-${type}.pdf`);
+  // }
+
+  // static async finalizeDocument(doc, stream, filePath) {
+  //   doc.end();
+  //   try {
+  //     await new Promise((resolve, reject) => {
+  //       stream.on('finish', resolve);
+  //       stream.on('error', reject);
+  //     });
+  //   } catch (err) {
+  //     fs.unlink(filePath, () => {});
+  //     throw err;
+  //   }
+  //   return filePath;
+  // }
+
 
   static generateContentHash(data) {
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
@@ -201,25 +220,22 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
     doc.moveDown(0.8);
   }
 
-  /**
-   * Finalizes and flushes the PDF to disk, resolving only once the write
-   * stream has actually finished. Returning before this was the root cause
-   * of "downloads but won't open" — the file was being served while still
-   * partially written. Cleans up a partial file on any write error.
-   */
-  static async finalizeDocument(doc, stream, filePath) {
+
+  static async generatePDFBuffer(doc) {
+  const chunks = [];
+
+  return await new Promise((resolve, reject) => {
+    doc.on("data", (chunk) => chunks.push(chunk));
+
+    doc.on("end", () => {
+      resolve(Buffer.concat(chunks));
+    });
+
+    doc.on("error", reject);
+
     doc.end();
-    try {
-      await new Promise((resolve, reject) => {
-        stream.on('finish', resolve);
-        stream.on('error', reject);
-      });
-    } catch (err) {
-      fs.unlink(filePath, () => {});
-      throw err;
-    }
-    return filePath;
-  }
+  });
+}
 
   // ---------------------------------------------------------------------
   // Public generators
@@ -230,12 +246,19 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
    * Text-only — never embeds or references evidence files.
    */
   static async generateReceipt(caseData, station, tenant) {
-    const filePath = this.generateFilePath(caseData.caseId, "receipt");
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
+    //local
+    // const filePath = this.generateFilePath(caseData.caseId, "receipt");
+    // const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    // const stream = fs.createWriteStream(filePath);
+    // doc.pipe(stream);
 
     try {
+
+      const doc = new PDFDocument({
+        size: "A4",
+        margin: 50
+      });
+
       this.drawMasthead(doc);
 
       doc.fontSize(18).font('Helvetica-Bold').fillColor(COLORS.dark)
@@ -327,11 +350,20 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
         notes: ['This document is auto-generated. For any queries, contact the police station.']
       });
 
-      return await this.finalizeDocument(doc, stream, filePath);
+      const pdfBuffer = await this.generatePDFBuffer(doc);
+
+    const uploaded = await uploadBufferToCloudinary(pdfBuffer, {
+      folder: `crime_saas/pdfs/receipts/${caseData._id}`,
+      resourceType: "raw",
+      filename: `${caseData.caseId}-receipt.pdf`
+    });
+
+    return uploaded.secure_url;
+      // return await this.finalizeDocument(doc, stream, filePath);
 
     } catch (err) {
       console.error("Receipt PDF generation failed:", err);
-      fs.unlink(filePath, () => {});
+      // fs.unlink(filePath, () => {});
       throw err instanceof apiError ? err : new apiError(500, "Receipt PDF generation failed");
     }
   }
@@ -347,10 +379,10 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
     }
 
     const type = isFullVersion ? 'full' : 'citizen';
-    const filePath = this.generateFilePath(caseData.caseId, type);
+    // const filePath = this.generateFilePath(caseData.caseId, type);
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
+    // const stream = fs.createWriteStream(filePath);
+    // doc.pipe(stream);
 
     try {
       this.drawMasthead(doc);
@@ -432,11 +464,20 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
         ]
       });
 
-      return await this.finalizeDocument(doc, stream, filePath);
+      // return await this.finalizeDocument(doc, stream, filePath);
 
+      const pdfBuffer = await this.generatePDFBuffer(doc);
+
+      const uploaded = await uploadBufferToCloudinary(pdfBuffer, {
+        folder: `crime_saas/pdfs/final-reports/${caseData._id}`,
+        resourceType: "raw",
+        filename: `${caseData.caseId}-${type}.pdf`
+      });
+
+      return uploaded.secure_url;
     } catch (err) {
       console.error("Full case PDF generation failed:", err);
-      fs.unlink(filePath, () => {});
+      // fs.unlink(filePath, () => {});
       throw err instanceof apiError ? err : new apiError(500, "Full case PDF generation failed");
     }
   }

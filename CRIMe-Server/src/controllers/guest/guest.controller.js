@@ -95,6 +95,10 @@ class GuestController {
 
     await storeOTP(sessionId, email, hashedOTP);
 
+    return res.status(200).json(
+      new apiResponse(200, { sessionId }, "OTP sent to your email")
+    );
+
     try {
       await sendEmail({
         to: email,
@@ -107,9 +111,7 @@ class GuestController {
       throw new apiError(502, "Failed to send verification email. Please try again.");
     }
 
-    return res.status(200).json(
-      new apiResponse(200, { sessionId }, "OTP sent to your email")
-    );
+    
   });
 
   static verifyOTP = wrapAsync(async (req, res) => {
@@ -423,7 +425,6 @@ class GuestController {
       description,
       aiSummary: description.substring(0, 200),
       severity: "MEDIUM", // safe default; refined by background AI pass
-      aiClassificationStatus: "PENDING",
       location: { type: "Point", coordinates },
       locationLabel,
       address,
@@ -459,13 +460,12 @@ class GuestController {
       try {
         const result = await withTimeout(
           geminiAIService.generateCrimeAnalysis(description, crimeType, address),
-          15000,
+          100000,
           "AI classification"
         );
         await Case.findByIdAndUpdate(newCase._id, {
           aiSummary: result.summary,
-          severity: result.severity,
-          // aiClassificationStatus: "COMPLETE"
+          severity: result.severity
         });
       } catch (err) {
         console.error(`AI analysis failed [${newCase.caseId}]:`, err.message);
@@ -518,6 +518,7 @@ class GuestController {
       });
     });
   });
+
 
   static trackCase = wrapAsync(async (req, res) => {
     const { caseId } = req.params;
