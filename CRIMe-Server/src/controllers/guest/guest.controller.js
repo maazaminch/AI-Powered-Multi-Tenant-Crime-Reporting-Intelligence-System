@@ -149,374 +149,321 @@ class GuestController {
 });
 
 
-  // ───── Step 2: Verify OTP + Submit Case (guest, no login) ─────
-    // ───── Step 2: Verify OTP + Submit Case (guest, no login) ─────
-  // static reportCase = wrapAsync(async (req, res) => {
-  //   const {
-  //     sessionId,
-  //     name,
-  //     phone,
-  //     email,
-  //     crimeType,
-  //     description,
-  //     coordinates,
-  //     locationLabel,
-  //     address,
-  //     policeStationId,
-  //     evidenceFileIds,
-  //     guestSessionId
-  //   } = req.body;
+  
+  static reportCase = wrapAsync(async (req, res) => {
 
-  //   await validateVerifiedSession(sessionId, email);
+      const {
+          sessionId,
+          name,
+          email,
+          phone,
+          crimeType,
+          description,
+          coordinates,
+          locationLabel,
+          address,
+          policeStationId,
+          evidenceFileIds,
+          guestSessionId
+      } = req.body;
 
-  //   // ───── 2. Guest identity validation ─────
-  //   if (!name || !phone || !email) {
-  //     throw new apiError(400, "name, phone and email are required");
-  //   }
 
-  //   // ───── 3. Case data validation (same as citizen flow) ─────
-  //   if (!crimeType || !description || !policeStationId) {
-  //     throw new apiError(400, "crimeType, description and policeStationId are required");
-  //   }
+      // ───── 1. Validate OTP session ─────
 
-  //   // Validate evidenceFileIds if provided
-  //   if (evidenceFileIds && (!Array.isArray(evidenceFileIds) || evidenceFileIds.length > 10)) {
-  //     throw new apiError(400, "evidenceFileIds must be an array with maximum 10 items");
-  //   }
+      await validateVerifiedSession(sessionId, email);
 
-  //   if (
-  //     !Array.isArray(coordinates) ||
-  //     coordinates.length !== 2 ||
-  //     coordinates.some((c) => typeof c !== "number")
-  //   ) {
-  //     throw new apiError(400, "Valid coordinates [lng, lat] are required");
-  //   }
 
-  //   // ───── 4. Resolve station → tenant (never trust client tenantId) ─────
-  //   const station = await PoliceStation.findOne({
-  //     _id: policeStationId,
-  //     isActive: true
-  //   });
+      // ───── 2. Validate required fields ─────
 
-  //   if (!station) {
-  //     throw new apiError(404, "Selected police station not found or inactive");
-  //   }
-
-  //   // ───── 5. Reporter identity ─────
-  //   const reporter = {
-  //     type: "GUEST",
-  //     fullName: name,
-  //     email,
-  //     phone,
-  //     isVerified: true
-  //   };
-
-  //   // ───── 6. Validate evidence ownership (if attached before submit) ─────
-  //   let evidenceIds = [];
-  //   if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
-
-  //     if (!guestSessionId) {
-  //       throw new apiError(400, "guestSessionId is required when attaching evidence");
-  //     }
-
-  //     const evidences = await Evidence.find({
-  //       _id: { $in: evidenceFileIds },
-  //       guestSessionId
-  //     });
-
-  //     if (evidences.length !== evidenceFileIds.length) {
-  //       throw new apiError(400, "One or more evidence files are invalid");
-  //     }
-
-  //     evidenceIds = evidences.map((e) => e._id);
-  //   }
-
-  //   // ───── 7. AI classification ─────
-  //   let summary, severity;
-  //   try {
-  //     const result = await geminiAIService.generateCrimeAnalysis(
-  //       description,
-  //       crimeType,
-  //       address
-  //     );
-  //     summary = result.summary;
-  //     severity = result.severity;
-  //   } catch (err) {
-  //     console.error("AI analysis failed:", err.message);
-  //     summary = description.substring(0, 200);
-  //     severity = "MEDIUM";
-  //   }
-
-  //   // ───── 8. Create case ─────
-  //   const trackingToken = nanoid(24);
-
-  //   const newCase = await Case.create({
-  //     tenantId: station.tenantId,
-  //     policeStationId: station._id,
-  //     crimeType,
-  //     description,
-  //     aiSummary: summary,
-  //     severity,
-  //     location: { type: "Point", coordinates },
-  //     locationLabel,
-  //     address,
-  //     reporter,
-  //     evidenceFiles: evidenceIds,
-  //     trackingToken,
-  //     status: "PENDING"
-  //   });
-
-  //   // ───── 9. Link uploaded evidence to this case ─────
-  //   if (evidenceIds.length > 0) {
-  //     await Evidence.updateMany(
-  //       { _id: { $in: evidenceIds } },
-  //       { $set: { caseId: newCase._id, tenantId: newCase.tenantId } }
-  //     );
-  //   }
-
-  //   // ───── 10. Generate acknowledgment receipt PDF (background task) ─────
-  //   const afterResponse = async () => {
-  //     try {
-  //       const receiptPdfPath = await PDFService.generateReceipt(newCase, station.name, "Police Department");
-  //       await Case.findByIdAndUpdate(newCase._id, { receiptPdf: receiptPdfPath });
-  //     } catch (pdfError) {
-  //       console.error('PDF generation failed:', pdfError);
-  //     }
-  //   };
-
-  //   afterResponse().catch(err => console.error("Background PDF generation failed", err));
-
-  //   // OTP session has served its purpose.
-  //   await invalidateOTP(sessionId);
-
-  //   // ───── 11. Respond immediately ─────
-  //   res.status(201).json(
-  //     new apiResponse(201, {
-  //       caseId: newCase.caseId,
-  //       trackingToken: newCase.trackingToken
-  //     }, "Crime reported successfully")
-  //   );
-
-  //   // ───── 12. Fire-and-forget background tasks ─────
-  //   setImmediate(async () => {
-  //     const tasks = [];
-
-  //     if (station.stationHead) {
-  //       tasks.push(
-  //         NotificationService.send({
-  //           tenantId: station.tenantId,
-  //           userId: station.stationHead,
-  //           type: "new_case_reported",
-  //           title: "New Case Reported",
-  //           message: `A new guest case (${newCase.caseId}) has been reported at ${station.name}`,
-  //           channels: ["inapp"]
-  //         })
-  //       );
-  //     }
-
-  //     tasks.push(
-  //       NotificationService.send({
-  //         tenantId: station.tenantId,
-  //         email: reporter.email,
-  //         type: "case_reported",
-  //         title: "Case Reported Successfully",
-  //         message: `Your case ${newCase.caseId} has been reported. Save your tracking token to check status later: ${trackingToken}`,
-  //         channels: ["email"]
-  //       })
-  //     );
-
-  //     const results = await Promise.allSettled(tasks);
-  //     results.forEach((r, i) => {
-  //       if (r.status === "rejected") {
-  //         console.error(`reportCase background task ${i} failed [${newCase.caseId}]:`, r.reason);
-  //       }
-  //     });
-  //   });
-  // });
-
-   static reportCase = wrapAsync(async (req, res) => {
-    const {
-      sessionId,
-      name,
-      phone,
-      email,
-      crimeType,
-      description,
-      coordinates,
-      locationLabel,
-      address,
-      policeStationId,
-      evidenceFileIds,
-      guestSessionId
-    } = req.body;
- 
-    await validateVerifiedSession(sessionId, email);
- 
-    // ───── 2. Guest identity validation ─────
-    if (!name || !phone || !email) {
-      throw new apiError(400, "name, phone and email are required");
-    }
- 
-    // ───── 3. Case data validation (same as citizen flow) ─────
-    if (!crimeType || !description || !policeStationId) {
-      throw new apiError(400, "crimeType, description and policeStationId are required");
-    }
- 
-    // Validate evidenceFileIds if provided
-    if (evidenceFileIds && (!Array.isArray(evidenceFileIds) || evidenceFileIds.length > 10)) {
-      throw new apiError(400, "evidenceFileIds must be an array with maximum 10 items");
-    }
- 
-    if (
-      !Array.isArray(coordinates) ||
-      coordinates.length !== 2 ||
-      coordinates.some((c) => typeof c !== "number")
-    ) {
-      throw new apiError(400, "Valid coordinates [lng, lat] are required");
-    }
- 
-    if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0 && !guestSessionId) {
-      throw new apiError(400, "guestSessionId is required when attaching evidence");
-    }
- 
-    // ───── 4/6. Resolve station + validate evidence ownership IN PARALLEL ─────
-    // These two lookups don't depend on each other, so there's no reason to
-    // pay for them serially.
-    const [station, evidences] = await Promise.all([
-      PoliceStation.findOne({ _id: policeStationId, isActive: true }),
-      Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0
-        ? Evidence.find({ _id: { $in: evidenceFileIds }, guestSessionId })
-        : Promise.resolve([])
-    ]);
- 
-    if (!station) {
-      throw new apiError(404, "Selected police station not found or inactive");
-    }
- 
-    if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
-      if (evidences.length !== evidenceFileIds.length) {
-        throw new apiError(400, "One or more evidence files are invalid");
+      if (!name || !email || !phone) {
+          throw new apiError(
+              400,
+              "name, email and phone are required"
+          );
       }
-    }
-    const evidenceIds = evidences.map((e) => e._id);
- 
-    // ───── 5. Reporter identity ─────
-    const reporter = {
-      type: "GUEST",
-      fullName: name,
-      email,
-      phone,
-      isVerified: true
-    };
- 
-    // ───── 7. Create case immediately with a cheap fallback classification.
-    // AI classification (Gemini) is NOT awaited here — it was previously the
-    // single biggest source of request latency (multi-second external API
-    // call sitting directly in the request path), and it does not scale:
-    // every concurrent submission held a request open on it. It now runs
-    // as a background task, exactly like PDF receipt generation below, and
-    // patches the case once it resolves.
-    const trackingToken = nanoid(24);
- 
-    const newCase = await Case.create({
-      tenantId: station.tenantId,
-      policeStationId: station._id,
-      crimeType,
-      description,
-      aiSummary: description.substring(0, 200),
-      severity: "MEDIUM", // safe default; refined by background AI pass
-      location: { type: "Point", coordinates },
-      locationLabel,
-      address,
-      reporter,
-      evidenceFiles: evidenceIds,
-      trackingToken,
-      status: "PENDING"
-    });
- 
-    // ───── 8. Link uploaded evidence to this case ─────
-    if (evidenceIds.length > 0) {
-      await Evidence.updateMany(
-        { _id: { $in: evidenceIds } },
-        { $set: { caseId: newCase._id, tenantId: newCase.tenantId } }
+
+      if (!crimeType || !description || !policeStationId) {
+          throw new apiError(
+              400,
+              "crimeType, description and policeStationId are required"
+          );
+      }
+
+
+      // ───── 3. Validate coordinates ─────
+
+      if (
+          !Array.isArray(coordinates) ||
+          coordinates.length !== 2 ||
+          coordinates.some((c) => typeof c !== "number")
+      ) {
+          throw new apiError(
+              400,
+              "Valid coordinates [lng, lat] are required"
+          );
+      }
+
+
+      // ───── 4. Validate evidenceFileIds ─────
+
+      if (
+          evidenceFileIds &&
+          (!Array.isArray(evidenceFileIds) ||
+              evidenceFileIds.length > 10)
+      ) {
+          throw new apiError(
+              400,
+              "evidenceFileIds must be an array with maximum 10 items"
+          );
+      }
+
+
+      // If evidence is attached, guestSessionId must exist
+      if (
+          Array.isArray(evidenceFileIds) &&
+          evidenceFileIds.length > 0 &&
+          !guestSessionId
+      ) {
+          throw new apiError(
+              400,
+              "guestSessionId is required when evidence files are attached"
+          );
+      }
+
+
+      // ───── 5. Resolve station + validate evidence ─────
+
+      const [station, evidences] = await Promise.all([
+          PoliceStation.findOne({
+              _id: policeStationId,
+              isActive: true
+          }),
+
+          Array.isArray(evidenceFileIds) &&
+          evidenceFileIds.length > 0
+              ? Evidence.find({
+                  _id: { $in: evidenceFileIds },
+                  guestSessionId
+              })
+              : Promise.resolve([])
+      ]);
+
+
+      if (!station) {
+          throw new apiError(
+              404,
+              "Selected police station not found or inactive"
+          );
+      }
+
+
+      // ───── 6. Validate evidence ─────
+
+      if (
+          Array.isArray(evidenceFileIds) &&
+          evidenceFileIds.length > 0
+      ) {
+
+          if (evidences.length !== evidenceFileIds.length) {
+              throw new apiError(
+                  400,
+                  "One or more evidence files are invalid or already attached to another case"
+              );
+          }
+      }
+
+
+      const evidenceIds = evidences.map(
+          (evidence) => evidence._id
       );
-    }
- 
-    // ───── 9. Respond immediately — this is now the fast path ─────
-    res.status(201).json(
-      new apiResponse(201, newCase, "Crime reported successfully")
-    );
- 
-    // ───── 10. Everything below is fire-and-forget background work ─────
- 
-    // OTP session cleanup — not needed for the response, don't block on it.
-    invalidateOTP(sessionId).catch(err =>
-      console.error(`invalidateOTP failed [${newCase.caseId}]:`, err)
-    );
- 
-    // AI classification pass (background). Bounded with a timeout so a
-    // stuck Gemini call can't hang around indefinitely.
-    (async () => {
-      try {
-        const result = await withTimeout(
-          geminiAIService.generateCrimeAnalysis(description, crimeType, address),
-          100000,
-          "AI classification"
-        );
-        await Case.findByIdAndUpdate(newCase._id, {
-          aiSummary: result.summary,
-          severity: result.severity
-        });
-      } catch (err) {
-        console.error(`AI analysis failed [${newCase.caseId}]:`, err.message);
-      }
-    })();
- 
-    // Receipt PDF generation (background, unchanged).
-    (async () => {
-      try {
-        const receiptPdfPath = await PDFService.generateReceipt(newCase, station.name, "Police Department");
-        await Case.findByIdAndUpdate(newCase._id, { receiptPdf: receiptPdfPath });
-      } catch (pdfError) {
-        console.error(`PDF generation failed [${newCase.caseId}]:`, pdfError);
-      }
-    })();
- 
-    // Notifications (background, unchanged).
-    setImmediate(async () => {
-      const tasks = [];
- 
-      if (station.stationHead) {
-        tasks.push(
-          NotificationService.send({
-            tenantId: station.tenantId,
-            userId: station.stationHead,
-            type: "new_case_reported",
-            title: "New Case Reported",
-            message: `A new guest case (${newCase.caseId}) has been reported at ${station.name}`,
-            channels: ["inapp"]
-          })
-        );
-      }
- 
-      tasks.push(
-        NotificationService.send({
+
+
+      // ───── 7. Reporter identity ─────
+
+      const reporter = {
+          type: "GUEST",
+          fullName: name,
+          email,
+          phone,
+          isVerified: true
+      };
+
+
+      // ───── 8. Create case immediately ─────
+
+      const trackingToken = nanoid(24);
+
+      const newCase = await Case.create({
           tenantId: station.tenantId,
-          email: reporter.email,
-          type: "case_reported",
-          title: "Case Reported Successfully",
-          message: `Your case ${newCase.caseId} has been reported. Save your tracking token to check status later: ${trackingToken}`,
-          channels: ["email"]
-        })
-      );
- 
-      const results = await Promise.allSettled(tasks);
-      results.forEach((r, i) => {
-        if (r.status === "rejected") {
-          console.error(`reportCase background task ${i} failed [${newCase.caseId}]:`, r.reason);
-        }
+          policeStationId: station._id,
+
+          crimeType,
+          description,
+
+          // Safe fallback until Gemini finishes
+          aiSummary: description.substring(0, 200),
+          severity: "MEDIUM",
+
+          location: {
+              type: "Point",
+              coordinates
+          },
+
+          locationLabel,
+          address,
+
+          reporter,
+
+          evidenceFiles: evidenceIds,
+
+          trackingToken,
+
+          status: "PENDING"
       });
-    });
+
+
+      // ───── 9. Link evidence to case ─────
+
+      if (evidenceIds.length > 0) {
+
+          await Evidence.updateMany(
+              {
+                  _id: { $in: evidenceIds }
+              },
+              {
+                  $set: {
+                      caseId: newCase._id,
+                      tenantId: newCase.tenantId
+                  }
+              }
+          );
+      }
+
+
+      // ───── 10. Respond immediately ─────
+
+      res.status(201).json(
+          new apiResponse(
+              201,
+              newCase,
+              "Crime reported successfully"
+          )
+      );
+
+
+      // ───── 11. Background: invalidate OTP ─────
+
+      (async () => {
+          try {
+
+              await invalidateOTP(sessionId);
+
+          } catch (err) {
+
+              console.error(
+                  `Failed to invalidate OTP session ${sessionId}:`,
+                  err.message
+              );
+
+          }
+      })();
+
+
+      // ───── 12. Background: AI classification ─────
+
+      (async () => {
+          try {
+
+              const result =
+                  await geminiAIService.generateCrimeAnalysis(
+                      description,
+                      crimeType,
+                      address
+                  );
+
+
+              await Case.findByIdAndUpdate(
+                  newCase._id,
+                  {
+                      aiSummary: result.summary,
+                      severity: result.severity
+                  }
+              );
+
+          } catch (err) {
+
+              console.error(
+                  `AI classification failed for case ${newCase._id}:`,
+                  err.message
+              );
+
+          }
+      })();
+
+
+      // ───── 13. Background: receipt PDF ─────
+
+      (async () => {
+          try {
+
+              const receiptUrl =
+                  await PDFService.generateReceipt(newCase);
+
+              await Case.findByIdAndUpdate(
+                  newCase._id,
+                  {
+                      receiptPdf: receiptUrl,
+                      guestDownloadAllowed: false
+                  }
+              );
+
+          } catch (err) {
+
+              console.error(
+                  `Receipt PDF generation failed for case ${newCase._id}:`,
+                  err.message
+              );
+
+          }
+      })();
+
+
+      // ───── 14. Background: station-head notification ─────
+
+      if (station.stationHead) {
+
+          (async () => {
+
+              try {
+
+                  await NotificationService.send({
+                      tenantId: station.tenantId,
+                      userId: station.stationHead,
+
+                      type: "new_case_reported",
+
+                      title: "New Case Reported",
+
+                      message:
+                          `A new case (${newCase.caseId}) has been reported ` +
+                          `at ${station.name} by ${reporter.fullName}`,
+
+                      channels: ["inapp"]
+                  });
+
+              } catch (err) {
+
+                  console.error(
+                      `Notification failed for case ${newCase._id}:`,
+                      err.message
+                  );
+
+              }
+
+          })();
+
+      }
+
   });
 
 

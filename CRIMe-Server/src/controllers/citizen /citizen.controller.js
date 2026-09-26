@@ -57,137 +57,256 @@ class CitizenController {
 
     // POST /citizen/citizen-report-crime - Submit crime report as authenticated citizen
     static reportCase = wrapAsync(async (req, res) => {
-        
-        const currentUser = req.user;
-        
-        const {
+
+    const currentUser = req.user;
+
+    const {
         crimeType,
         description,
-        coordinates,        // [lng, lat] — from map pin/GPS
-        locationLabel,         // auto reverse-geocoded label
-        address,     // optional — citizen-refined precise location
+        coordinates,       // [lng, lat] — from map pin/GPS
+        locationLabel,     // auto reverse-geocoded label
+        address,           // optional — citizen-refined precise location
         policeStationId,
-        evidenceFileIds      // optional — uploaded before final submit
-        } = req.body;
+        evidenceFileIds    // optional — uploaded before final submit
+    } = req.body;
 
-        // ───── 1. Required field validation ─────
-        if (!crimeType || !description || !policeStationId) {
-        throw new apiError(400, "crimeType, description and policeStationId are required");
-        }
 
-        if (
+    // ───── 1. Required field validation ─────
+
+    if (!crimeType || !description || !policeStationId) {
+        throw new apiError(
+            400,
+            "crimeType, description and policeStationId are required"
+        );
+    }
+
+
+    if (
         !Array.isArray(coordinates) ||
         coordinates.length !== 2 ||
         coordinates.some((c) => typeof c !== "number")
-        ) {
-        throw new apiError(400, "Valid coordinates [lng, lat] are required");
-        }
+    ) {
+        throw new apiError(
+            400,
+            "Valid coordinates [lng, lat] are required"
+        );
+    }
 
-        // Validate evidenceFileIds if provided
-        if (evidenceFileIds && (!Array.isArray(evidenceFileIds) || evidenceFileIds.length > 10)) {
-        throw new apiError(400, "evidenceFileIds must be an array with maximum 10 items");
-        }
 
-        // ───── 4. Validate evidence ownership (if attached at submit time) ─────
-        let evidenceIds = [];
-        if (Array.isArray(evidenceFileIds) && evidenceFileIds.length > 0) {
-        const evidences = await Evidence.find({ 
-            _id: { $in: evidenceFileIds }, 
+    // Validate evidenceFileIds if provided
+    if (
+        evidenceFileIds &&
+        (!Array.isArray(evidenceFileIds) ||
+            evidenceFileIds.length > 10)
+    ) {
+        throw new apiError(
+            400,
+            "evidenceFileIds must be an array with maximum 10 items"
+        );
+    }
+
+
+    // ───── 2. Validate evidence ownership ─────
+
+    let evidenceIds = [];
+
+    if (
+        Array.isArray(evidenceFileIds) &&
+        evidenceFileIds.length > 0
+    ) {
+        const evidences = await Evidence.find({
+            _id: { $in: evidenceFileIds },
             uploadedBy: currentUser._id,
-            caseId: null          // ✅ must still be standalone/unattached
+            caseId: null
         });
 
         if (evidences.length !== evidenceFileIds.length) {
-            throw new apiError(400, "One or more evidence files are invalid or already attached to another case");
-        }
-        evidenceIds = evidences.map((e) => e._id);
+            throw new apiError(
+                400,
+                "One or more evidence files are invalid or already attached to another case"
+            );
         }
 
-        // ───── 2. Resolve station → tenant (never trust client tenantId) ─────
-        const station = await PoliceStation.findOne({
+        evidenceIds = evidences.map((e) => e._id);
+    }
+
+
+    // ───── 3. Resolve station → tenant ─────
+
+    // Never trust tenantId from the client.
+    const station = await PoliceStation.findOne({
         _id: policeStationId,
         isActive: true
-        });
+    });
 
-        if (!station) {
-        throw new apiError(404, "Selected police station not found or inactive");
-        }
+    if (!station) {
+        throw new apiError(
+            404,
+            "Selected police station not found or inactive"
+        );
+    }
 
-        // ───── 3. Reporter identity — authenticated citizen ─────
-        const reporter = {
-            type: "CITIZEN",
-            citizenId: currentUser._id,
-            fullName: currentUser.fullName,
-            email: currentUser.email,
-            phone: currentUser.phone,
-            isVerified: true
-        };
 
-        // ───── 5. AI Classification ─────
-    // Gemini service ALWAYS returns something.
-    // Case creation should NEVER fail because of AI.
+    // ───── 4. Reporter identity ─────
 
-    let summary, severity;
-        try {
-          const result = await geminiAIService.generateCrimeAnalysis(
-            description,
-            crimeType,
-            address
-          );
-          summary = result.summary;
-          severity = result.severity;
-        } catch (err) {
-          console.error("AI analysis failed:", err.message);
-          summary = description.substring(0, 200);
-          severity = "MEDIUM";
-        }
-    
+    const reporter = {
+        type: "CITIZEN",
+        citizenId: currentUser._id,
+        fullName: currentUser.fullName,
+        email: currentUser.email,
+        phone: currentUser.phone,
+        isVerified: true
+    };
 
-        // ───── 6. Create case ─────
-        const newCase = await Case.create({
-        tenantId: station.tenantId,        // derived from station, not client input
+
+    // ───── 5. Create case immediately ─────
+
+    // AI runs in the background, so use safe fallback values initially.
+    const newCase = await Case.create({
+        tenantId: station.tenantId,
         policeStationId: station._id,
+
         crimeType,
         description,
-        aiSummary: summary,
-        severity: severity,
+
+        aiSummary: description.substring(0, 200),
+        severity: "MEDIUM",
+        aiClassificationStatus: "PENDING",
+
         location: {
             type: "Point",
             coordinates
         },
+
         locationLabel,
         address,
+
         reporter,
+
         evidenceFiles: evidenceIds,
+
         status: "PENDING"
-        });
+    });
 
-        // ───── 7. Link uploaded evidence to this case ─────
-        if (evidenceIds.length > 0) {
+
+    // ───── 6. Link uploaded evidence to this case ─────
+
+    if (evidenceIds.length > 0) {
         await Evidence.updateMany(
-            { _id: { $in: evidenceIds } },
-            { $set: { caseId: newCase._id, tenantId: newCase.tenantId } }
+            {
+                _id: { $in: evidenceIds }
+            },
+            {
+                $set: {
+                    caseId: newCase._id,
+                    tenantId: newCase.tenantId
+                }
+            }
         );
-        }
+    }
 
-        // ───── 8. Send notification to station head ─────
-        if (station.stationHead) {
-            await NotificationService.send({
-                tenantId: station.tenantId,
-                userId: station.stationHead,
-                type: "new_case_reported",
-                title: "New Case Reported",
-                message: `A new case (${newCase.caseId}) has been reported at ${station.name} by ${reporter.fullName}`,
-                channels: ["inapp"]
+
+    // ───── 7. Respond immediately ─────
+
+    // Everything required to successfully create the case is complete.
+    // The citizen does NOT wait for Gemini or notifications.
+    res.status(201).json(
+        new apiResponse(
+            201,
+            newCase,
+            "Crime reported successfully"
+        )
+    );
+
+
+    // ───── 8. Background: AI classification ─────
+
+    (async () => {
+        try {
+
+            const result =
+                await geminiAIService.generateCrimeAnalysis(
+                    description,
+                    crimeType,
+                    address
+                );
+
+
+            await Case.findByIdAndUpdate(
+                newCase._id,
+                {
+                    aiSummary: result.summary,
+                    severity: result.severity,
+                    aiClassificationStatus: "COMPLETE"
+                }
+            );
+
+        } catch (err) {
+
+            console.error(
+                `AI classification failed for case ${newCase._id}:`,
+                err.message
+            );
+
+
+            // Case already exists, so AI failure must NOT affect submission.
+            await Case.findByIdAndUpdate(
+                newCase._id,
+                {
+                    aiClassificationStatus: "FAILED"
+                }
+            ).catch((updateErr) => {
+
+                console.error(
+                    `Failed to update AI status for case ${newCase._id}:`,
+                    updateErr.message
+                );
+
             });
         }
+    })();
 
-        // ───── 9. Respond ─────
-        return res.status(201).json(
-        new apiResponse(201, newCase, "Crime reported successfully")
-        );
+
+    // ───── 9. Background: Station-head notification ─────
+
+    if (station.stationHead) {
+
+        (async () => {
+
+            try {
+
+                await NotificationService.send({
+                    tenantId: station.tenantId,
+                    userId: station.stationHead,
+
+                    type: "new_case_reported",
+
+                    title: "New Case Reported",
+
+                    message:
+                        `A new case (${newCase.caseId}) has been reported ` +
+                        `at ${station.name} by ${reporter.fullName}`,
+
+                    channels: ["inapp"]
+                });
+
+            } catch (err) {
+
+                console.error(
+                    `Notification failed for case ${newCase._id}:`,
+                    err.message
+                );
+
+            }
+
+        })();
+
+    }
 
     });
+
+
+
     //it suggests nearest police stations based on coordinates while reporting a case
     static suggestNearestStations = wrapAsync(async (req, res) => {
     const { lng, lat } = req.query;
