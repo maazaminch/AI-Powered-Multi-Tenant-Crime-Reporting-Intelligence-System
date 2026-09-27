@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Badge } from '../../components/ui/Badge'
 import { Separator } from '../../components/ui/Separator'
 import { useCaseDetails } from '../../hooks/admin/useCaseDetails'
-import LocationView from '../../components/map/LocationView'
+import LocationView from '../../components/features/location/LocationView'
 import Loader from '@/components/ui/feedback/Loader'
 import ErrorState from '@/components/ui/feedback/ErrorState'
 import NoData from '@/components/ui/feedback/NoData'
@@ -87,7 +87,7 @@ const CaseDetailsPage = () => {
     }, {})
   }
 
-    const handleOpenEvidence = (evidence) => {
+  const handleOpenEvidence = (evidence) => {
     if (evidence.fileUrl) {
       window.open(evidence.fileUrl, '_blank')
     }

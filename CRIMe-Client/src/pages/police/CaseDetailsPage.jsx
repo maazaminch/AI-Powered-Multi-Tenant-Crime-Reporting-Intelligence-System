@@ -27,7 +27,7 @@ import { AddStatementModal } from '../../components/features/shared/modals/AddSt
 import { AddArrestModal } from '../../components/features/shared/modals/AddArrestModal'
 import { UpdateStatusModal } from '../../components/features/police/modals/UpdateStatusModal'
 import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
-import LocationView from '../../components/map/LocationView'
+import LocationView from '../../components/features/location/LocationView'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
 
 

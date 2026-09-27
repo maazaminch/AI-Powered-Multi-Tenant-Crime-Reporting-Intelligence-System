@@ -65,13 +65,6 @@ const validateGuestCaseAccess = async (caseId, trackingToken) => {
     return caseDoc;
 };
 
-const withTimeout = (promise, ms, label = "operation") =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-    )
-  ]);
 
 class GuestController {
 

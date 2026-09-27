@@ -16,8 +16,7 @@ import { AddArrestModal } from '../../components/features/shared/modals/AddArres
 import { AssignCaseModal } from '../../components/features/stationHead/modals/AssignCaseModal'
 import { CloseCaseModal } from '../../components/features/stationHead/modals/CloseCaseModal'
 import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
-import LocationView from '../../components/map/LocationView'
-import { toast } from 'sonner'
+import LocationView from '../../components/features/location/LocationView'
 import { useStationPolice } from '../../hooks/stationHead/useStationPolice'
 
 const CaseDetailsPage = () => {

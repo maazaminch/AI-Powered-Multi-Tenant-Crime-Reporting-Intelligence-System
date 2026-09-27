@@ -10,7 +10,7 @@ import { useReportCase, useSuggestNearestStations } from '../../hooks/citizen/us
 import { useEvidence } from '../../hooks/evidence/useEvidence'
 import { usePDF } from '../../hooks/pdf/usePDF'
 import { CaseReportedSuccessModal } from '../../components/features/citizen/modals/CaseReportedSuccessModal'
-import LocationPicker from '../../components/map/LocationPicker'
+import LocationPicker from '../../components/features/location/LocationPicker'
 import {
   AlertTriangle,
   MapPin,

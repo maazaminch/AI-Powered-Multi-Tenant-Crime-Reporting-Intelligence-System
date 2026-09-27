@@ -152,11 +152,11 @@ const AuditTable = ({ logs, pagination, isLoading, error, onPageChange, onRefetc
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
           <div className="text-sm text-slate-600">
             Showing {pagination.currentPage} of {pagination.totalPages} pages 
-            ({pagination.total} total logs)
+            ({pagination.totalLogs} total logs)
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={() => onPageChange(pagination.currentPage - 1)}
+              onClick={() => onPageChange(Number(pagination.currentPage) - 1)}
               disabled={!pagination.hasPrevPage}
               variant="outline"
               size="sm"
@@ -166,7 +166,7 @@ const AuditTable = ({ logs, pagination, isLoading, error, onPageChange, onRefetc
               Previous
             </Button>
             <Button
-              onClick={() => onPageChange(pagination.currentPage + 1)}
+              onClick={() => onPageChange(Number(pagination.currentPage) + 1)}
               disabled={!pagination.hasNextPage}
               variant="outline"
               size="sm"

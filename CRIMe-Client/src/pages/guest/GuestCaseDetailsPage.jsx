@@ -26,7 +26,7 @@ import { Badge } from '../../components/ui/Badge'
 import { useGuestCaseDetails } from '../../hooks/guest/useGuestCaseDetails'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
 import { AddNoteModal } from '../../components/features/shared/modals/AddNoteModal'
-import LocationView from '../../components/map/LocationView'
+import LocationView from '../../components/features/location/LocationView'
 import Loader from '@/components/ui/feedback/Loader'
 import ErrorState from '@/components/ui/feedback/ErrorState'
 

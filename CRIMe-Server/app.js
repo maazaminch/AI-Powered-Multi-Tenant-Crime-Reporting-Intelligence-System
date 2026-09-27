@@ -32,8 +32,12 @@ const app = express();
 // Stops MIME-sniffing attacks
 // Removes the X-Powered-By: Express header (don't advertise your stack to attackers)
 // Sets Content-Security-Policy, HSTS, and other protective headers
-app.use(helmet()); // sets secure HTTP headers
-
+app.use(helmet({
+  crossOriginOpenerPolicy: {
+    policy: "same-origin-allow-popups"
+  },
+  crossOriginEmbedderPolicy: false
+}));
 
 
 app.use(cors({ 

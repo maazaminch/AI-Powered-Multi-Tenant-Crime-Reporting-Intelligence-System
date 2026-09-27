@@ -93,6 +93,8 @@ class SuperAdminController {
             status,
             tenantId
         } = req.query;
+
+        
         const skip = (page - 1) * limit;
 
         const filter = {

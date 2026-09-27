@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react'
 
 const GoogleSignInButton = ({
@@ -8,26 +9,49 @@ const GoogleSignInButton = ({
   disabled = false
 }) => {
   const buttonRef = useRef(null)
+  const initializedRef = useRef(false)
+
+  const onSuccessRef = useRef(onSuccess)
+  const onErrorRef = useRef(onError)
+
   const [isLoaded, setIsLoaded] = useState(false)
+
+  // Keep latest callbacks without re-running Google initialization
+  useEffect(() => {
+    onSuccessRef.current = onSuccess
+    onErrorRef.current = onError
+  }, [onSuccess, onError])
+
+
+  // ───── Wait for Google Identity Services ─────
 
   useEffect(() => {
     const checkGoogleLoaded = () => {
       if (window.google?.accounts?.id) {
         setIsLoaded(true)
+        return true
       }
+
+      return false
     }
 
-    // Check immediately
-    checkGoogleLoaded()
+    if (checkGoogleLoaded()) {
+      return
+    }
 
-    // Check while GSI script is loading
-    const interval = setInterval(checkGoogleLoaded, 100)
+    const interval = setInterval(() => {
+      if (checkGoogleLoaded()) {
+        clearInterval(interval)
+      }
+    }, 100)
 
     const timeout = setTimeout(() => {
       clearInterval(interval)
 
       if (!window.google?.accounts?.id) {
-        onError?.('Google Identity Services failed to load')
+        onErrorRef.current?.(
+          'Google Identity Services failed to load'
+        )
       }
     }, 5000)
 
@@ -35,78 +59,104 @@ const GoogleSignInButton = ({
       clearInterval(interval)
       clearTimeout(timeout)
     }
-  }, [onError])
+  }, [])
+
+
+  // ───── Initialize Google + render button ─────
 
   useEffect(() => {
-    if (!isLoaded || !buttonRef.current || disabled) {
+    if (
+      !isLoaded ||
+      !buttonRef.current ||
+      disabled ||
+      initializedRef.current
+    ) {
       return
     }
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
     if (!clientId) {
-      onError?.('Google Client ID is not configured')
+      onErrorRef.current?.(
+        'Google Client ID is not configured'
+      )
       return
     }
 
     try {
-      // Initialize Google Identity Services
+
       window.google.accounts.id.initialize({
         client_id: clientId,
 
         callback: (response) => {
+
           if (!response?.credential) {
-            onError?.('Google did not return an ID token')
+            onErrorRef.current?.(
+              'Google did not return an ID token'
+            )
             return
           }
 
-          onSuccess?.(response.credential)
+          onSuccessRef.current?.(
+            response.credential
+          )
         },
 
         auto_select: false,
         cancel_on_tap_outside: true
       })
 
-      // Clear any previously rendered button
+
       buttonRef.current.innerHTML = ''
 
-      // Render Google's official Sign in with Google button
+
       window.google.accounts.id.renderButton(
         buttonRef.current,
         {
           type: 'standard',
           theme: 'outline',
           size: 'large',
-          text: 'signin_with',
+          text: text === 'Sign up with Google'
+            ? 'signup_with'
+            : 'signin_with',
           shape: 'rectangular',
           width: 400
         }
       )
-    } catch (error) {
-      console.error('Google Sign-In initialization failed:', error)
-      onError?.('Unable to initialize Google Sign-In')
-    }
-  }, [isLoaded, onSuccess, onError, disabled])
 
-  if (!isLoaded) {
-    return (
-      <div
-        className={`w-full flex items-center justify-center py-3 ${className}`}
-      >
-        <span className="text-sm text-gray-400">
-          Loading Google Sign-In...
-        </span>
-      </div>
-    )
-  }
+
+      initializedRef.current = true
+
+    } catch (error) {
+
+      console.error(
+        'Google Sign-In initialization failed:',
+        error
+      )
+
+      onErrorRef.current?.(
+        'Unable to initialize Google Sign-In'
+      )
+    }
+
+  }, [isLoaded, disabled, text])
+
 
   return (
     <div
       className={`w-full flex justify-center ${className} ${
-        disabled ? 'pointer-events-none opacity-60' : ''
+        disabled
+          ? 'pointer-events-none opacity-60'
+          : ''
       }`}
     >
-      <div ref={buttonRef} />
+      {!isLoaded ? (
+        <span className="text-sm text-gray-400 py-3">
+          Loading Google Sign-In...
+        </span>
+      ) : (
+        <div ref={buttonRef} />
+      )}
     </div>
   )
 }

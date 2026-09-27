@@ -35,7 +35,7 @@ const AdminsPage = () => {
 
   const [filters, setFilters] = useState({
     page: 1,
-
+    // limit: 10,
     search: '',
     status: '',
     tenantId: ''

@@ -27,7 +27,7 @@ import { useCaseDetails } from '../../hooks/citizen/useCaseDetails'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
 import { AddNoteModal } from '../../components/features/shared/modals/AddNoteModal'
 import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
-import LocationView from '../../components/map/LocationView'
+import LocationView from '../../components/features/location/LocationView'
 import Loader from '../../components/ui/feedback/Loader'
 import ErrorState from '../../components/ui/feedback/ErrorState'
 

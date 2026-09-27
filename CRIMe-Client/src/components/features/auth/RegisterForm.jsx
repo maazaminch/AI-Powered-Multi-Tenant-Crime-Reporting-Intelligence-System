@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { useAuth } from '../../../hooks/auth/useAuth'
 // import { uploadService } from '../../../services/uploadService'
 import GoogleSignInButton from './GoogleSignInButton'
+import { toast } from 'sonner'
 
 const RegisterForm = () => {
   const navigate = useNavigate()

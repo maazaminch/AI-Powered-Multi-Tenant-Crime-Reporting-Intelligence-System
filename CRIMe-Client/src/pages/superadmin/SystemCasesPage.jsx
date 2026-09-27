@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { formatError } from '../../lib/utils'
 import SearchDropdown from '../../components/common/SearchDropdown'
+import Loader from '../../components/ui/feedback/Loader';
+import ErrorState from '../../components/ui/feedback/ErrorState';
+import NoData from '../../components/ui/feedback/NoData';
 
 import { 
   FileText, 
@@ -120,6 +123,8 @@ const SystemCasesPage = () => {
 
   const statuses = ['PENDING', 'ASSIGNED', 'UNDER_INVESTIGATION', 'RESOLVED', 'CLOSED']
   const severities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+
+
 
   return (
     <div className="space-y-6">
@@ -318,20 +323,17 @@ const SystemCasesPage = () => {
       <Card>
         <CardContent className="p-6">
           {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="h-24 animate-pulse rounded-lg border bg-muted/40" />
-              ))}
-            </div>
+              <Loader 
+                text='Loading System Cases...'
+              />
           ) : error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {formatError(error)}
-            </div>
+              <ErrorState 
+                title='Error Loading System Cases'
+              />
           ) : cases.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center">
-              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No cases found matching your filters</p>
-            </div>
+              <NoData 
+                title='No System Cases Found'
+              />
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-end">

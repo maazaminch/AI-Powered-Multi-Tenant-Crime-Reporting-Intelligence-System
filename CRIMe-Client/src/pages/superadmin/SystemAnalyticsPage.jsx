@@ -17,13 +17,13 @@ import {
 
 import { useSystemAnalytics } from "../../hooks/superadmin/useSystemAnalytics";
 
+import Loader from '../../components/ui/feedback/Loader';
+import ErrorState from '../../components/ui/feedback/ErrorState';
+import NoData from '../../components/ui/feedback/NoData';
+
+
 const SystemAnalyticsPage = () => {
   const { analytics, isLoading, error } = useSystemAnalytics();
-
-  // const analytics = data;
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading analytics</div>;
 
   // Data mapping for charts
   const userPieData = [
@@ -51,6 +51,31 @@ const SystemAnalyticsPage = () => {
 
   const COLORS = ["#fe1100b7", "#00C49F", "#00c40acc","#ffbb28c4"];
 
+
+  if(isLoading) {
+    return (
+      <Loader 
+        text='Loading System Analytics...'
+      />
+    )
+  }
+
+  if(error) {
+    return (
+      <ErrorState 
+        title='Error Loading System Analytics'
+      />
+    )
+  }
+
+  if(analytics.length === 0){
+    return (
+      <NoData
+        title='No System Analytics Found'
+      />
+    )
+  }
+
   return (
     <div className="space-y-6 p-6">
 
@@ -63,8 +88,6 @@ const SystemAnalyticsPage = () => {
           </p>
         </div>
       </div>
-
-
 
       <div className="grid gap-6 grid-cols-1 ">
         <div className="grid gap-6">
@@ -96,15 +119,6 @@ const SystemAnalyticsPage = () => {
                 <p className="mt-2 text-sm text-slate-500">Currently deactive tenants</p>
               </CardContent>
             </Card>
-            {/* <Card className="border border-slate-400 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-sm text-slate-500">Total cases</CardTitle>
-              </CardHeader>
-              <CardContent className="py-4">
-                <p className="text-3xl font-semibold text-slate-900">{analytics.cases.total}</p>
-                <p className="mt-2 text-sm text-slate-500">All case statuses combined</p>
-              </CardContent>
-            </Card> */}
           </div>
 
           <Card className="border border-slate-700 bg-white shadow-sm">
