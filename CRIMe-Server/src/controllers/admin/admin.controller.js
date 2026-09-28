@@ -405,8 +405,13 @@ class AdminController {
         if (!police) {
             throw new apiError(404, "Police officer not found");
         }
-        if(police.policeStationId) {
-            throw new apiError(400, "Police officer is already assigned to a station");
+        // Check if already assigned to THIS specific station
+        if(police.policeStationId && police.policeStationId.toString() === stationId) {
+            throw new apiError(400, "Police officer is already assigned to this station");
+        }
+        // Check if assigned to a different station
+        if(police.policeStationId && police.policeStationId.toString() !== stationId) {
+            throw new apiError(400, "Police officer is already assigned to another station");
         }
 
         const station = await PoliceStation.findById(stationId);
@@ -1095,23 +1100,24 @@ class AdminController {
             throw new apiError(400, "Location with valid coordinates is required");
         }
 
-        if (!name || !address || !city || !contactNumber) {
+        if (!name || !city || !contactNumber) {
             throw new apiError(400, "Important fields are required");
         }
 
+
         const station = await PoliceStation.create({
             tenantId: currentUser.tenantId,
-            name,
+            name: name.trim(),
             location: {
                 type: "Point",
                 coordinates: [location.coordinates[0], location.coordinates[1]]
             },
-            address,
-            locationLabel: locationLabel || null,
-            city,
+            address: address ? address.trim() : undefined,
+            locationLabel: locationLabel ? locationLabel.trim() : null,
+            city: city.trim(),
             sector,
-            contactNumber,
-            email,
+            contactNumber: contactNumber.trim(),
+            email: email ? email.trim().toLowerCase() : undefined,
             stationHead: null,
             isActive: true,
             createdBy: currentUser._id
@@ -1119,6 +1125,11 @@ class AdminController {
 
         if (!station) {
             throw new apiError(500, "Failed to create station");
+        }
+
+        // Verify code was generated
+        if (!station.code) {
+            console.error("Station code not generated for station:", station._id);
         }
 
         res.status(201).json(
@@ -1131,16 +1142,21 @@ class AdminController {
         const { stationId } = req.params;
 
 
-        const filter = { 
+        const filter = {
             _id: stationId,
             ...req.tenantFilter
         };
-        
+
         const station = await PoliceStation.findOne(filter);
         if (!station) {
             throw new apiError(404, "Station not found");
         }
 
+        // Unassign all police officers from this station
+        await User.updateMany(
+            { policeStationId: stationId, ...req.tenantFilter },
+            { policeStationId: null, isStationHead: false }
+        );
 
         // Permanently remove the station document
         await PoliceStation.findByIdAndDelete(stationId);

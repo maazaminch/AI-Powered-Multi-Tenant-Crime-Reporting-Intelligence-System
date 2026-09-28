@@ -296,8 +296,8 @@ export const requiredFullLocationSchema = Joi.object({
         })
 });
 
-// Pagination schema
-export const paginationSchema = {
+// Pagination schema - accepts optional default limit (defaults to 10)
+export const paginationSchema = (defaultLimit = 10) => ({
     page: Joi.number()
         .integer()
         .min(1)
@@ -309,17 +309,11 @@ export const paginationSchema = {
         .integer()
         .min(1)
         .max(100)
-        .default(10)
+        .default(defaultLimit)
         .messages({
             'number.min': 'Limit must be at least 1',
             'number.max': 'Limit cannot exceed 100'
         })
-};
-
-// Use when a resource needs a different default limit (e.g. 10)
-export const paginationWithLimit = (defaultLimit = 10) => ({
-    page: paginationSchema.page,
-    limit: paginationSchema.limit.default(defaultLimit)
 });
 
 // Sort schema

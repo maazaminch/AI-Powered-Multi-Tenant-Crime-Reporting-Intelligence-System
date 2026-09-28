@@ -4,7 +4,7 @@ import { mongoIdSchema, paginationSchema } from "./common.schema.js";
 
 export const getAuditLogsSchema = {
   query: Joi.object({
-    ...paginationSchema,
+    ...paginationSchema(20),
     tenantId: mongoIdSchema.optional().messages({
       'string.pattern.base': 'Invalid tenant ID format'
     }),

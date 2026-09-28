@@ -201,9 +201,14 @@ class SuperAdminController {
         if (admin.role !== "ADMIN") {
             throw new apiError(400, "Only ADMIN role allowed");
         }
-        
-        if (admin.tenantId) {
-            throw new apiError(400, "Admin already has tenant. Use transfer");
+
+        // Check if already assigned to THIS specific tenant
+        if(admin.tenantId && admin.tenantId.toString() === tenantId) {
+            throw new apiError(400, "Admin is already assigned to this tenant");
+        }
+        // Check if assigned to a different tenant
+        if(admin.tenantId && admin.tenantId.toString() !== tenantId) {
+            throw new apiError(400, "Admin is already assigned to another tenant. Use transfer instead");
         }
 
         const tenant = await Tenant.findById(tenantId);
@@ -231,7 +236,7 @@ class SuperAdminController {
         });
 
         res.status(200).json(
-            new apiResponse(200, 
+            new apiResponse(200,
                 { adminId: admin._id, tenantId },
                 "Admin assigned to tenant successfully")
         );
@@ -515,28 +520,46 @@ class SuperAdminController {
     static deleteTenantController = wrapAsync(async(req, res) =>{
             const { tenantId } = req.params;
             const currentUser = req.user;
-    
+
             if(!currentUser.isSuperAdmin) throw new apiError(403, 'Not allowed to delete tenant')
-    
-            const deletedTenant = await Tenant.findByIdAndDelete(tenantId)
+
+            const deletedTenant = await Tenant.findById(tenantId)
             if(!deletedTenant) {
-                throw new apiError(400, 'Tenant not deleted')
-            } else {
-             const superAdmin = await User.findOne({isSuperAdmin: true}) 
-             if(superAdmin){
+                throw new apiError(404, 'Tenant not found')
+            }
+
+            // Unassign all admins from this tenant
+            await User.updateMany(
+                { tenantId: tenantId, role: 'ADMIN' },
+                { tenantId: null }
+            );
+
+            // Unassign all police officers from this tenant
+            await User.updateMany(
+                { tenantId: tenantId, role: 'POLICE' },
+                { tenantId: null, policeStationId: null, isStationHead: false }
+            );
+
+            // Delete all police stations belonging to this tenant
+            await PoliceStation.deleteMany({ tenantId: tenantId });
+
+            // Delete the tenant
+            await Tenant.findByIdAndDelete(tenantId)
+
+            const superAdmin = await User.findOne({isSuperAdmin: true})
+            if(superAdmin){
                     await NotificationService.send({
                     tenantId: deletedTenant._id,
                     userId: superAdmin._id,
                     type: 'Tenant Deletion',
                     title: 'Tenant Deleted',
                     message: `${deletedTenant.name} tenant has been deleted`,
-                    channels: ['inapp', 
+                    channels: ['inapp',
                         //'email'
                         ]
                     })
-             }  
-            }
-    
+             }
+
             return res.status(200).json(new apiResponse(200, deletedTenant, 'Tenant deleted successfully'));
         })
     

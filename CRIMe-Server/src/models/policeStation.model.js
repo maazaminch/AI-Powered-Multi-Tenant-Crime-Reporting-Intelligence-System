@@ -20,7 +20,6 @@ const PoliceStationSchema = new mongoose.Schema({
 
   code: {
     type: String,
-    required: true,
     unique: true, // e.g., SHA-MUL-001
     trim: true
   },
@@ -93,7 +92,9 @@ PoliceStationSchema.pre('validate', async function() {
       this.code = generateStationCode(this.name, this.city, this.sector);
     }
   } catch (err) {
-    console.error("ACTUAL ERROR:", err);
+    console.error("Station code generation error:", err.message);
+    // Set a fallback code if generation fails
+    this.code = `STN-${Date.now().toString(36).toUpperCase()}`;
   }
 });
 

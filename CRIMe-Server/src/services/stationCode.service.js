@@ -3,9 +3,13 @@
 function generateStationCode(name, city, sector) {
     const cleanName = name.substring(0, 3).toUpperCase();
     const cleanCity = city.substring(0, 3).toUpperCase();
-    const cleanSector = sector.toUpperCase();
-    return `${cleanName}-${cleanCity}-${cleanSector}`;
+    const cleanSector = sector ? sector.substring(0, 3).toUpperCase() : 'GEN';
 
-  }
-  
-  export default generateStationCode;
+    if(cleanSector){
+        return `${cleanName}-${cleanCity}-${cleanSector}`;
+    }
+    
+    return `${cleanName}-${cleanCity}`;
+}
+
+export default generateStationCode;

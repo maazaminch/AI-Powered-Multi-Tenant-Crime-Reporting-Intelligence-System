@@ -1,9 +1,10 @@
 import Joi from 'joi';
 import {
-    requiredFullLocationSchema,
+    requiredLocationSchema,
     requiredMongoIdSchema,
     optionalMongoIdSchema,
-    paginationSchema
+    paginationSchema,
+    phonePattern
 } from './common.schema.js';
 
 // ─────────────── CREATE STATION ───────────────
@@ -19,8 +20,14 @@ export const createStationSchema = {
                 'string.max': 'Station name cannot exceed 200 characters',
                 'any.required': 'Station name is required'
             }),
-        location: requiredFullLocationSchema.location,
-        locationLabel: requiredFullLocationSchema.locationLabel,
+        location: requiredLocationSchema,
+        locationLabel: Joi.string()
+            .max(500)
+            .required()
+            .messages({
+                'string.max': 'Location label cannot exceed 500 characters',
+                'any.required': 'Location label is required'
+            }),
         address: Joi.string()
             .max(500)
             .trim()
@@ -46,13 +53,9 @@ export const createStationSchema = {
                 'string.max': 'Sector cannot exceed 100 characters'
             }),
         contactNumber: Joi.string()
-            .min(10)
-            .max(15)
-            .pattern(/^\d{10,15}$/)
+            .pattern(phonePattern)
             .required()
             .messages({
-                'string.min': 'Contact number must be at least 10 characters',
-                'string.max': 'Contact number cannot exceed 15 characters',
                 'string.pattern.base': 'Please provide a valid contact number',
                 'any.required': 'Contact number is required'
             }),
@@ -107,7 +110,14 @@ export const getStationsSchema = {
             }),
         isActive: Joi.boolean()
             .optional(),
-        ...paginationSchema
+        search: Joi.string()
+            .max(100)
+            .trim()
+            .optional()
+            .messages({
+                'string.max': 'Search term cannot exceed 100 characters'
+            }),
+        ...paginationSchema(10)
     })
 };
 

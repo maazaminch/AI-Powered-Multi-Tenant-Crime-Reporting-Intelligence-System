@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { mongoIdSchema, paginationWithLimit, TenantType } from "./common.schema.js";
+import { mongoIdSchema, paginationSchema, TenantType } from "./common.schema.js";
 
 export const getAllTenantsSchema = {
   query: Joi.object({
@@ -10,7 +10,7 @@ export const getAllTenantsSchema = {
       'any.only': `Type must be one of: ${Object.values(TenantType).join(', ')}`
     }),
     isActive: Joi.boolean().optional(),
-    ...paginationWithLimit(10),
+    ...paginationSchema(10),
   }),
 };
 

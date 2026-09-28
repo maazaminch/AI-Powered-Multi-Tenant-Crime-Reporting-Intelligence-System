@@ -3,8 +3,17 @@ import verifyJWT from "../middlewares/auth.middleware.js";
 import tenantGuard from "../middlewares/tenantGuard.middleware.js";
 import roleGuard from "../middlewares/roleGuard.middleware.js";
 import auditLog from "../middlewares/auditLog.middleware.js";
+import validate from "../middlewares/validate.middleware.js";
 import AdminController from "../controllers/admin/admin.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
+import {
+    createStationSchema,
+    deleteStationSchema,
+    activateOrDeactivateStationSchema,
+    getStationsSchema,
+    getStationDetailsSchema,
+    stationsDropdownSchema
+} from "../validations/policeStation.schema.js";
 
 const adminRoutes = express.Router();
 
@@ -16,8 +25,9 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(createStationSchema),
     auditLog('CREATE', 'POLICE_STATION'),
-    AdminController.createStation   
+    AdminController.createStation
 );
 
 adminRoutes.delete(
@@ -25,8 +35,9 @@ adminRoutes.delete(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(deleteStationSchema),
     auditLog('DELETE', 'POLICE_STATION'),
-    AdminController.deleteStation   
+    AdminController.deleteStation
 );
 
 adminRoutes.post(
@@ -34,24 +45,27 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(activateOrDeactivateStationSchema),
     auditLog('TOGGLE', 'POLICE_STATION'),
-    AdminController.activateOrDeactivateStation   
-);  
+    AdminController.activateOrDeactivateStation
+);
 
 adminRoutes.get(
     "/get-stations",
     verifyJWT,
     tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN] }), 
-    AdminController.getStations   
+    roleGuard({ roles: [Roles.ADMIN] }),
+    validate(getStationsSchema),
+    AdminController.getStations
 );
 
 adminRoutes.get(
     "/get-station-details/:stationId",
     verifyJWT,
     tenantGuard,
-    roleGuard({ roles: [Roles.ADMIN] }), 
-    AdminController.getStationDetails   
+    roleGuard({ roles: [Roles.ADMIN] }),
+    validate(getStationDetailsSchema),
+    AdminController.getStationDetails
 );
 
 // Police Management Routes
@@ -76,6 +90,7 @@ adminRoutes.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(stationsDropdownSchema),
     AdminController.stationsDropdown
 );
 

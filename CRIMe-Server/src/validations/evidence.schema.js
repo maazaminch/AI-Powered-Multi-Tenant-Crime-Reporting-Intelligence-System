@@ -108,14 +108,11 @@ export const deleteEvidenceSchema = {
 export const evidenceFileIdsSchema = {
   body: Joi.object({
     evidenceFileIds: Joi.array()
-      .items(
-        Joi.string().pattern(/^[0-9a-fA-F]{24}$/)
-      )
+      .items(optionalMongoIdSchema)
       .max(10)
       .optional()
       .messages({
-        'array.max': 'Maximum 10 evidence files allowed',
-        'string.pattern.base': 'Invalid evidence ID format'
+        'array.max': 'Maximum 10 evidence files allowed'
       })
   })
 };
