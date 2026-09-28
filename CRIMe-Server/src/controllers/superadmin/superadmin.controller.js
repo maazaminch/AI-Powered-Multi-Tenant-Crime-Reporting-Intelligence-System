@@ -513,7 +513,7 @@ class SuperAdminController {
         })
     
     static deleteTenantController = wrapAsync(async(req, res) =>{
-            const tenantId = req.params.tenantId;
+            const { tenantId } = req.params;
             const currentUser = req.user;
     
             if(!currentUser.isSuperAdmin) throw new apiError(403, 'Not allowed to delete tenant')
@@ -541,7 +541,7 @@ class SuperAdminController {
         })
     
     static activateOrDeactivateTenantController = wrapAsync(async(req, res) => {
-            const tenantId = req.params.tenantId;
+            const { tenantId } = req.params;
             const currentUser = req.user;
     
             if(!currentUser.isSuperAdmin) throw new apiError(403, 'Not allowed to activate or deactivate tenant')
@@ -629,7 +629,7 @@ class SuperAdminController {
     }); 
 
     static getTenantDetails = wrapAsync(async (req, res) => {
-        const tenantId = req.params.tenantId;
+        const { tenantId } = req.params;
         const currentUser = req.user;
 
         if (!currentUser.isSuperAdmin) {

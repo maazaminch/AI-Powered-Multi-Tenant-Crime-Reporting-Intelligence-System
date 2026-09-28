@@ -5,7 +5,7 @@ import roleGuard from "../middlewares/roleGuard.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
 import AuditController from "../controllers/audit/audit.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
-import { getAuditLogsSchema, getAuditLogByIdSchema, getUserActivitySchema, getUserActivityQuerySchema } from "../validations/audit.schema.js";
+import { getAuditLogsSchema } from "../validations/audit.schema.js";
 
 const auditRouter = express.Router();
 
@@ -15,7 +15,7 @@ auditRouter.get(
   verifyJWT,
   tenantGuard,
   roleGuard({ roles: [Roles.ADMIN] }),
-  // validate(getAuditLogsSchema, 'query'),
+  validate(getAuditLogsSchema),
   AuditController.getAuditLogs
 );
 
