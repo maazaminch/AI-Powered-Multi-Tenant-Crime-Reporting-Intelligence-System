@@ -1,19 +1,23 @@
 import Joi from 'joi';
 import {
     requiredUserBaseFields,
+    userBaseFields,
     requiredPasswordSchema,
     requiredEmailSchema,
     requiredPhoneSchema,
     Roles,
     Gender,
     IdType,
-    minAgeValidator
+    minAgeValidator,
+    mongoIdSchema,
+    requiredAddressSchema
 } from './common.schema.js';
 
 // ─────────────── REGISTER CITIZEN ───────────────
 export const registerCitizenSchema = {
     body: Joi.object({
         ...requiredUserBaseFields,
+        address: requiredAddressSchema,
         password: requiredPasswordSchema,
         confirmPassword: Joi.string()
             .valid(Joi.ref('password'))
@@ -34,6 +38,7 @@ export const registerWithInviteSchema = {
                 'any.required': 'Invite token is required'
             }),
         ...requiredUserBaseFields,
+        address: requiredAddressSchema,
         password: requiredPasswordSchema,
         confirmPassword: Joi.string()
             .valid(Joi.ref('password'))
@@ -45,20 +50,21 @@ export const registerWithInviteSchema = {
         // Police-specific fields
         badgeNumber: Joi.string()
             .when('role', {
-                is: Joi.string().valid(Roles.POLICE),
+                is: Joi.string().valid(Roles.POLICE).required(),
                 then: Joi.string().required(),
                 otherwise: Joi.string().optional()
             })
             .messages({
                 'any.required': 'Badge number is required for police officers'
             }),
-        policeStationId: Joi.string()
+        policeStationId: mongoIdSchema
             .when('role', {
-                is: Joi.string().valid(Roles.POLICE),
-                then: Joi.string().required(),
-                otherwise: Joi.string().optional()
+                is: Joi.string().valid(Roles.POLICE).required(),
+                then: mongoIdSchema.required(),
+                otherwise: mongoIdSchema.optional()
             })
             .messages({
+                'string.pattern.base': 'Invalid police station ID format',
                 'any.required': 'Police station assignment is required for police officers'
             })
     })
@@ -90,52 +96,46 @@ export const googleLoginSchema = {
 // ─────────────── GOOGLE REGISTER CITIZEN ───────────────
 export const googleRegisterCitizenSchema = {
     body: Joi.object({
-        googleId: Joi.string()
+
+        idToken: Joi.string()
             .required()
             .messages({
-                'any.required': 'Google ID is required'
+                'any.required': 'Google ID token is required'
             }),
-        ...requiredUserBaseFields,
-        profilePictureUrl: Joi.string()
-            .uri()
-            .optional()
+
+        phone: requiredPhoneSchema,
+
+        gender: userBaseFields.gender
+            .required()
             .messages({
-                'string.uri': 'Profile picture must be a valid URL'
+                'any.required': 'Gender is required'
+            }),
+
+        dateOfBirth: userBaseFields.dateOfBirth
+            .required()
+            .custom(minAgeValidator(15))
+            .messages({
+                'any.required': 'Date of birth is required',
+                'any.invalid': 'You must be at least 15 years old to register'
+            }),
+
+        address: requiredAddressSchema,
+
+        idType: userBaseFields.idType
+            .required()
+            .messages({
+                'any.required': 'ID type is required'
+            }),
+
+        nationalIdHash: userBaseFields.nationalIdHash
+            .required()
+            .messages({
+                'any.required': 'National ID is required'
             })
     })
 };
 
-// ─────────────── CREATE INVITE LINK ───────────────
-export const createInviteLinkSchema = {
-    body: Joi.object({
-        email: requiredEmailSchema,
-        role: Joi.string()
-            .valid(Roles.ADMIN, Roles.POLICE)
-            .required()
-            .messages({
-                'any.only': 'Role must be either ADMIN or POLICE',
-                'any.required': 'Role is required'
-            }),
-        tenantId: Joi.string()
-            .when('role', {
-                is: Joi.string().valid(Roles.POLICE),
-                then: Joi.string().required(),
-                otherwise: Joi.string().optional()
-            })
-            .messages({
-                'any.required': 'Tenant ID is required for police invitations'
-            }),
-        stationId: Joi.string()
-            .when('role', {
-                is: Joi.string().valid(Roles.POLICE),
-                then: Joi.string().required(),
-                otherwise: Joi.string().optional()
-            })
-            .messages({
-                'any.required': 'Station ID is required for police invitations'
-            })
-    })
-};
+
 
 // ─────────────── REFRESH TOKEN ───────────────
 export const refreshTokenSchema = {

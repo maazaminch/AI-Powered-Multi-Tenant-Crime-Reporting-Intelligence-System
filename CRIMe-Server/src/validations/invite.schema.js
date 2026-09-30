@@ -2,7 +2,7 @@ import Joi from 'joi';
 import {
     requiredEmailSchema,
     Roles,
-    optionalMongoIdSchema
+    mongoIdSchema
 } from './common.schema.js';
 
 // ─────────────── CREATE INVITE LINK ───────────────
@@ -16,27 +16,15 @@ export const createInviteLinkSchema = {
                 'any.only': 'Role must be either ADMIN or POLICE',
                 'any.required': 'Role is required'
             }),
-        tenantId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
+        tenantId: mongoIdSchema
             .when('role', {
                 is: Joi.string().valid(Roles.POLICE),
-                then: Joi.string().required(),
-                otherwise: Joi.string().optional()
+                then: mongoIdSchema.required(),
+                otherwise: mongoIdSchema.optional()
             })
             .messages({
                 'string.pattern.base': 'Invalid tenant ID format',
                 'any.required': 'Tenant ID is required for police invitations'
-            }),
-        stationId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
-            .when('role', {
-                is: Joi.string().valid(Roles.POLICE),
-                then: Joi.string().required(),
-                otherwise: Joi.string().optional()
-            })
-            .messages({
-                'string.pattern.base': 'Invalid station ID format',
-                'any.required': 'Station ID is required for police invitations'
             })
     })
 };

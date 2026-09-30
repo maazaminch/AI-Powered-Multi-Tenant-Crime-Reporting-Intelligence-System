@@ -15,9 +15,13 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String, required: true , unique: true, trim: true},
   password: { type: String, required: function() { return this.authProvider === "LOCAL"; } },
   // confirmPassword: {type: String, required: true}, its only required in frontend
-  profilePictureUrl: { 
-    type: String, 
-    //required: true 
+  profilePictureUrl: {
+    type: String,
+    //required: true
+  },
+  profilePicturePublicId: {
+    type: String,
+    // Cloudinary public_id for profile picture
   },
   gender: { type: String, enum: ["MALE", "FEMALE"], required: true },
   role: { type: String, enum: ["CITIZEN", "POLICE", "ADMIN"], required: true, index: true },
@@ -52,7 +56,7 @@ const UserSchema = new mongoose.Schema({
   age: {type: Number },
   address: { type: String },
   idType: { type: String, enum: ["PASSPORT", "DRIVER_LICENSE", "NATIONAL_ID"], required: true },
-  nationalIdHash: { type: String, required: true, index: true },
+  nationalIdHash: { type: String, required: true, index: true, unique: true },
 
 
   // Refresh Token

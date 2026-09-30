@@ -10,6 +10,11 @@ import { verifyGoogleIdToken } from '../../services/googleOAuth.service.js';
 import crypto from "crypto";
 import Invite from "../../models/invite.model.js";
 import PoliceStation from "../../models/policeStation.model.js";
+import {
+  uploadBufferToCloudinary,
+  getCloudinaryResourceType,
+  deleteFromCloudinary
+} from '../../services/cloudinary.storage.service.js';
 
 class authController {
 
@@ -21,12 +26,8 @@ class authController {
     const currentUser = req.user;
 
     // ─────────────────────────────
-    // Validation
+    // Authorization
     // ─────────────────────────────
-
-    if (!email || !role) {
-        throw new apiError(400, "Email and role are required");
-    }
 
     // ─────────────────────────────
     // Authorization
@@ -247,7 +248,7 @@ class authController {
         address,
         idType,
         nationalIdHash,
-        profilePictureStorageKey,
+        profilePicturePublicId,
         badgeNumber
     } = req.body;
 
@@ -382,7 +383,8 @@ class authController {
         nationalIdHash: hashedNationalId,
 
         profilePictureUrl:
-            profilePictureStorageKey || null,
+            profilePicturePublicId || null,
+        profilePicturePublicId: profilePicturePublicId || null,
 
         tenantId: tenantId || undefined,
 
@@ -489,7 +491,7 @@ class authController {
         email,
         password,
         confirmPassword,
-        profilePictureStorageKey,
+        profilePicturePublicId,
         phone,
         gender,
         dateOfBirth,
@@ -540,7 +542,8 @@ class authController {
         fullName,
         email,
         password: hashPassword,
-        profilePictureUrl: profilePictureStorageKey || null,
+        profilePictureUrl: profilePicturePublicId || null,
+        profilePicturePublicId: profilePicturePublicId || null,
         gender,
         phone,
         role, // always CITIZEN
@@ -833,6 +836,17 @@ class authController {
         const existingUser = await User.findOne({ email: payload.email });
         if (existingUser) {
             throw new apiError(400, "Email already registered. Please login instead.");
+        }
+
+        const existingGoogleUser = await User.findOne({
+            googleId: payload.sub
+        });
+
+        if (existingGoogleUser) {
+            throw new apiError(
+                400,
+                "This Google account is already registered. Please login instead."
+            );
         }
 
         const existingUserByPhone = await User.findOne({ phone });
@@ -1139,6 +1153,84 @@ class authController {
             }
         }, "Current user fetched successfully"))
 
+    });
+
+    static uploadProfilePictureController = wrapAsync(async (req, res) => {
+        const currentUser = req.user;
+        const file = req.file;
+
+        if (!file) {
+            throw new apiError(400, "Profile picture file is required");
+        }
+
+        // Validate file type
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!allowedTypes.includes(file.mimetype)) {
+            throw new apiError(400, "Only PNG, JPEG, or WebP images are allowed");
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            throw new apiError(400, "File size must be less than 5MB");
+        }
+
+        try {
+            let folder, filename, storageKey, imageUrl;
+
+            if (currentUser) {
+                // Authenticated user - update existing profile picture
+                // Delete old profile picture if exists
+                if (currentUser.profilePictureStorageKey) {
+                    try {
+                        await deleteFromCloudinary(currentUser.profilePictureStorageKey, 'image');
+                    } catch (deleteError) {
+                        console.error('Failed to delete old profile picture:', deleteError);
+                        // Continue with upload even if delete fails
+                    }
+                }
+
+                folder = `crime_saas/profile-pictures/${currentUser._id}`;
+                filename = `profile-${currentUser._id}`;
+
+                const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, {
+                    folder,
+                    resourceType: 'image',
+                    filename
+                });
+
+                // Update user with new profile picture
+                currentUser.profilePictureStorageKey = cloudinaryResult.public_id;
+                currentUser.profilePictureUrl = cloudinaryResult.secure_url;
+                await currentUser.save();
+
+                storageKey = cloudinaryResult.public_id;
+                imageUrl = cloudinaryResult.secure_url;
+            } else {
+                // Unauthenticated user (registration) - upload to temp folder
+                const tempId = crypto.randomBytes(16).toString('hex');
+                folder = `crime_saas/temp-profile-pictures/${tempId}`;
+                filename = `temp-${tempId}`;
+
+                const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, {
+                    folder,
+                    resourceType: 'image',
+                    filename
+                });
+
+                storageKey = cloudinaryResult.public_id;
+                imageUrl = cloudinaryResult.secure_url;
+            }
+
+            return res.status(200).json(
+                new apiResponse(200, {
+                    profilePictureUrl: imageUrl,
+                    profilePictureStorageKey: storageKey
+                }, "Profile picture uploaded successfully")
+            );
+        } catch (error) {
+            console.error('Profile picture upload failed:', error);
+            throw new apiError(500, `Failed to upload profile picture: ${error.message}`);
+        }
     });
 
 }

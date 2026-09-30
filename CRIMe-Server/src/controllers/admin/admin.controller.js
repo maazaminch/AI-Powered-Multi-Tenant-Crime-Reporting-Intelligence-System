@@ -1107,16 +1107,16 @@ class AdminController {
 
         const station = await PoliceStation.create({
             tenantId: currentUser.tenantId,
-            name: name.trim(),
+            name: name ? name.trim() : undefined,
             location: {
                 type: "Point",
                 coordinates: [location.coordinates[0], location.coordinates[1]]
             },
             address: address ? address.trim() : undefined,
             locationLabel: locationLabel ? locationLabel.trim() : null,
-            city: city.trim(),
-            sector,
-            contactNumber: contactNumber.trim(),
+            city: city ? city.trim() : undefined,
+            sector: sector ? sector.trim() : undefined,
+            contactNumber: contactNumber ? contactNumber.trim() : undefined,
             email: email ? email.trim().toLowerCase() : undefined,
             stationHead: null,
             isActive: true,

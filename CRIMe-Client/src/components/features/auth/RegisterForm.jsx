@@ -4,7 +4,7 @@ import { Button } from '../../ui/Button'
 import { Input } from '../../ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/Card'
 import { useAuth } from '../../../hooks/auth/useAuth'
-// import { uploadService } from '../../../services/uploadService'
+import api from '../../../services/api'
 import GoogleSignInButton from './GoogleSignInButton'
 import { toast } from 'sonner'
 
@@ -70,31 +70,25 @@ const RegisterForm = () => {
     setProfilePic(file)
     setProfilePicPreview(URL.createObjectURL(file))
 
-    // Upload to storage
+    // Upload to Cloudinary via backend
     setIsUploading(true)
     try {
-      const uploadResponse = await uploadService.getPublicProfileUploadUrl(file.name, file.type)
+      const formData = new FormData()
+      formData.append('profilePicture', file)
 
-      if (!uploadResponse || !uploadResponse.data) {
-        throw new Error('Invalid response from server')
+      const response = await api.post('/api/auth/upload-profile-picture', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.data && response.data.data) {
+        setFormData(prev => ({ ...prev, profilePictureStorageKey: response.data.data.profilePictureStorageKey }))
+        toast.success('Profile picture uploaded successfully')
       }
-
-      const uploadParams = uploadResponse.data
-      const { key, storageKey, provider } = uploadParams
-
-      // Upload the file
-      const uploadResult = await uploadService.uploadFile(uploadParams, file)
-
-      // Use the returned public_id for Cloudinary, otherwise use key/storageKey
-      let finalStorageKey = key || storageKey
-      if (provider === 'cloudinary' && uploadResult.public_id) {
-        finalStorageKey = uploadResult.public_id
-      }
-
-      setFormData(prev => ({ ...prev, profilePictureStorageKey: finalStorageKey }))
     } catch (error) {
       console.error('Profile picture upload failed:', error)
-      toast.error(error.message || 'Failed to upload profile picture')
+      toast.error(error.response?.data?.message || 'Failed to upload profile picture')
       setProfilePic(null)
       setProfilePicPreview('')
       setFormData(prev => ({ ...prev, profilePictureStorageKey: '' }))

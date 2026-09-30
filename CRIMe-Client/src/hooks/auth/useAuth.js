@@ -172,6 +172,9 @@ const initializeAuth = async () => {
     isLoading: isLoading || loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending || googleLoginMutation.isPending || googleRegisterMutation.isPending,
     error,
 
+    isLoginLoading: loginMutation.isPending,
+    isGoogleLoginLoading: googleLoginMutation.isPending,
+
     // Actions
     login,
     register,

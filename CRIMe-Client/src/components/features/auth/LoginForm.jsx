@@ -12,9 +12,15 @@ const LoginForm = () => {
     password: ''
   })
 
-  const { login, googleLogin, clearError } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const {
+    login,
+    googleLogin,
+    isLoginLoading,
+    isGoogleLoginLoading,
+    clearError
+  } = useAuth()
+  // const [isLoading, setIsLoading] = useState(false)
+  // const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const navigate = useNavigate()
 
   // Clear error on component mount
@@ -28,9 +34,8 @@ const LoginForm = () => {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    setIsLoading(true)
      try {
       const res = await login(formData)
       const user = res?.data?.user
@@ -46,13 +51,12 @@ const LoginForm = () => {
           { navigate('/superadmin/dashboard') }
         else { navigate('/admin/dashboard') } }
 
-   }  finally {
-      setIsLoading(false)
-    }
+   }  catch (error) {
+      console.error('Login failed:', error)
+   } 
   }
 
   const handleGoogleLogin = async (idToken) => {
-    setIsGoogleLoading(true)
     try {
       const res = await googleLogin(idToken)
       const user = res?.data?.user
@@ -69,8 +73,6 @@ const LoginForm = () => {
         else { navigate('/admin/dashboard') } }
     } catch (err) {
       console.error('Google login failed:', err)
-    } finally {
-      setIsGoogleLoading(false)
     }
   }
 
@@ -89,7 +91,7 @@ const LoginForm = () => {
         </CardHeader>
         <CardContent className="space-y-6">
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -126,9 +128,9 @@ const LoginForm = () => {
               variant="success"
               type="submit"
               className="w-full py-2"
-              disabled={isLoading || isGoogleLoading}
+              disabled={isLoginLoading || isGoogleLoginLoading}
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoginLoading ? 'Logging in...' : 'Login'}
             </Button>
 
             <div className="relative">
@@ -144,7 +146,7 @@ const LoginForm = () => {
             onSuccess={handleGoogleLogin}
             onError={handleGoogleError}
             text="Sign in with Google"
-            disabled={isGoogleLoading}
+            disabled={isGoogleLoginLoading}
           />
 
           </form>

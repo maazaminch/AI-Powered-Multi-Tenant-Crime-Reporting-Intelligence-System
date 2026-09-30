@@ -3,7 +3,7 @@ import Joi from 'joi';
 // ─────────────── PATTERNS ───────────────
 
 // Password: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
-export const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+export const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
 
 // Phone: 10-15 characters
 export const phonePattern = /^\d{10,15}$/;
@@ -108,7 +108,7 @@ export const emailSchema = Joi.string()
         'string.email': 'Please provide a valid email address'
     });
 
-export const requiredEmailSchema = emailSchema.required().messages({
+export const requiredEmailSchema = emailSchema.messages({
     'any.required': 'Email is required'
 });
 
@@ -134,6 +134,13 @@ export const passwordSchema = Joi.string()
 
 export const requiredPasswordSchema = passwordSchema.required().messages({
     'any.required': 'Password is required'
+});
+
+export const addressSchema = Joi.string().trim().max(1000).messages({
+    'string.max': 'Address cannot exceed 1000 characters'
+});
+export const requiredAddressSchema = addressSchema.required().messages({
+    'any.required': 'Address is required'
 });
 
 export const mongoIdSchema = Joi.string()
