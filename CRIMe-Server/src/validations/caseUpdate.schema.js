@@ -189,7 +189,7 @@ export const addCaseUpdateSchema = {
             }),
         // Evidence files (array of evidence IDs)
         evidenceFiles: Joi.array()
-            .items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/))
+            .items(optionalMongoIdSchema)
             .when('updateType', {
                 is: Joi.string().valid(UpdateType.EVIDENCE),
                 then: Joi.array().min(1).required(),
@@ -197,8 +197,7 @@ export const addCaseUpdateSchema = {
             })
             .messages({
                 'array.min': 'At least one evidence file is required for evidence updates',
-                'any.required': 'Evidence files are required for evidence updates',
-                'string.pattern.base': 'Invalid evidence ID format'
+                'any.required': 'Evidence files are required for evidence updates'
             })
     })
 };
@@ -221,7 +220,7 @@ export const getCaseUpdatesSchema = {
             .messages({
                 'any.only': `Visibility must be one of: ${Object.values(Visibility).join(', ')}`
             }),
-        ...paginationSchema
+        ...paginationSchema(10)
     })
 };
 

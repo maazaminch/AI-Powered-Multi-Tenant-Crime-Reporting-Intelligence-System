@@ -8,7 +8,9 @@ import {
     nearbyStationsSchema,
     validateLocationSchema,
     distanceCalculationSchema,
-    jurisdictionCheckSchema
+    jurisdictionCheckSchema,
+    tenantStationsSchema,
+    searchAddressSchema
 } from "../validations/location.schema.js";
 
 const router = express.Router();
@@ -28,7 +30,7 @@ router.post(
 router.get(
     "/nearby-stations",
     tenantGuard,
-    // validate(nearbyStationsSchema),
+    validate(nearbyStationsSchema),
     LocationController.getNearbyStations
 );
 
@@ -60,7 +62,16 @@ router.get(
 router.get(
     "/tenant-stations",
     tenantGuard,
+    validate(tenantStationsSchema),
     LocationController.getTenantStations
+);
+
+// Search for addresses
+router.get(
+    "/search-address",
+    tenantGuard,
+    validate(searchAddressSchema),
+    LocationController.searchAddress
 );
 
 export default router;

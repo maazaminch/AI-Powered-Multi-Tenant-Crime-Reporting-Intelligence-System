@@ -73,9 +73,10 @@ const ReportCasePage = () => {
           // },
           onSuccess: (data) => {
             console.log('Stations response:', data)
-            const stations = data.stations || []
+            // Backend returns apiResponse format: { statusCode, data, message }
+            const stations = data.data?.stations || data.stations || []
             setNearestStations(stations)
-            
+
             // Auto-select the nearest station (first one, already sorted by distance)
             if (stations.length > 0) {
               setFormData(prev => ({

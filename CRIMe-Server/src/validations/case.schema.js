@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import {
-    requiredFullLocationSchema,
+    requiredLocationSchema,
     reporterSchema,
     CrimeType,
     CaseStatus,
@@ -30,27 +30,27 @@ export const reportCaseSchema = {
                 'string.max': 'Description cannot exceed 5000 characters',
                 'any.required': 'Description is required'
             }),
-        location: requiredFullLocationSchema.extract('location'),
-        locationLabel: requiredFullLocationSchema.extract('locationLabel'),        
+        location: requiredLocationSchema,
+        locationLabel: Joi.string()
+            .max(500)
+            .required()
+            .messages({
+                'string.max': 'Location label cannot exceed 500 characters',
+                'any.required': 'Location label is required'
+            }),
         address: Joi.string()
             .max(1000)
             .optional()
             .messages({
                 'string.max': 'Address cannot exceed 1000 characters'
             }),
-        policeStationId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
-            .optional()
-            .messages({
-                'string.pattern.base': 'Invalid police station ID format'
-            }),
+        policeStationId: optionalMongoIdSchema,
         evidenceFileIds: Joi.array()
-            .items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/))
+            .items(optionalMongoIdSchema)
             .max(10)
             .optional()
             .messages({
-                'array.max': 'Maximum 10 evidence files allowed',
-                'string.pattern.base': 'Invalid evidence ID format'
+                'array.max': 'Maximum 10 evidence files allowed'
             }),
         allowCitizenUpdates: Joi.boolean()
             .default(true)
@@ -71,7 +71,7 @@ export const getCaseUpdatesSchema = {
         caseId: requiredMongoIdSchema
     }),
     query: Joi.object({
-        ...paginationSchema
+        ...paginationSchema(10)
     })
 };
 
@@ -103,13 +103,7 @@ export const assignCaseSchema = {
         caseId: requiredMongoIdSchema
     }),
     body: Joi.object({
-        assignedTo: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
-            .required()
-            .messages({
-                'string.pattern.base': 'Invalid user ID format',
-                'any.required': 'Assigned user ID is required'
-            })
+        assignedTo: requiredMongoIdSchema
     })
 };
 
@@ -122,7 +116,7 @@ export const getCitizenCasesSchema = {
             .messages({
                 'any.only': `Status must be one of: ${Object.values(CaseStatus).join(', ')}`
             }),
-        ...paginationSchema
+        ...paginationSchema(10)
     })
 };
 
@@ -141,7 +135,7 @@ export const getMyCasesSchema = {
             .messages({
                 'any.only': `Severity must be one of: ${Object.values(Severity).join(', ')}`
             }),
-        ...paginationSchema
+        ...paginationSchema(10)
     })
 };
 
@@ -167,7 +161,7 @@ export const getTenantCasesSchema = {
                 'any.only': `Severity must be one of: ${Object.values(Severity).join(', ')}`
             }),
         policeStationId: optionalMongoIdSchema,
-        ...paginationSchema
+        ...paginationSchema(10)
     })
 };
 

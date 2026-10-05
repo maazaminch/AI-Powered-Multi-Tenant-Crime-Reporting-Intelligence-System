@@ -49,7 +49,7 @@ export default function LocationPicker({
     if (value) setPosition(value)
   }, [value])
 
-  // ADDRESS SEARCH (Nominatim)
+  // ADDRESS SEARCH (Backend API)
   const searchAddress = async (text) => {
     setQuery(text)
 
@@ -58,11 +58,24 @@ export default function LocationPicker({
       return
     }
 
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${text}`
-    )
-    const data = await res.json()
-    setResults(data)
+    try {
+      const data = await locationService.searchAddress(text)
+      // console.log('Address search response:', data)
+
+      // Response can be either:
+      // 1. { data: { results: [...] } } (apiResponse format)
+      // 2. { results: [...] } (direct data)
+      const results = data.data?.results || data.results || []
+
+      if (results.length > 0) {
+        setResults(results)
+      } else {
+        setResults([])
+      }
+    } catch (error) {
+      console.error('Address search error:', error)
+      setResults([])
+    }
   }
 
   // REVERSE GEOCODING (get address from coordinates) - Using Backend API
@@ -71,12 +84,17 @@ export default function LocationPicker({
     setError(null)
     try {
       const data = await locationService.reverseGeocode(lat, lng)
-      
-      if (data.success && data.data) {
-        setQuery(data.data.address || data.data.formattedAddress)
-        return data.data.address || data.data.formattedAddress
+
+      // Response can be either:
+      // 1. { data: { address: ... } } (apiResponse format)
+      // 2. { address: ... } (direct data)
+      const address = data.data?.address || data.data?.formattedAddress || data.address || data.formattedAddress
+
+      if (address) {
+        setQuery(address)
+        return address
       } else {
-        throw new Error(data.message || 'Failed to get address')
+        throw new Error('Failed to get address')
       }
     } catch (error) {
       console.error('Reverse geocoding failed:', error)

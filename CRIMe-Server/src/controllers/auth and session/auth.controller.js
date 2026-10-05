@@ -1180,9 +1180,9 @@ class authController {
             if (currentUser) {
                 // Authenticated user - update existing profile picture
                 // Delete old profile picture if exists
-                if (currentUser.profilePictureStorageKey) {
+                if (currentUser.profilePicturePublicId) {
                     try {
-                        await deleteFromCloudinary(currentUser.profilePictureStorageKey, 'image');
+                        await deleteFromCloudinary(currentUser.profilePicturePublicId, 'image');
                     } catch (deleteError) {
                         console.error('Failed to delete old profile picture:', deleteError);
                         // Continue with upload even if delete fails
@@ -1199,7 +1199,7 @@ class authController {
                 });
 
                 // Update user with new profile picture
-                currentUser.profilePictureStorageKey = cloudinaryResult.public_id;
+                currentUser.profilePicturePublicId = cloudinaryResult.public_id;
                 currentUser.profilePictureUrl = cloudinaryResult.secure_url;
                 await currentUser.save();
 
@@ -1224,7 +1224,7 @@ class authController {
             return res.status(200).json(
                 new apiResponse(200, {
                     profilePictureUrl: imageUrl,
-                    profilePictureStorageKey: storageKey
+                    profilePicturePublicId: storageKey
                 }, "Profile picture uploaded successfully")
             );
         } catch (error) {

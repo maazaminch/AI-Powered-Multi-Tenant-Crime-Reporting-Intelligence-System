@@ -15,11 +15,15 @@ const AssignSHOModal = ({
 
   const { data: police, isLoading: isLoadingPolice } = useQuery({
     queryKey: ["stationPolice", stationId],
-    queryFn: () => adminService.getAllPolice(1, "APPROVED", "",stationId),
+    queryFn: () => adminService.getAllPolice({ page: 1, status: "APPROVED", policeStationId: stationId }),
     enabled: !!open && !!stationId,
   });
 
-  const stationPolice = police?.police || [];
+  // Backend returns apiResponse format: { statusCode, data: { police: [...] }, message }
+  const stationPolice = police?.data?.police || [];
+
+  console.log('Police data:', police);
+  console.log('Station police:', stationPolice);
 
   const handleSubmit = () => {
     if (!selectedPoliceId || !stationId) {

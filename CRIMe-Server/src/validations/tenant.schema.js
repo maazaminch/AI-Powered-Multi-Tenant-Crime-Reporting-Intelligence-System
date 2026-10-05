@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { mongoIdSchema, paginationSchema, TenantType } from "./common.schema.js";
+import { requiredMongoIdSchema, paginationSchema, TenantType } from "./common.schema.js";
 
 export const getAllTenantsSchema = {
   query: Joi.object({
@@ -16,10 +16,7 @@ export const getAllTenantsSchema = {
 
 export const tenantIdParamsSchema = {
   params: Joi.object({
-    tenantId: mongoIdSchema.required().messages({
-      'string.pattern.base': 'Invalid tenant ID format',
-      'any.required': 'Tenant ID is required'
-    }),
+    tenantId: requiredMongoIdSchema
   }),
 };
 

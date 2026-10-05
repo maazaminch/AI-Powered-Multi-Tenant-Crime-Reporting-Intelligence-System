@@ -34,5 +34,12 @@ export const locationService = {
     getTenantStations: async () => {
         const response = await api.get('/api/v1/location/tenant-stations')
         return response.data
+    },
+
+    searchAddress: async (query) => {
+        const response = await api.get('/api/v1/location/search-address', {
+            params: { query }
+        })
+        return response.data
     }
 }

@@ -132,6 +132,24 @@ class LocationController {
             .status(200)
             .json(new apiResponse(200, result.data, "Tenant stations retrieved successfully"));
     });
+
+    /**
+     * Search for addresses using geocoding API
+     * GET /api/v1/location/search-address
+     */
+    static searchAddress = wrapAsync(async (req, res) => {
+        const { query } = req.query;
+
+        const result = await LocationService.searchAddress(query);
+
+        if (!result.success) {
+            throw new apiError(400, result.error);
+        }
+
+        return res
+            .status(200)
+            .json(new apiResponse(200, result.data, "Address search completed"));
+    });
 }
 
 export default LocationController;

@@ -30,7 +30,8 @@ class LocationService {
                         lat: latitude,
                         lon: longitude,
                         zoom: 18,
-                        addressdetails: 1
+                        addressdetails: 1,
+                        'accept-language': 'en' // Force English results
                     },
                     headers: {
                         'User-Agent': 'Crime-SaaS-Location-Service'
@@ -339,6 +340,73 @@ class LocationService {
             return {
                 success: false,
                 error: error.message
+            };
+        }
+    }
+
+    /**
+     * Search for addresses using Nominatim geocoding API
+     * @param {string} query - Search query (address, place name, etc.)
+     * @returns {Object} { success, data, error }
+     */
+    static async searchAddress(query) {
+        try {
+            // Validate query
+            if (!query || typeof query !== 'string' || query.trim().length < 3) {
+                return {
+                    success: false,
+                    error: 'Search query must be at least 3 characters'
+                };
+            }
+
+            // Call Nominatim API
+            const response = await axios.get(
+                `https://nominatim.openstreetmap.org/search`,
+                {
+                    params: {
+                        format: 'json',
+                        q: query.trim(),
+                        limit: 10,
+                        addressdetails: 1,
+                        'accept-language': 'en' // Force English results
+                    },
+                    headers: {
+                        'User-Agent': 'Crime-SaaS-Location-Service'
+                    }
+                }
+            );
+
+            if (response.data && Array.isArray(response.data)) {
+                // Transform Nominatim response to match frontend expectations
+                const results = response.data.map(item => ({
+                    lat: item.lat,
+                    lon: item.lon,
+                    display_name: item.display_name,
+                    address: item.address || {}
+                }));
+
+                return {
+                    success: true,
+                    data: {
+                        results,
+                        total: results.length
+                    }
+                };
+            }
+
+            return {
+                success: true,
+                data: {
+                    results: [],
+                    total: 0
+                }
+            };
+
+        } catch (error) {
+            console.error('Address search error:', error.message);
+            return {
+                success: false,
+                error: 'Failed to search addresses. Please try again.'
             };
         }
     }
