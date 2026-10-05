@@ -19,11 +19,41 @@ import { useSystemAnalytics } from "../../hooks/superadmin/useSystemAnalytics";
 
 import Loader from '../../components/ui/feedback/Loader';
 import ErrorState from '../../components/ui/feedback/ErrorState';
-import NoData from '../../components/ui/feedback/NoData';
 
 
 const SystemAnalyticsPage = () => {
   const { analytics, isLoading, error } = useSystemAnalytics();
+
+  if (isLoading) {
+    return (
+      <Loader
+        text='Loading System Analytics...'
+      />
+    )
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title='Error Loading System Analytics'
+      />
+    )
+  }
+
+  if (
+    !analytics?.users ||
+    !analytics?.cases ||
+    !analytics?.tenants ||
+    !analytics?.trends ||
+    !analytics?.performance ||
+    !Array.isArray(analytics.performance.topActiveTenants)
+  ) {
+    return (
+      <ErrorState
+        title='System Analytics data is unavailable'
+      />
+    )
+  }
 
   // Data mapping for charts
   const userPieData = [
@@ -51,30 +81,6 @@ const SystemAnalyticsPage = () => {
 
   const COLORS = ["#fe1100b7", "#00C49F", "#00c40acc","#ffbb28c4"];
 
-
-  if(isLoading) {
-    return (
-      <Loader 
-        text='Loading System Analytics...'
-      />
-    )
-  }
-
-  if(error) {
-    return (
-      <ErrorState 
-        title='Error Loading System Analytics'
-      />
-    )
-  }
-
-  if(analytics.length === 0){
-    return (
-      <NoData
-        title='No System Analytics Found'
-      />
-    )
-  }
 
   return (
     <div className="space-y-6 p-6">

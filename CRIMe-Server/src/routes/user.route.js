@@ -6,7 +6,12 @@ import auditLog from "../middlewares/auditLog.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
 import userController from "../controllers/user management/user.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
-import { updateProfileSchema, changePasswordSchema } from "../validations/user.schema.js";
+import {
+    updateProfileSchema,
+    changePasswordSchema,
+    updateUserStatusSchema,
+    deleteUserSchema
+} from "../validations/user.schema.js";
 
 const userRouter = express.Router();
 
@@ -24,7 +29,7 @@ userRouter.get(
 userRouter.put(
     "/update-profile",
     verifyJWT,
-    // validate(updateProfileSchema),
+    validate(updateProfileSchema),
     auditLog('UPDATE', 'PROFILE'),
     userController.updateProfile
 );
@@ -33,7 +38,7 @@ userRouter.put(
 userRouter.put(
     "/change-password",
     verifyJWT,
-    // validate(changePasswordSchema),
+    validate(changePasswordSchema),
     auditLog('CHANGE', 'PASSWORD'),
     userController.changePassword
 );
@@ -44,6 +49,7 @@ userRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
+    validate(updateUserStatusSchema),
     auditLog('UPDATE', 'USER_STATUS'),
     userController.updateUserStatus
 );
@@ -53,6 +59,7 @@ userRouter.delete(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN], flags: [UserFlags.IS_SUPER_ADMIN] }),
+    validate(deleteUserSchema),
     auditLog('DELETE', 'USER'),
     userController.deleteUserController
 );

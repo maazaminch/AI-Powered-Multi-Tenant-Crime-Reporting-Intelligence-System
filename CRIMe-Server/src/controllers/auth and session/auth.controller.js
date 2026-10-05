@@ -248,6 +248,7 @@ class authController {
         address,
         idType,
         nationalIdHash,
+        profilePictureUrl,
         profilePicturePublicId,
         badgeNumber
     } = req.body;
@@ -382,8 +383,7 @@ class authController {
         idType,
         nationalIdHash: hashedNationalId,
 
-        profilePictureUrl:
-            profilePicturePublicId || null,
+        profilePictureUrl: profilePictureUrl || null,
         profilePicturePublicId: profilePicturePublicId || null,
 
         tenantId: tenantId || undefined,
@@ -492,6 +492,7 @@ class authController {
         password,
         confirmPassword,
         profilePicturePublicId,
+        profilePictureUrl,
         phone,
         gender,
         dateOfBirth,
@@ -542,7 +543,7 @@ class authController {
         fullName,
         email,
         password: hashPassword,
-        profilePictureUrl: profilePicturePublicId || null,
+        profilePictureUrl: profilePictureUrl || null,
         profilePicturePublicId: profilePicturePublicId || null,
         gender,
         phone,
@@ -600,6 +601,17 @@ class authController {
 
     if (!user) {
         throw new apiError(400, "Email not registered");
+    }
+
+    if (user.authProvider === "GOOGLE" && !user.password) {
+        throw new apiError(
+            400,
+            "This account uses Google sign-in. Please continue with Google."
+        );
+    }
+
+    if (typeof user.password !== "string" || !user.password) {
+        throw new apiError(400, "This account does not have a password set.");
     }
 
     const comparePassword = await bcrypt.compare(password, user.password);
@@ -820,7 +832,17 @@ class authController {
     });
 
     static googleRegisterCitizenController = wrapAsync(async (req, res) => {
-        const { idToken, phone, gender, dateOfBirth, address, idType, nationalIdHash } = req.body;
+        const {
+            idToken,
+            phone,
+            gender,
+            dateOfBirth,
+            address,
+            idType,
+            nationalIdHash,
+            profilePictureUrl,
+            profilePicturePublicId
+        } = req.body;
 
         if (!idToken) {
             throw new apiError(400, "ID token is required");
@@ -873,7 +895,8 @@ class authController {
             googleId: payload.sub,
             authProvider: "GOOGLE",
             isEmailVerified: payload.email_verified,
-            profilePictureUrl: payload.picture || null
+            profilePictureUrl: profilePictureUrl || payload.picture || null,
+            profilePicturePublicId: profilePicturePublicId || null
         };
 
         const user = await User.create(userData);
@@ -1178,19 +1201,9 @@ class authController {
             let folder, filename, storageKey, imageUrl;
 
             if (currentUser) {
-                // Authenticated user - update existing profile picture
-                // Delete old profile picture if exists
-                if (currentUser.profilePicturePublicId) {
-                    try {
-                        await deleteFromCloudinary(currentUser.profilePicturePublicId, 'image');
-                    } catch (deleteError) {
-                        console.error('Failed to delete old profile picture:', deleteError);
-                        // Continue with upload even if delete fails
-                    }
-                }
-
                 folder = `crime_saas/profile-pictures/${currentUser._id}`;
-                filename = `profile-${currentUser._id}`;
+                filename = `profile-${currentUser._id}-${crypto.randomBytes(8).toString('hex')}`;
+                const oldPublicId = currentUser.profilePicturePublicId;
 
                 const cloudinaryResult = await uploadBufferToCloudinary(file.buffer, {
                     folder,
@@ -1202,6 +1215,14 @@ class authController {
                 currentUser.profilePicturePublicId = cloudinaryResult.public_id;
                 currentUser.profilePictureUrl = cloudinaryResult.secure_url;
                 await currentUser.save();
+
+                if (oldPublicId && oldPublicId !== cloudinaryResult.public_id) {
+                    try {
+                        await deleteFromCloudinary(oldPublicId, 'image');
+                    } catch (deleteError) {
+                        console.error('Failed to delete old profile picture:', deleteError);
+                    }
+                }
 
                 storageKey = cloudinaryResult.public_id;
                 imageUrl = cloudinaryResult.secure_url;
@@ -1236,4 +1257,3 @@ class authController {
 }
 
 export default authController;
-

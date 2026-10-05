@@ -365,6 +365,17 @@ class UserController {
         const user = await User.findById(currentUser._id);
         if (!user) throw new apiError(404, "User not found");
 
+        if (user.authProvider === "GOOGLE" && !user.password) {
+            throw new apiError(
+                400,
+                "This account uses Google sign-in. So you cannot change password."
+            );
+        }
+
+        if (typeof user.password !== "string" || !user.password) {
+            throw new apiError(400, "This account does not have a password set.");
+        }
+
         // Verify current password
         const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
         if (!isPasswordValid) {
@@ -393,4 +404,3 @@ class UserController {
 }
 
 export default UserController;
-

@@ -26,6 +26,24 @@ const AdminDashboard = () => {
     return new Date(date).toLocaleDateString()
   }
 
+      if(isLoading) {
+        return (
+          <Loader 
+            text="Loading dashboard..."
+            fullScreen
+          />
+        )
+      }
+    
+      if(error) {
+        return (
+          <ErrorState 
+            title="Failed to load dashboard."
+            description="Please try again later."
+          />
+        )
+      }
+  
 
   return (
     <div className="space-y-6" >

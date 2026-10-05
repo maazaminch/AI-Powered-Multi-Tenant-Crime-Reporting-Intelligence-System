@@ -104,7 +104,10 @@ class NotificationController {
     const currentUser = req.user;
 
     const unreadCount = await Notification.countDocuments({ 
-      userId: currentUser._id, isRead: false });
+      userId: currentUser._id,
+      channels: "inapp",
+      isRead: false
+    });
 
     return res.status(200).json(
         new apiResponse(

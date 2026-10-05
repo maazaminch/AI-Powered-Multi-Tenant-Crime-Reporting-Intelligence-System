@@ -9,7 +9,6 @@ import {
     Gender,
     IdType,
     minAgeValidator,
-    mongoIdSchema,
     requiredAddressSchema
 } from './common.schema.js';
 
@@ -18,6 +17,15 @@ export const registerCitizenSchema = {
     body: Joi.object({
         ...requiredUserBaseFields,
         address: requiredAddressSchema,
+        profilePictureUrl: Joi.string()
+            .uri()
+            .max(2048)
+            .allow('')
+            .optional(),
+        profilePicturePublicId: Joi.string()
+            .max(500)
+            .allow('')
+            .optional(),
         password: requiredPasswordSchema,
         confirmPassword: Joi.string()
             .valid(Joi.ref('password'))
@@ -39,6 +47,15 @@ export const registerWithInviteSchema = {
             }),
         ...requiredUserBaseFields,
         address: requiredAddressSchema,
+        profilePictureUrl: Joi.string()
+            .uri()
+            .max(2048)
+            .allow('')
+            .optional(),
+        profilePicturePublicId: Joi.string()
+            .max(500)
+            .allow('')
+            .optional(),
         password: requiredPasswordSchema,
         confirmPassword: Joi.string()
             .valid(Joi.ref('password'))
@@ -57,16 +74,6 @@ export const registerWithInviteSchema = {
             .messages({
                 'any.required': 'Badge number is required for police officers'
             }),
-        policeStationId: mongoIdSchema
-            .when('role', {
-                is: Joi.string().valid(Roles.POLICE).required(),
-                then: mongoIdSchema.required(),
-                otherwise: mongoIdSchema.optional()
-            })
-            .messages({
-                'string.pattern.base': 'Invalid police station ID format',
-                'any.required': 'Police station assignment is required for police officers'
-            })
     })
 };
 
@@ -131,7 +138,18 @@ export const googleRegisterCitizenSchema = {
             .required()
             .messages({
                 'any.required': 'National ID is required'
-            })
+            }),
+
+        profilePictureUrl: Joi.string()
+            .uri()
+            .max(2048)
+            .allow('')
+            .optional(),
+
+        profilePicturePublicId: Joi.string()
+            .max(500)
+            .allow('')
+            .optional()
     })
 };
 

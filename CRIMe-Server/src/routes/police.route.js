@@ -6,7 +6,14 @@ import auditLog from "../middlewares/auditLog.middleware.js";
 import PoliceController from "../controllers/police/police.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
 import validate from "../middlewares/validate.middleware.js";
-import { toggleCitizenEvidenceUploadSchema } from "../validations/case.schema.js";
+import {
+  getMyCasesSchema,
+  getCaseDetailsSchema,
+  getCaseUpdatesSchema,
+  updateCaseStatusSchema,
+  toggleCitizenEvidenceUploadSchema
+} from "../validations/case.schema.js";
+import { addCaseUpdateSchema } from "../validations/caseUpdate.schema.js";
 
 const policeRouter = express.Router();
 
@@ -25,8 +32,9 @@ policeRouter.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
+    validate(getMyCasesSchema),
     PoliceController.getMyCases
-)
+);
 
 
 policeRouter.post(
@@ -34,9 +42,10 @@ policeRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
+    validate(addCaseUpdateSchema),
     auditLog('ADD', 'CASE_UPDATE'),
     PoliceController.addCaseUpdate
-)
+);
 
 
 policeRouter.patch(
@@ -44,6 +53,7 @@ policeRouter.patch(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
+    validate(updateCaseStatusSchema),
     auditLog('UPDATE', 'CASE_STATUS'),
     PoliceController.updateCaseStatus
 )
@@ -53,6 +63,7 @@ policeRouter.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
+    validate(getCaseDetailsSchema),
     PoliceController.getCaseDetails
 )
 
@@ -61,6 +72,7 @@ policeRouter.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.POLICE] }),
+    validate(getCaseUpdatesSchema),
     PoliceController.getCaseUpdates
 )
 

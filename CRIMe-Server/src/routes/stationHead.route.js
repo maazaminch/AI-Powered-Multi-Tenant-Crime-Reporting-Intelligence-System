@@ -5,6 +5,14 @@ import roleGuard from "../middlewares/roleGuard.middleware.js";
 import auditLog from "../middlewares/auditLog.middleware.js";
 import StationHeadController from "../controllers/stationHead/stationHead.controller.js";
 import { Roles, UserFlags } from "../constants/roles.js";
+import validate from "../middlewares/validate.middleware.js";
+import {
+    getCaseDetailsSchema,
+    getCaseUpdatesSchema,
+    closeCaseStatusSchema,
+    assignCaseSchema
+} from "../validations/case.schema.js";
+import { addCaseUpdateSchema } from "../validations/caseUpdate.schema.js";
 
 const stationHeadRouter = express.Router();
 
@@ -50,6 +58,7 @@ stationHeadRouter.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    validate(getCaseDetailsSchema),
     StationHeadController.getCaseDetails
 );
 
@@ -58,6 +67,7 @@ stationHeadRouter.patch(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    validate(closeCaseStatusSchema),
     auditLog('CLOSE', 'CASE'),
     StationHeadController.closeCaseStatus
 );
@@ -67,6 +77,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    validate(addCaseUpdateSchema),
     auditLog('ADD', 'CASE_UPDATE'),
     StationHeadController.addCaseUpdate
 );
@@ -76,6 +87,7 @@ stationHeadRouter.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    validate(getCaseUpdatesSchema),
     StationHeadController.getCaseUpdates
 );
 
@@ -84,6 +96,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    validate(assignCaseSchema),
     auditLog('ASSIGN', 'CASE'),
     StationHeadController.assignCaseToPolice
 );
@@ -93,6 +106,7 @@ stationHeadRouter.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ flags: [UserFlags.IS_STATION_HEAD] }),
+    validate(assignCaseSchema),
     auditLog('REASSIGN', 'CASE'),
     StationHeadController.reassignCase
 );

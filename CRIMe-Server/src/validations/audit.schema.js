@@ -17,14 +17,20 @@ export const getAuditLogsSchema = {
     targetType: Joi.string().max(50).trim().optional().messages({
       'string.max': 'Target type cannot exceed 50 characters'
     }),
+    sensitivity: Joi.string()
+      .valid('PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED')
+      .optional()
+      .messages({
+        'any.only': 'Sensitivity must be PUBLIC, INTERNAL, CONFIDENTIAL, or RESTRICTED'
+      }),
     search: Joi.string().max(100).trim().optional().messages({
       'string.max': 'Search term cannot exceed 100 characters'
     }),
-    startDate: Joi.date().optional().messages({
-      'date.base': 'Start date must be a valid date'
+    startDate: Joi.string().isoDate().strict().optional().messages({
+      'string.isoDate': 'Start date must be a valid date'
     }),
-    endDate: Joi.date().optional().messages({
-      'date.base': 'End date must be a valid date'
+    endDate: Joi.string().isoDate().strict().optional().messages({
+      'string.isoDate': 'End date must be a valid date'
     }),
   }),
 };

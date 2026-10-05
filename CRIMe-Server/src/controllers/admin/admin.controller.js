@@ -1204,7 +1204,7 @@ class AdminController {
             ...req.tenantFilter
         } 
         if (isActive !== undefined && isActive !== "") {
-            filter.isActive = isActive === "true";
+            filter.isActive = isActive;
         }
         if (search) {
             filter.$or = [

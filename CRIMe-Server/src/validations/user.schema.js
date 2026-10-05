@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import {
     requiredMongoIdSchema,
+    mongoIdSchema,
     UserStatus,
     Roles,
     paginationSchema
@@ -12,11 +13,11 @@ export const updateUserStatusSchema = {
         userId: requiredMongoIdSchema
     }),
     body: Joi.object({
-        status: Joi.string()
-            .valid(...Object.values(UserStatus))
+        newStatus: Joi.string()
+            .valid(UserStatus.APPROVED, UserStatus.BLOCKED, UserStatus.REJECTED)
             .required()
             .messages({
-                'any.only': `Status must be one of: ${Object.values(UserStatus).join(', ')}`,
+                'any.only': 'Status must be APPROVED, BLOCKED, or REJECTED',
                 'any.required': 'Status is required'
             })
     })
@@ -26,7 +27,7 @@ export const updateUserStatusSchema = {
 export const searchUsersSchema = {
     query: Joi.object({
         search: Joi.string()
-            .min(2)
+            .min(1)
             .max(100)
             .trim()
             .optional()
@@ -46,15 +47,15 @@ export const searchUsersSchema = {
             .messages({
                 'any.only': `Status must be one of: ${Object.values(UserStatus).join(', ')}`
             }),
-        policeStationId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
+        policeStationId: Joi.alternatives()
+            .try(Joi.string().valid('UNASSIGNED'), mongoIdSchema)
             .optional()
             .messages({
-                'string.pattern.base': 'Invalid police station ID format'
+                'alternatives.match': 'Invalid police station ID format'
             }),
         isStationHead: Joi.boolean()
             .optional(),
-        ...paginationSchema
+        ...paginationSchema()
     })
 };
 
@@ -71,9 +72,7 @@ export const assignPoliceToStationSchema = {
         policeId: requiredMongoIdSchema
     }),
     body: Joi.object({
-        policeStationId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
-            .required()
+        stationId: requiredMongoIdSchema
             .messages({
                 'string.pattern.base': 'Invalid police station ID format',
                 'any.required': 'Police station ID is required'
@@ -87,16 +86,7 @@ export const transferPoliceSchema = {
         policeId: requiredMongoIdSchema
     }),
     body: Joi.object({
-        fromStationId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
-            .required()
-            .messages({
-                'string.pattern.base': 'Invalid source station ID format',
-                'any.required': 'Source station ID is required'
-            }),
-        toStationId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
-            .required()
+        stationId: requiredMongoIdSchema
             .messages({
                 'string.pattern.base': 'Invalid destination station ID format',
                 'any.required': 'Destination station ID is required'
@@ -110,12 +100,10 @@ export const assignOrChangeStationHeadSchema = {
         stationId: requiredMongoIdSchema
     }),
     body: Joi.object({
-        stationHeadId: Joi.string()
-            .pattern(/^[0-9a-fA-F]{24}$/)
-            .required()
+        policeId: requiredMongoIdSchema
             .messages({
                 'string.pattern.base': 'Invalid user ID format',
-                'any.required': 'Station head ID is required'
+                'any.required': 'Police ID is required'
             })
     })
 };

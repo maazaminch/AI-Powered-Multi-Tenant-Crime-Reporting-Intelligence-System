@@ -63,7 +63,6 @@ export const uploadGuestStandaloneEvidenceSchema = {
       .required()
       .messages({
         'string.min': 'Guest session ID must be at least 10 characters',
-        'string.max': 'Guest session ID must be at least 10 characters',
         'string.max': 'Guest session ID cannot exceed 100 characters',
         'any.required': 'Guest session ID is required'
       }),
@@ -103,6 +102,23 @@ export const deleteEvidenceSchema = {
   })
 };
 
+export const deleteGuestStandaloneEvidenceSchema = {
+  params: Joi.object({
+    evidenceId: requiredMongoIdSchema
+  }),
+  body: Joi.object({
+    guestSessionId: Joi.string()
+      .min(10)
+      .max(100)
+      .required()
+      .messages({
+        'string.min': 'Guest session ID must be at least 10 characters',
+        'string.max': 'Guest session ID cannot exceed 100 characters',
+        'any.required': 'Guest session ID is required'
+      })
+  })
+};
+
 // ─────────────── EVIDENCE FILE IDS ───────────────
 
 export const evidenceFileIdsSchema = {
@@ -125,5 +141,6 @@ export default {
   getEvidenceSchema,
   getCaseEvidenceSchema,
   deleteEvidenceSchema,
+  deleteGuestStandaloneEvidenceSchema,
   evidenceFileIdsSchema
 };

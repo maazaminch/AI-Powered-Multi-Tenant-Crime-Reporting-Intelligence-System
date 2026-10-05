@@ -14,6 +14,8 @@ import {
   FileText
 } from 'lucide-react'
 import StatCard from '../../components/common/StatCard'
+import Loader from '../../components/ui/feedback/Loader'
+import ErrorState from '../../components/ui/feedback/ErrorState'
 
 
 
@@ -22,33 +24,21 @@ const PoliceDashboard = () => {
   const { stats, isLoading, error } = useDashboard()
   const navigate = useNavigate()
 
-  if (isLoading) {
+    if(isLoading) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex items-center justify-center min-h-screen"
-      >
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading dashboard...</p>
-        </div>
-      </motion.div>
+      <Loader 
+        text="Loading dashboard..."
+        fullScreen
+      />
     )
   }
 
   if(error) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex items-center justify-center min-h-screen"
-      >
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Error loading dashboard</p>
-        </div>
-      </motion.div>
+      <ErrorState 
+        title="Failed to load dashboard."
+        description="Please try again later."
+      />
     )
   }
   

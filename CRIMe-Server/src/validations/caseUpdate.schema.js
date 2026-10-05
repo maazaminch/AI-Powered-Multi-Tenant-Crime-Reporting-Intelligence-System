@@ -4,7 +4,6 @@ import {
     optionalMongoIdSchema,
     UpdateType,
     Visibility,
-    CaseStatus,
     paginationSchema
 } from './common.schema.js';
 
@@ -15,34 +14,11 @@ export const addCaseUpdateSchema = {
     }),
     body: Joi.object({
         updateType: Joi.string()
-            .valid(...Object.values(UpdateType))
+            .valid(UpdateType.NOTE, UpdateType.EVIDENCE, UpdateType.STATEMENT, UpdateType.ARREST)
             .required()
             .messages({
-                'any.only': `Update type must be one of: ${Object.values(UpdateType).join(', ')}`,
+                'any.only': 'Update type must be NOTE, EVIDENCE, STATEMENT, or ARREST',
                 'any.required': 'Update type is required'
-            }),
-        // Status update specific fields
-        previousStatus: Joi.string()
-            .valid(...Object.values(CaseStatus))
-            .when('updateType', {
-                is: Joi.string().valid(UpdateType.STATUS_UPDATE),
-                then: Joi.string().required(),
-                otherwise: Joi.string().optional()
-            })
-            .messages({
-                'any.only': `Previous status must be one of: ${Object.values(CaseStatus).join(', ')}`,
-                'any.required': 'Previous status is required for status updates'
-            }),
-        newStatus: Joi.string()
-            .valid(...Object.values(CaseStatus))
-            .when('updateType', {
-                is: Joi.string().valid(UpdateType.STATUS_UPDATE),
-                then: Joi.string().required(),
-                otherwise: Joi.string().optional()
-            })
-            .messages({
-                'any.only': `New status must be one of: ${Object.values(CaseStatus).join(', ')}`,
-                'any.required': 'New status is required for status updates'
             }),
         // Common fields visible to all update types
         visibility: Joi.string()
@@ -60,7 +36,8 @@ export const addCaseUpdateSchema = {
             }),
         // Note specific fields
         note: Joi.string()
-            .min(5)
+            .trim()
+            .min(1)
             .max(2000)
             .when('updateType', {
                 is: Joi.string().valid(UpdateType.NOTE),
@@ -68,28 +45,23 @@ export const addCaseUpdateSchema = {
                 otherwise: Joi.string().optional()
             })
             .messages({
-                'string.min': 'Note must be at least 5 characters',
+                'string.min': 'Note is required',
                 'string.max': 'Note cannot exceed 2000 characters',
                 'any.required': 'Note is required for note updates'
             }),
         // Statement specific fields
         statement: Joi.object({
             personName: Joi.string()
-                .min(2)
                 .max(200)
                 .trim()
-                .when('updateType', {
-                    is: Joi.string().valid(UpdateType.STATEMENT),
-                    then: Joi.string().required(),
-                    otherwise: Joi.string().optional()
-                })
+                .allow('')
+                .optional()
                 .messages({
-                    'string.min': 'Person name must be at least 2 characters',
-                    'string.max': 'Person name cannot exceed 200 characters',
-                    'any.required': 'Person name is required for statements'
+                    'string.max': 'Person name cannot exceed 200 characters'
                 }),
             text: Joi.string()
-                .min(10)
+                .trim()
+                .min(1)
                 .max(5000)
                 .when('updateType', {
                     is: Joi.string().valid(UpdateType.STATEMENT),
@@ -97,7 +69,7 @@ export const addCaseUpdateSchema = {
                     otherwise: Joi.string().optional()
                 })
                 .messages({
-                    'string.min': 'Statement must be at least 10 characters',
+                    'string.min': 'Statement text is required',
                     'string.max': 'Statement cannot exceed 5000 characters',
                     'any.required': 'Statement text is required for statements'
                 })
@@ -113,35 +85,30 @@ export const addCaseUpdateSchema = {
         // Arrest specific fields
         arrest: Joi.object({
             personName: Joi.string()
-                .min(2)
-                .max(200)
                 .trim()
+                .min(1)
+                .max(200)
                 .when('updateType', {
                     is: Joi.string().valid(UpdateType.ARREST),
                     then: Joi.string().required(),
                     otherwise: Joi.string().optional()
                 })
                 .messages({
-                    'string.min': 'Suspect name must be at least 2 characters',
+                    'string.min': 'Suspect name is required',
                     'string.max': 'Suspect name cannot exceed 200 characters',
                     'any.required': 'Suspect name is required for arrests'
                 }),
             personContact: Joi.string()
-                .min(10)
                 .max(20)
                 .trim()
-                .when('updateType', {
-                    is: Joi.string().valid(UpdateType.ARREST),
-                    then: Joi.string().required(),
-                    otherwise: Joi.string().optional()
-                })
+                .allow('')
+                .optional()
                 .messages({
-                    'string.min': 'Contact number must be at least 10 characters',
-                    'string.max': 'Contact number cannot exceed 20 characters',
-                    'any.required': 'Contact number is required for arrests'
+                    'string.max': 'Contact number cannot exceed 20 characters'
                 }),
             arrestReason: Joi.string()
-                .min(10)
+                .trim()
+                .min(1)
                 .max(5000)
                 .when('updateType', {
                     is: Joi.string().valid(UpdateType.ARREST),
@@ -149,34 +116,24 @@ export const addCaseUpdateSchema = {
                     otherwise: Joi.string().optional()
                 })
                 .messages({
-                    'string.min': 'Arrest details must be at least 10 characters',
+                    'string.min': 'Arrest reason is required',
                     'string.max': 'Arrest details cannot exceed 5000 characters',
                     'any.required': 'Arrest details are required for arrests'
                 }),
             arrestDate: Joi.date()
                 .max('now')
-                .when('updateType', {
-                    is: Joi.string().valid(UpdateType.ARREST),
-                    then: Joi.date().required(),
-                    otherwise: Joi.date().optional()
-                })
+                .allow('')
+                .optional()
                 .messages({
-                    'date.max': 'Arrest date cannot be in the future',
-                    'any.required': 'Arrest date is required for arrests'
+                    'date.max': 'Arrest date cannot be in the future'
                 }),
             arrestLocation: Joi.string()
-                .min(2)
                 .max(200)
                 .trim()
-                .when('updateType', {
-                    is: Joi.string().valid(UpdateType.ARREST),
-                    then: Joi.string().required(),
-                    otherwise: Joi.string().optional()
-                })
+                .allow('')
+                .optional()
                 .messages({
-                    'string.min': 'Arrest location must be at least 2 characters',
-                    'string.max': 'Arrest location cannot exceed 200 characters',
-                    'any.required': 'Arrest location is required for arrests'
+                    'string.max': 'Arrest location cannot exceed 200 characters'
                 })
         })
             .when('updateType', {

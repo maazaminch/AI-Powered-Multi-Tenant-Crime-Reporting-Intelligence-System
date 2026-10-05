@@ -114,5 +114,12 @@ authRouter.post(
     authController.uploadProfilePictureController
 );
 
+authRouter.post(
+    "/profile-picture",
+    verifyJWT,
+    upload.single('profilePicture'),
+    authController.uploadProfilePictureController
+);
+
 
 export default authRouter;

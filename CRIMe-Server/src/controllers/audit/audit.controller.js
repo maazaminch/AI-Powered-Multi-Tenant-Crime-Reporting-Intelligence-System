@@ -12,6 +12,7 @@ class AuditController {
       tenantId,
       action,
       targetType,
+      sensitivity,
       userId,
       startDate,
       endDate,
@@ -43,6 +44,7 @@ class AuditController {
     if (!search) {
       if (action) filter.action = action;
       if (targetType) filter.targetType = targetType;
+      if (sensitivity) filter.sensitivity = sensitivity;
       if (userId) filter['actor.userId'] = userId;
     }
 
@@ -50,7 +52,13 @@ class AuditController {
     if (startDate || endDate) {
       filter.createdAt = {};
       if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
+      if (endDate) {
+        const inclusiveEndDate = new Date(endDate);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+          inclusiveEndDate.setUTCHours(23, 59, 59, 999);
+        }
+        filter.createdAt.$lte = inclusiveEndDate;
+      }
     }
 
     // Comprehensive search across multiple fields

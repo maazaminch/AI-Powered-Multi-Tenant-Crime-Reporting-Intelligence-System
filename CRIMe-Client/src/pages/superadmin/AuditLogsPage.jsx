@@ -24,7 +24,7 @@ const AuditLogsPage = () => {
     userId: '',
     startDate: '',
     endDate: '',
-    severity: ''
+    sensitivity: ''
   })
 
   const { logs, pagination, isLoading, error, refetch } = useAuditLogs(filters)
@@ -49,7 +49,7 @@ const AuditLogsPage = () => {
       userId: '',
       startDate: '',
       endDate: '',
-      severity: ''
+      sensitivity: ''
     })
   }
 

@@ -8,7 +8,7 @@ const AuditFilters = ({ filters, onFilterChange, onReset, users = [] }) => {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const actions = ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'UPLOAD']
-  const targetTypes = ['CASE', 'CASE_UPDATE', 'EVIDENCE', 'USER', 'TENANT', 'POLICE_STATION', 'AUTH', 'PROFILE-UPDATE']
+  const targetTypes = ['CASE', 'CASE_UPDATE', 'EVIDENCE', 'USER', 'TENANT', 'POLICE_STATION', 'AUTH', 'PROFILE']
   const sensitivities = ['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']
 
   // Convert users to dropdown options - only include users with fullName

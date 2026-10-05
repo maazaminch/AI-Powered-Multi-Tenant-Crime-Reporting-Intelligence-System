@@ -12,6 +12,7 @@ const UpdateProfileForm = ({
   onCancel,
   onSave,
   isPending,
+  isProfilePictureUploading,
   fileInputRef,
   onProfilePicClick,
   onFileChange
@@ -77,8 +78,9 @@ const UpdateProfileForm = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 onChange={onFileChange}
+                disabled={isProfilePictureUploading}
                 className="hidden"
               />
             </div>

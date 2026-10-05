@@ -17,14 +17,9 @@ export const createInviteLinkSchema = {
                 'any.required': 'Role is required'
             }),
         tenantId: mongoIdSchema
-            .when('role', {
-                is: Joi.string().valid(Roles.POLICE),
-                then: mongoIdSchema.required(),
-                otherwise: mongoIdSchema.optional()
-            })
+            .optional()
             .messages({
-                'string.pattern.base': 'Invalid tenant ID format',
-                'any.required': 'Tenant ID is required for police invitations'
+                'string.pattern.base': 'Invalid tenant ID format'
             })
     })
 };

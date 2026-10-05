@@ -81,13 +81,6 @@ export const deleteStationSchema = {
 export const activateOrDeactivateStationSchema = {
     params: Joi.object({
         stationId: requiredMongoIdSchema
-    }),
-    body: Joi.object({
-        isActive: Joi.boolean()
-            .required()
-            .messages({
-                'any.required': 'Status (isActive) is required'
-            })
     })
 };
 

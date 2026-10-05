@@ -27,6 +27,7 @@ const RegisterForm = () => {
     idType: '',
     nationalIdHash: '',
     badgeNumber: '',
+    profilePictureUrl: '',
     profilePicturePublicId: ''
   })
 
@@ -84,7 +85,11 @@ const RegisterForm = () => {
       })
 
       if (response.data && response.data.data) {
-        setFormData(prev => ({ ...prev, profilePicturePublicId: response.data.data.profilePicturePublicId }))
+        setFormData(prev => ({
+          ...prev,
+          profilePictureUrl: response.data.data.profilePictureUrl,
+          profilePicturePublicId: response.data.data.profilePicturePublicId
+        }))
         toast.success('Profile picture uploaded successfully')
       }
     } catch (error) {
@@ -92,7 +97,7 @@ const RegisterForm = () => {
       toast.error(error.response?.data?.message || 'Failed to upload profile picture')
       setProfilePic(null)
       setProfilePicPreview('')
-      setFormData(prev => ({ ...prev, profilePicturePublicId: '' }))
+      setFormData(prev => ({ ...prev, profilePictureUrl: '', profilePicturePublicId: '' }))
     } finally {
       setIsUploading(false)
     }
@@ -113,6 +118,7 @@ const RegisterForm = () => {
           address: formData.address,
           idType: formData.idType,
           nationalIdHash: formData.nationalIdHash,
+          profilePictureUrl: formData.profilePictureUrl,
           profilePicturePublicId: formData.profilePicturePublicId
         }
 
@@ -207,7 +213,7 @@ const RegisterForm = () => {
                     onClick={() => {
                       setProfilePic(null)
                       setProfilePicPreview('')
-                      setFormData(prev => ({ ...prev, profilePicturePublicId: '' }))
+                      setFormData(prev => ({ ...prev, profilePictureUrl: '', profilePicturePublicId: '' }))
                     }}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                   >

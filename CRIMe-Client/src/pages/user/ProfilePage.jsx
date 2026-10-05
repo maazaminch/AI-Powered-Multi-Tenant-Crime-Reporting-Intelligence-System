@@ -3,9 +3,10 @@ import { useProfile } from '../../hooks/user/useProfile'
 import UpdateProfileForm from '../../components/features/user/forms/UpdateProfileForm'
 import Loader from '../../components/ui/feedback/Loader'
 import ErrorState from '../../components/ui/feedback/ErrorState'
+import { toast } from 'sonner'
 
 const ProfilePage = () => {
-  const { user, isLoading, error, refetch, updateProfile } = useProfile()
+  const { user, isLoading, error, refetch, updateProfile, uploadProfilePicture } = useProfile()
   const fileInputRef = useRef(null)
   
   const [isEditing, setIsEditing] = useState(false)
@@ -23,16 +24,30 @@ const ProfilePage = () => {
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0]
-    if (file) {
-      // In a real app, you would upload this to cloud storage
-      // For now, we'll just use a placeholder URL
-      const imageUrl = URL.createObjectURL(file)
+    e.target.value = ''
+    if (!file) return
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a PNG, JPEG, or WebP image')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB')
+      return
+    }
+
+    try {
+      const response = await uploadProfilePicture.mutateAsync(file)
       setFormData(prev => ({
         ...prev,
-        profilePictureUrl: imageUrl
+        profilePictureUrl: response.data.profilePictureUrl
       }))
+    } catch {
+      // The mutation reports upload errors to the user.
     }
   }
 
@@ -118,7 +133,8 @@ const ProfilePage = () => {
         onEdit={handleEdit}
         onCancel={handleCancel}
         onSave={handleSave}
-        isPending={updateProfile.isPending}
+        isPending={updateProfile.isPending || uploadProfilePicture.isPending}
+        isProfilePictureUploading={uploadProfilePicture.isPending}
         fileInputRef={fileInputRef}
         onProfilePicClick={handleProfilePicClick}
         onFileChange={handleFileChange}

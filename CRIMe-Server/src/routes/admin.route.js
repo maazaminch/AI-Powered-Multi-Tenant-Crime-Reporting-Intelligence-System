@@ -14,6 +14,18 @@ import {
     getStationDetailsSchema,
     stationsDropdownSchema
 } from "../validations/policeStation.schema.js";
+import {
+    searchUsersSchema,
+    assignPoliceToStationSchema,
+    transferPoliceSchema,
+    assignOrChangeStationHeadSchema,
+    removeStationHeadSchema
+} from "../validations/user.schema.js";
+import {
+    getTenantCasesSchema,
+    getCaseDetailsSchema,
+    getCaseUpdatesSchema
+} from "../validations/case.schema.js";
 
 const adminRoutes = express.Router();
 
@@ -82,6 +94,7 @@ adminRoutes.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(searchUsersSchema),
     AdminController.getAllPolice
 );
 
@@ -109,6 +122,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(assignPoliceToStationSchema),
     auditLog('ASSIGN', 'POLICE'),
     AdminController.assignPoliceToStation
 );
@@ -117,6 +131,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(transferPoliceSchema),
     auditLog('TRANSFER', 'POLICE'),
     AdminController.transferPolice
 );
@@ -130,6 +145,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(assignOrChangeStationHeadSchema),
     auditLog('ASSIGN', 'SHO'),
     AdminController.assignOrChangeStationHead
 );
@@ -139,6 +155,7 @@ adminRoutes.post(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(removeStationHeadSchema),
     auditLog('REMOVE', 'SHO'),
     AdminController.removeStationHead
 );
@@ -152,6 +169,7 @@ adminRoutes.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(getTenantCasesSchema),
     AdminController.tenantCases
 );
 
@@ -160,6 +178,7 @@ adminRoutes.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(getCaseDetailsSchema),
     AdminController.caseDetails
 );
 
@@ -168,6 +187,7 @@ adminRoutes.get(
     verifyJWT,
     tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
+    validate(getCaseUpdatesSchema),
     AdminController.caseUpdates
 );
 // Analytics Dashboard Routes

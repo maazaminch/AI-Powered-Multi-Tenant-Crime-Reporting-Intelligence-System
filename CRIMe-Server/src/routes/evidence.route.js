@@ -14,7 +14,8 @@ import {
   uploadGuestStandaloneEvidenceSchema,
   getEvidenceSchema,
   getCaseEvidenceSchema,
-  deleteEvidenceSchema
+  deleteEvidenceSchema,
+  deleteGuestStandaloneEvidenceSchema
 } from '../validations/evidence.schema.js';
 
 const evidenceRouter = Router();
@@ -78,7 +79,7 @@ evidenceRouter.post(
   '/upload-evidence/:caseId',
   verifyJWT,
   // uploadLimiter,
-  uploadEvidence.array('files', 5),
+  uploadEvidence.array('files', 10),
   validate(uploadEvidenceSchema),
   auditLog('UPLOAD', 'EVIDENCE'),
   EvidenceController.uploadEvidence
@@ -105,6 +106,7 @@ evidenceRouter.post(
 // Delete standalone evidence for guests
 evidenceRouter.delete(
   '/guest/standalone/:evidenceId',
+  validate(deleteGuestStandaloneEvidenceSchema),
   GuestEvidenceController.deleteGuestStandaloneEvidence
 );
 

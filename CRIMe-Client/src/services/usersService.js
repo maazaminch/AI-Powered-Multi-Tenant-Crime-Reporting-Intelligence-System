@@ -14,6 +14,13 @@ export const usersService = {
     return response
   },
 
+  uploadProfilePicture: async (file) => {
+    const formData = new FormData()
+    formData.append('profilePicture', file)
+    const response = await api.post('/api/auth/profile-picture', formData)
+    return response
+  },
+
   // Change password
   changePassword: async (passwordData) => {
     const response = await api.put('/api/users/change-password', passwordData)

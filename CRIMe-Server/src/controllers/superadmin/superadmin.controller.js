@@ -615,12 +615,8 @@ class SuperAdminController {
             filter.type = type;
         }
         if (isActive !== undefined && isActive !== "") {
-            filter.isActive = isActive === "true";
+            filter.isActive = isActive;
         }
-        // if using joi
-        // if (isActive !== undefined) {
-        //     filter.isActive = isActive;
-        // }
         
 
         const tenants = await Tenant.find(filter)

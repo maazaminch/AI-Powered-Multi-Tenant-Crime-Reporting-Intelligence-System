@@ -26,6 +26,17 @@ export const useProfile = () => {
     }
   })
 
+  const uploadProfilePictureMutation = useMutation({
+    mutationFn: usersService.uploadProfilePicture,
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ['user-profile'] })
+      toast.success(response?.message || 'Profile picture updated successfully')
+    },
+    onError: (err) => {
+      toast.error(formatError(err))
+    }
+  })
+
   // Change password mutation
   const changePasswordMutation = useMutation({
     mutationFn: usersService.changePassword,
@@ -47,6 +58,7 @@ export const useProfile = () => {
 
     // Mutations (page will call .mutate() or .mutateAsync())
     updateProfile: updateProfileMutation,
+    uploadProfilePicture: uploadProfilePictureMutation,
     changePassword: changePasswordMutation
   }
 }

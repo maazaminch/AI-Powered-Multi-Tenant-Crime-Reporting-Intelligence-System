@@ -19,11 +19,7 @@ const AssignSHOModal = ({
     enabled: !!open && !!stationId,
   });
 
-  // Backend returns apiResponse format: { statusCode, data: { police: [...] }, message }
-  const stationPolice = police?.data?.police || [];
-
-  console.log('Police data:', police);
-  console.log('Station police:', stationPolice);
+  const stationPolice = police?.police || [];
 
   const handleSubmit = () => {
     if (!selectedPoliceId || !stationId) {
@@ -38,7 +34,7 @@ const AssignSHOModal = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 p-4 overflow-y-auto">
       <div className="min-h-screen flex items-start justify-center pt-10">
-        <div className="w-full max-w-2xl rounded-lg border bg-white p-6 shadow-lg">
+        <div className="w-full max-w-xl rounded-lg border bg-white p-6 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">
               Assign Station Head Officer
@@ -89,9 +85,6 @@ const AssignSHOModal = ({
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-semibold">Email: </span>{officer.email}
-                    </p>
                     <p className="text-xs text-muted-foreground">
                       <span className="font-semibold">Badge Number: </span>{officer.badgeNumber || "N/A"}
                     </p>

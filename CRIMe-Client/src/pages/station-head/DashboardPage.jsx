@@ -5,37 +5,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/Button'
 
 import StatCard from '../../components/common/StatCard'
-
-// function StatCard({
-//   title,
-//   value,
-//   color,
-//   bg,
-//   path,
-// }) {
-//     const navigate = useNavigate()
-//   return (
-//     <Card
-//       onClick={() => navigate(path)}
-//       className={`cursor-pointer transition hover:shadow-lg ${bg}`}
-//     >
-//       <CardContent className="flex flex-col items-center justify-center p-6">
-//         <h2 className={`text-3xl font-bold ${color}`}>
-//           {value}
-//         </h2>
-
-//         <p className="mt-2 text-sm text-muted-foreground">
-//           {title}
-//         </p>
-//       </CardContent>
-//     </Card>
-//   )
-// }
+import Loader from '../../components/ui/feedback/Loader'
+import ErrorState from '../../components/ui/feedback/ErrorState'
 
 const StationHeadDashboard = () => {
 
   const { stats, isLoading, error } = useDashboard()
   const navigate = useNavigate()
+
+    if(isLoading) {
+      return (
+        <Loader 
+          text="Loading dashboard..."
+          fullScreen
+        />
+      )
+    }
+  
+    if(error) {
+      return (
+        <ErrorState 
+          title="Failed to load dashboard."
+          description="Please try again later."
+        />
+      )
+    }
 
   return (
     <div className="space-y-6" >
