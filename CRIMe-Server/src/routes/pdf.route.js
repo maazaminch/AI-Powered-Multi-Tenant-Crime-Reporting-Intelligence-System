@@ -1,10 +1,7 @@
 import express from "express";
 import verifyJWT from "../middlewares/auth.middleware.js";
-import tenantGuard from "../middlewares/tenantGuard.middleware.js";
-import roleGuard from "../middlewares/roleGuard.middleware.js";
 import auditLog from "../middlewares/auditLog.middleware.js";
-import PDFController from "../controllers/pdf.controller.js";
-import { Roles, UserFlags } from "../constants/roles.js";
+import PDFController from "../controllers/utilities/pdf.controller.js";
 
 const pdfRouter = express.Router();
 

@@ -19,6 +19,10 @@ CRIMe-Server/.env.*
 !CRIMe-Server/.env.example
 
 
+CRIMe-Server/script
+CRIMe-Server/seed
+
+
 # ============================================
 # Build output
 # ============================================

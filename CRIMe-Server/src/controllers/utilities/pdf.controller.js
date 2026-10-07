@@ -1,12 +1,12 @@
-import PDFService from "../services/pdf.service.js";
-import Case from "../models/case.model.js";
-import CaseUpdate from "../models/caseUpdate.model.js";
-import Evidence from "../models/evidence.model.js";
-import PoliceStation from "../models/policeStation.model.js";
-import Tenant from "../models/tenant.model.js";
-import apiError from "../utils/apiError.js";
-import wrapAsync from "../utils/wrapAsync.js";
-import apiResponse from "../utils/apiResponse.js";
+import PDFService from "../../services/pdf.service.js";
+import Case from "../../models/case.model.js";
+import CaseUpdate from "../../models/caseUpdate.model.js";
+import Evidence from "../../models/evidence.model.js";
+import PoliceStation from "../../models/policeStation.model.js";
+import Tenant from "../../models/tenant.model.js";
+import apiError from "../../utils/apiError.js";
+import wrapAsync from "../../utils/wrapAsync.js";
+import apiResponse from "../../utils/apiResponse.js";
 // import fs from "fs";
 
 class PDFController {
