@@ -26,9 +26,6 @@ const io = new Server(server, {
   }
 });
 
-// Connect to database after environment variables are loaded
-connectDB();
-
 // Make io global so NotificationService can emit
 global.io = io;
 
@@ -48,9 +45,17 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 8000
-server.listen(PORT, () => {
-  // console.log(`Server running on port http://localhost:${PORT}`) 
-  console.log(`Server running on port ${PORT}`)
-});
 
+const startServer = async () => {
+  try {
+    await connectDB();
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`)
+    });
+  } catch (error) {
+    console.error("Failed to start server because MongoDB connection failed:", error);
+    process.exit(1);
+  }
+};
 
+startServer();

@@ -1,36 +1,16 @@
 import express from "express";
-import AuditLog from "../models/auditLog.model.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
-// Health check route with audit system monitoring
-router.get("/", async (req, res) => {
-  try {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
-    const auditHealth = {
-      enabled: process.env.AUDIT_ENABLED !== 'false',
-      recentLogs: await AuditLog.countDocuments({
-        createdAt: { $gte: fiveMinutesAgo }
-      }),
-      recentErrors: await AuditLog.countDocuments({
-        createdAt: { $gte: fiveMinutesAgo },
-        success: false
-      })
-    };
+router.get("/", (req, res) => {
+  const databaseConnected = mongoose.connection.readyState === 1;
 
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      audit: auditHealth
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Health check failed',
-      error: error.message
-    });
-  }
+  res.status(databaseConnected ? 200 : 503).json({
+    status: databaseConnected ? "ok" : "error",
+    timestamp: new Date().toISOString(),
+    database: databaseConnected ? "connected" : "disconnected"
+  });
 });
 
 export default router;
