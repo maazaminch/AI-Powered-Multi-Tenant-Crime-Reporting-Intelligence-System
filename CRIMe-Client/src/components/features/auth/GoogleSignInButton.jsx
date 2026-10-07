@@ -1,6 +1,9 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 
+let initializedClientId = null
+let activeCallbacks = null
+
 const GoogleSignInButton = ({
   onSuccess,
   onError,
@@ -9,7 +12,7 @@ const GoogleSignInButton = ({
   disabled = false
 }) => {
   const buttonRef = useRef(null)
-  const initializedRef = useRef(false)
+  const callbackOwnerRef = useRef({})
 
   const onSuccessRef = useRef(onSuccess)
   const onErrorRef = useRef(onError)
@@ -20,6 +23,21 @@ const GoogleSignInButton = ({
   useEffect(() => {
     onSuccessRef.current = onSuccess
     onErrorRef.current = onError
+  }, [onSuccess, onError])
+
+  useEffect(() => {
+    const owner = callbackOwnerRef.current
+    activeCallbacks = {
+      owner,
+      onSuccess: onSuccessRef,
+      onError: onErrorRef
+    }
+
+    return () => {
+      if (activeCallbacks?.owner === owner) {
+        activeCallbacks = null
+      }
+    }
   }, [onSuccess, onError])
 
 
@@ -68,8 +86,7 @@ const GoogleSignInButton = ({
     if (
       !isLoaded ||
       !buttonRef.current ||
-      disabled ||
-      initializedRef.current
+      disabled
     ) {
       return
     }
@@ -84,48 +101,43 @@ const GoogleSignInButton = ({
     }
 
     try {
+      if (!initializedClientId) {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response) => {
+            const callbacks = activeCallbacks
+            if (!response?.credential) {
+              callbacks?.onError.current?.(
+                'Google did not return an ID token'
+              )
+              return
+            }
 
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-
-        callback: (response) => {
-
-          if (!response?.credential) {
-            onErrorRef.current?.(
-              'Google did not return an ID token'
-            )
-            return
-          }
-
-          onSuccessRef.current?.(
-            response.credential
-          )
-        },
-
-        auto_select: false,
-        cancel_on_tap_outside: true
-      })
-
+            callbacks?.onSuccess.current?.(response.credential)
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true
+        })
+        initializedClientId = clientId
+      } else if (initializedClientId !== clientId) {
+        onErrorRef.current?.(
+          'Google Sign-In is already initialized with a different Client ID'
+        )
+        return
+      }
 
       buttonRef.current.innerHTML = ''
 
-
-      window.google.accounts.id.renderButton(
-        buttonRef.current,
-        {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: text === 'Sign up with Google'
-            ? 'signup_with'
-            : 'signin_with',
-          shape: 'rectangular',
-          width: 400
-        }
-      )
-
-
-      initializedRef.current = true
+      window.google.accounts.id.renderButton(buttonRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: text === 'Sign up with Google'
+          ? 'signup_with'
+          : 'signin_with',
+        shape: 'rectangular',
+        width: 400
+      })
 
     } catch (error) {
 
