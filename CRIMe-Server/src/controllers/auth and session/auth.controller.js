@@ -11,6 +11,12 @@ import crypto from "crypto";
 import Invite from "../../models/invite.model.js";
 import PoliceStation from "../../models/policeStation.model.js";
 import {
+  ACCESS_TOKEN_TTL,
+  ACCESS_TOKEN_TTL_MS,
+  REFRESH_TOKEN_TTL_MS,
+  getSessionExpiresAt
+} from "../../config/authTokenConfig.js";
+import {
   uploadBufferToCloudinary,
   getCloudinaryResourceType,
   deleteFromCloudinary
@@ -642,7 +648,7 @@ class authController {
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: "30m"
+            expiresIn: ACCESS_TOKEN_TTL
         }
     );
 
@@ -663,9 +669,7 @@ class authController {
 
     const refreshTokenFamily = crypto.randomBytes(16).toString("hex");
 
-    const refreshTokenExpiresAt = new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000
-    );
+    const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
 
     user.refreshTokenId = refreshTokenId;
     user.refreshTokenHash = refreshTokenHash;
@@ -685,7 +689,7 @@ class authController {
         sameSite: process.env.NODE_ENV === "production"
             ? "none"
             : "lax",
-        maxAge: 30 * 60 * 1000
+        maxAge: ACCESS_TOKEN_TTL_MS
     };
 
     const refreshCookieOptions = {
@@ -694,7 +698,7 @@ class authController {
         sameSite: process.env.NODE_ENV === "production"
             ? "none"
             : "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000
+        maxAge: REFRESH_TOKEN_TTL_MS
     };
 
     // ─────────────────────────────────────────
@@ -789,17 +793,17 @@ class authController {
             user.isEmailVerified = payload.email_verified;
         }
 
-        // ─────────────── Generate Access Token (30 mins) ───────────────
+        // ─────────────── Generate Access Token ───────────────
         const accessToken = jwt.sign(
             {
                 id: user._id,
                 tenantId: user.tenantId
             },
             process.env.JWT_SECRET,
-            { expiresIn: '30m' }
+            { expiresIn: ACCESS_TOKEN_TTL }
         );
 
-        // ─────────────── Generate Refresh Token (7 days) ───────────────
+        // ─────────────── Generate Refresh Token ───────────────
         const refreshTokenId = crypto.randomBytes(16).toString("hex");
         const refreshTokenSecret = crypto.randomBytes(32).toString("hex");
 
@@ -807,7 +811,7 @@ class authController {
 
         const refreshTokenHash = await bcrypt.hash(refreshTokenSecret, 10);
         const refreshTokenFamily = crypto.randomBytes(16).toString("hex");
-        const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
 
         // ─────────────── Store Refresh Token in MongoDB ───────────────
         user.refreshTokenId = refreshTokenId;
@@ -818,17 +822,24 @@ class authController {
         await user.save();
 
         // ─────────────── Cookie Options ───────────────
-        const cookieOptions = {
+        const accessCookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",   
+            maxAge: ACCESS_TOKEN_TTL_MS
+        };
+        const refreshCookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: REFRESH_TOKEN_TTL_MS
         };
 
         const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
 
         return res.status(200)
-            .cookie("accessToken", accessToken, cookieOptions)
-            .cookie("refreshToken", refreshToken, cookieOptions)
+            .cookie("accessToken", accessToken, accessCookieOptions)
+            .cookie("refreshToken", refreshToken, refreshCookieOptions)
             .json(new apiResponse(
                 200,
                 {
@@ -911,17 +922,17 @@ class authController {
             throw new apiError(500, "User creation failed");
         }
 
-        // ─────────────── Generate Access Token (30 mins) ───────────────
+        // ─────────────── Generate Access Token ───────────────
         const accessToken = jwt.sign(
             {
                 id: user._id,
                 tenantId: user.tenantId
             },
             process.env.JWT_SECRET,
-            { expiresIn: '30m' }
+            { expiresIn: ACCESS_TOKEN_TTL }
         );
 
-        // ─────────────── Generate Refresh Token (7 days) ───────────────
+        // ─────────────── Generate Refresh Token ───────────────
         const refreshTokenId = crypto.randomBytes(16).toString("hex");
         const refreshTokenSecret = crypto.randomBytes(32).toString("hex");
 
@@ -929,7 +940,7 @@ class authController {
 
         const refreshTokenHash = await bcrypt.hash(refreshTokenSecret, 10);
         const refreshTokenFamily = crypto.randomBytes(16).toString("hex");
-        const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
 
         // ─────────────── Store Refresh Token in MongoDB ───────────────
         user.refreshTokenId = refreshTokenId;
@@ -940,10 +951,17 @@ class authController {
         await user.save();
 
         // ─────────────── Cookie Options ───────────────
-        const cookieOptions = {
+        const accessCookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: ACCESS_TOKEN_TTL_MS
+        };
+        const refreshCookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: REFRESH_TOKEN_TTL_MS
         };
 
         const userSafe = await User.findById(user._id).select('-password -nationalIdHash');
@@ -959,8 +977,8 @@ class authController {
         });
 
         return res.status(201)
-            .cookie("accessToken", accessToken, cookieOptions)
-            .cookie("refreshToken", refreshToken, cookieOptions)
+            .cookie("accessToken", accessToken, accessCookieOptions)
+            .cookie("refreshToken", refreshToken, refreshCookieOptions)
             .json(new apiResponse(
                 201,
                 {
@@ -1001,10 +1019,8 @@ class authController {
     }
 
     // Check expiration
-    if (
-        !user.refreshTokenExpiresAt ||
-        user.refreshTokenExpiresAt <= new Date()
-    ) {
+    const sessionExpiresAt = getSessionExpiresAt(user);
+    if (!sessionExpiresAt || sessionExpiresAt <= new Date()) {
         throw new apiError(401, "Invalid or expired refresh token");
     }
 
@@ -1035,9 +1051,10 @@ class authController {
         10
     );
 
-    const newRefreshTokenExpiresAt = new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000
-    );
+    const refreshTokenMaxAge = sessionExpiresAt.getTime() - Date.now();
+    if (refreshTokenMaxAge <= 0) {
+        throw new apiError(401, "Invalid or expired refresh token");
+    }
 
     // Keep the same family during rotation
     const refreshTokenFamily =
@@ -1045,7 +1062,6 @@ class authController {
 
     user.refreshTokenId = newRefreshTokenId;
     user.refreshTokenHash = newRefreshTokenHash;
-    user.refreshTokenExpiresAt = newRefreshTokenExpiresAt;
     user.refreshTokenFamily = refreshTokenFamily;
 
     await user.save();
@@ -1058,7 +1074,7 @@ class authController {
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: "30m"
+            expiresIn: ACCESS_TOKEN_TTL
         }
     );
 
@@ -1070,7 +1086,7 @@ class authController {
         sameSite: process.env.NODE_ENV === "production"
             ? "none"
             : "lax",
-        maxAge: 30 * 60 * 1000
+        maxAge: ACCESS_TOKEN_TTL_MS
     };
 
     const refreshCookieOptions = {
@@ -1079,7 +1095,7 @@ class authController {
         sameSite: process.env.NODE_ENV === "production"
             ? "none"
             : "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000
+        maxAge: refreshTokenMaxAge
     };
 
 

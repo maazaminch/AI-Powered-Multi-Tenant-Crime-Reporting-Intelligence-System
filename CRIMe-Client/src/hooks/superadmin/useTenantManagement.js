@@ -40,6 +40,7 @@ export const useTenantManagement = (
       superAdminService.activateOrDeactivateTenant(tenantId),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
+      queryClient.invalidateQueries({ queryKey: ['tenants-details'] })
       toast.success(response?.message || 'Tenant status updated')
     },
     onError: (err) => {

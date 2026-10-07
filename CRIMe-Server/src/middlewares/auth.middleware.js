@@ -3,6 +3,11 @@ import wrapAsync from "../utils/wrapAsync.js";
 import jwt from 'jsonwebtoken'
 import User from '../models/user.model.js'
 import bcrypt from 'bcrypt'
+import {
+    ACCESS_TOKEN_TTL,
+    ACCESS_TOKEN_TTL_MS,
+    getSessionExpiresAt
+} from '../config/authTokenConfig.js'
 
 
 const verifyJWT = wrapAsync(async (req, res, next) => {
@@ -40,6 +45,11 @@ const verifyJWT = wrapAsync(async (req, res, next) => {
         return next(new apiError(401, "Unauthorized user."));
     }
 
+    const sessionExpiresAt = getSessionExpiresAt(user);
+    if (!sessionExpiresAt || sessionExpiresAt <= new Date()) {
+        return next(new apiError(401, "Session expired."));
+    }
+
     req.user = user;
     next();
 }
@@ -72,12 +82,12 @@ async function attemptTokenRefresh(req, res, next) {
         const user = await User.findOne({ refreshTokenId })
             .select("+refreshTokenHash");
 
-        if (
-            !user ||
-            !user.refreshTokenExpiresAt ||
-            user.refreshTokenExpiresAt <= new Date() ||
-            !user.refreshTokenHash
-        ) {
+        if (!user || !user.refreshTokenHash) {
+            return next(new apiError(401, "Invalid or expired refresh token"));
+        }
+
+        const sessionExpiresAt = getSessionExpiresAt(user);
+        if (!sessionExpiresAt || sessionExpiresAt <= new Date()) {
             return next(new apiError(401, "Invalid or expired refresh token"));
         }
 
@@ -99,14 +109,14 @@ async function attemptTokenRefresh(req, res, next) {
                 tenantId: user.tenantId
             },
             process.env.JWT_SECRET,
-            { expiresIn: "30m" }
+            { expiresIn: ACCESS_TOKEN_TTL }
         );
 
         const accessCookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: 30 * 60 * 1000
+            maxAge: ACCESS_TOKEN_TTL_MS
         };
 
         res.cookie("accessToken", newAccessToken, accessCookieOptions);
