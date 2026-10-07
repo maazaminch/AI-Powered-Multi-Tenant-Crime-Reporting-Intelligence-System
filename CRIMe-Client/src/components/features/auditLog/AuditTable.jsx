@@ -106,11 +106,15 @@ const AuditTable = ({ logs, pagination, isLoading, error, onPageChange, onRefetc
                   <td className="p-3 text-sm text-slate-700">
                     <div className="flex flex-col">
                       <span className="font-medium">
-                        {log.actor.userId?.fullName || 'Unknown'}
+                        {log.actor.name || log.actor.userId?.fullName || 'Unknown'}
                       </span>
                       {log.actor.role && (
                         <Badge variant="outline" className="text-xs mt-1 w-fit">
-                          {log.actor.role}
+                          {log.actor.flags?.isSuperAdmin
+                            ? 'SUPERADMIN'
+                            : log.actor.flags?.isStationHead
+                              ? 'SHO'
+                              : log.actor.role}
                         </Badge>
                       )}
                     </div>

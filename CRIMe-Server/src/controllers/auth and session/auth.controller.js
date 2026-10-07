@@ -678,6 +678,7 @@ class authController {
     user.lastLogin = new Date();
 
     await user.save();
+    req.user = user;
 
     // ─────────────────────────────────────────
     // Cookies
@@ -823,6 +824,7 @@ class authController {
         user.refreshTokenFamily = refreshTokenFamily;
         user.lastLogin = new Date();
         await user.save();
+        req.user = user;
 
         // ─────────────── Cookie Options ───────────────
         const accessCookieOptions = {

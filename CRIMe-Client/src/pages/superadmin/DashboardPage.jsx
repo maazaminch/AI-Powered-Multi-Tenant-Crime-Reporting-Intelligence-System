@@ -161,7 +161,7 @@ const SuperAdminDashboard = () => {
                     {log.targetType} - {log.action.replace(/_/g, ' ')} 
                   </p>
                   <p className="text-xs text-slate-500">
-                    {log.actor?.userId?.fullName || 'System'} - {log.actor?.role || 'System'}
+                    {log.actor?.name || log.actor?.userId?.fullName || 'System'} - {log.actor?.flags?.isSuperAdmin ? 'SUPERADMIN' : log.actor?.flags?.isStationHead ? 'SHO' : log.actor?.role || 'System'}
           
                   </p>
                 </div>
