@@ -1,4 +1,5 @@
 import axios from 'axios'
+import useAuthStore from '../store/authStore'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -25,11 +26,17 @@ api.interceptors.response.use(
     return response.data
   },
   (error) => {
-    // Handle common errors
-    if (error.response?.status === 401) {
-      localStorage.removeItem("accessToken");
-      // Unauthorized - redirect to login
-      // window.location.href = '/login'
+    const isLoginRequest = ['/api/auth/login', '/api/auth/google-login']
+      .some((path) => error.config?.url?.includes(path))
+
+    if (
+      error.response?.status === 401 &&
+      !isLoginRequest &&
+      useAuthStore.getState().isAuthenticated
+    ) {
+      useAuthStore.getState().logout()
+      sessionStorage.setItem('session-expired', 'true')
+      window.location.assign('/login')
     }
     
     // Extract error message from backend response

@@ -1,8 +1,16 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import LoginForm from '../../components/features/auth/LoginForm'
 
 const LoginPage = () => {
+  useEffect(() => {
+    if (sessionStorage.getItem('session-expired') === 'true') {
+      sessionStorage.removeItem('session-expired')
+      toast.error('Your session expired. Please sign in again.')
+    }
+  }, [])
+
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] max-w-lg flex-col justify-center px-4 py-12 sm:px-6">
       <div className="mb-8 text-center">

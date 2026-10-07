@@ -3,7 +3,6 @@ import wrapAsync from "../utils/wrapAsync.js";
 import jwt from 'jsonwebtoken'
 import User from '../models/user.model.js'
 import bcrypt from 'bcrypt'
-import crypto from 'crypto'
 
 
 const verifyJWT = wrapAsync(async (req, res, next) => {
@@ -58,68 +57,65 @@ async function attemptTokenRefresh(req, res, next) {
         if (!refreshToken) {
             return next(new apiError(401, "Refresh token missing"));
         }
-        
-        // ─────────────── Find User by Refresh Token ───────────────
-        const users = await User.find({
-            refreshTokenExpiresAt: { $gt: new Date() }
-        }).select('+refreshTokenHash +refreshTokenFamily');
-        
-        let matchedUser = null;
-        for (const user of users) {
-            const isMatch = await bcrypt.compare(refreshToken, user.refreshTokenHash);
-            
-            if (isMatch) {
-                matchedUser = user;
-                break;
-            }
+
+        const separatorIndex = refreshToken.indexOf(".");
+        if (separatorIndex === -1) {
+            return next(new apiError(401, "Invalid refresh token"));
         }
 
-        if (!matchedUser) {
+        const refreshTokenId = refreshToken.slice(0, separatorIndex);
+        const refreshTokenSecret = refreshToken.slice(separatorIndex + 1);
+        if (!refreshTokenId || !refreshTokenSecret) {
+            return next(new apiError(401, "Invalid refresh token"));
+        }
+
+        const user = await User.findOne({ refreshTokenId })
+            .select("+refreshTokenHash");
+
+        if (
+            !user ||
+            !user.refreshTokenExpiresAt ||
+            user.refreshTokenExpiresAt <= new Date() ||
+            !user.refreshTokenHash
+        ) {
             return next(new apiError(401, "Invalid or expired refresh token"));
         }
 
-        // ─────────────── Check User Status ───────────────
-        if (matchedUser.status !== "APPROVED") {
+        const isMatch = await bcrypt.compare(
+            refreshTokenSecret,
+            user.refreshTokenHash
+        );
+        if (!isMatch) {
+            return next(new apiError(401, "Invalid or expired refresh token"));
+        }
+
+        if (user.status !== "APPROVED") {
             return next(new apiError(403, "Account not approved"));
         }
 
-        // ─────────────── Token Rotation ───────────────
-        const newRefreshToken = crypto.randomBytes(32).toString('hex');
-        const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
-        const newRefreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-        // ─────────────── Update MongoDB ───────────────
-        matchedUser.refreshTokenHash = newRefreshTokenHash;
-        matchedUser.refreshTokenExpiresAt = newRefreshTokenExpiresAt;
-        await matchedUser.save();
-
-        // ─────────────── Generate New Access Token ───────────────
         const newAccessToken = jwt.sign(
             {
-                id: matchedUser._id,
-                tenantId: matchedUser.tenantId
+                id: user._id,
+                tenantId: user.tenantId
             },
             process.env.JWT_SECRET,
-            { expiresIn: '30m' }
+            { expiresIn: "30m" }
         );
 
-        const cookieOptions = {
+        const accessCookieOptions = {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 30 * 60 * 1000
         };
 
-        // ─────────────── Set new tokens in request ───────────────
-        res.cookie("accessToken", newAccessToken, cookieOptions);
-        res.cookie("refreshToken", newRefreshToken, cookieOptions);
+        res.cookie("accessToken", newAccessToken, accessCookieOptions);
 
-        // ─────────────── Set user in request ───────────────
-        req.user = await User.findById(matchedUser._id).select("-password");
+        req.user = await User.findById(user._id).select("-password");
 
         next();
     } catch (error) {
-        console.error("Token refresh error:", error.message);
-        return next(new apiError(401, "Token refresh failed"));
+        return next(error);
     }
 }
 

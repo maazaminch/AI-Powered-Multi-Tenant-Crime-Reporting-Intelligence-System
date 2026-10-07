@@ -614,6 +614,13 @@ class authController {
         throw new apiError(400, "This account does not have a password set.");
     }
 
+    if(user.role === "ADMIN" && user.status === "APPROVED" && user.tenantId === null) {
+        throw new apiError(403, "Account approved but not assigned to a tenant. Please contact administrator.");
+    }
+    if(user.role === "POLICE" && user.status === "APPROVED" && user.policeStationId === null) {
+        throw new apiError(403, "Account approved but not assigned to a police station. Please contact administrator.");
+    }
+
     const comparePassword = await bcrypt.compare(password, user.password);
 
     if (!comparePassword) {
