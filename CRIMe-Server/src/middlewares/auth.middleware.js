@@ -40,8 +40,9 @@ const verifyJWT = wrapAsync(async (req, res, next) => {
         return next(new apiError(401, "Invalid or expired token."));
     }
 
-    const user = await User.findById(decoded.id).select("-password");
-    if (!user) {
+    const user = await User.findById(decoded.id)
+        .select("-password +refreshTokenHash");
+    if (!user || !user.refreshTokenHash) {
         return next(new apiError(401, "Unauthorized user."));
     }
 

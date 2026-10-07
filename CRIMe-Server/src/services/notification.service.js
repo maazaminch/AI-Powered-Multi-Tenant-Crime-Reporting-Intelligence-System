@@ -2,16 +2,9 @@
 // services/notificationService.js
 import Notification from '../models/notification.model.js';
 import User from '../models/user.model.js';
-import { sendEmail } from './nodemailer.service.js'; // your existing service
+import { sendEmail } from './nodemailer.service.js';
 
 class NotificationService {
-        // On frontend, after login:
-
-        // const socket = io('http://localhost:8000'); // match server URL
-        // socket.emit('join', user._id); // join room with userId
-
-
-
   static async send({ tenantId, userId, email, type, title, message, html, channels = ["inapp","email"] }) {
 
     const notification = await Notification.create({
@@ -25,8 +18,10 @@ class NotificationService {
     });
 
     // In-app real-time push via Socket.IO
-    if(global.io && channels.includes("inapp")) {
-      global.io.to(userId.toString()).emit('notification', notification);
+    if (global.io && userId && channels.includes("inapp")) {
+      global.io
+        .to(`user:${userId.toString()}`)
+        .emit('notification', notification);
     }
 
     // Send email using your existing service

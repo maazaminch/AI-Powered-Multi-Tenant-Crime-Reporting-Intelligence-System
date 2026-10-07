@@ -9,28 +9,30 @@ class SocketService {
   }
 
   // Connect to socket
-  connect(userId) {
-    if (this.socket && this.connected) {
+  connect() {
+    if (this.socket) {
       return this.socket
     }
 
     this.socket = io(SOCKET_URL, {
       withCredentials: true,
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      autoConnect: false
     })
 
     this.socket.on('connect', () => {
-      console.log('Connected to server')
       this.connected = true
-      // Join user room
-      this.socket.emit('join', userId)
     })
 
     this.socket.on('disconnect', () => {
-      console.log('Disconnected from server')
       this.connected = false
     })
 
+    this.socket.on('connect_error', (error) => {
+      console.error('Notification socket connection failed:', error.message)
+    })
+
+    this.socket.connect()
     return this.socket
   }
 

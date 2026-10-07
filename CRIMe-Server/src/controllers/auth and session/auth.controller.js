@@ -736,11 +736,14 @@ class authController {
     // ─────────────── Clear Refresh Token from MongoDB ───────────────
     await User.findByIdAndUpdate(userId, {
         $unset: {
+            refreshTokenId: 1,
             refreshTokenHash: 1,
             refreshTokenExpiresAt: 1,
             refreshTokenFamily: 1
         }
     });
+
+    global.io?.in(`user:${userId.toString()}`).disconnectSockets(true);
 
     const options = {
         httpOnly: true,

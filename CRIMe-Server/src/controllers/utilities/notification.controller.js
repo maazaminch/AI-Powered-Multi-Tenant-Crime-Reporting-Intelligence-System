@@ -84,7 +84,11 @@ class NotificationController {
     const notificationId = req.params.notificationId;
     
     const updatedNotification = await Notification.findByIdAndUpdate(
-      notificationId,
+      {
+        _id: notificationId,
+        userId: req.user._id,
+        channels: "inapp"
+      },
       { isRead: true, readAt: new Date() },
       { new: true }
     );
