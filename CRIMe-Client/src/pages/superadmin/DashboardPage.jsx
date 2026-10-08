@@ -88,7 +88,7 @@ const SuperAdminDashboard = () => {
             value={stats?.totalCases ?? '...'}
             color="text-white"
             bg="bg-rose-900 hover:bg-rose-700"
-            path="/super-admin/cases"
+            path="/super-admin/system-cases"
           />
 
         </div>

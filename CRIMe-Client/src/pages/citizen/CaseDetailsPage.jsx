@@ -260,10 +260,10 @@ const CaseDetailsPage = () => {
               </CardHeader>
               <CardContent className="pt-4">
                 <LocationView location={caseDetails.location} height={300} />
-                {caseDetails.addressText && (
+                {caseDetails.address && (
                   <p className="text-sm text-muted-foreground mt-3 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    {caseDetails.addressText}
+                    {caseDetails.address || 'Location not specified'}
                   </p>
                 )}
               </CardContent>
