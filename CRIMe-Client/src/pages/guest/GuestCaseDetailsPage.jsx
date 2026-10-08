@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Calendar,
   MapPin,
+  MapPinHouse,
   User,
   FileText,
   AlertCircle,
@@ -259,6 +260,14 @@ const GuestCaseDetailsPage = () => {
                   <span className="font-medium">Location:</span>
                   <span>{caseDetails.locationLabel || caseDetails.address || 'Location not specified'}</span>
                 </div>
+
+                {caseDetails.address && (
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                                    <MapPinHouse className="w-4 h-4" />
+                                    <span className="font-medium">Exact Address:</span>
+                                    <span>{caseDetails.address || 'Address not specified'}</span>
+                                </div>
+                              )}
               </CardContent>
             </Card>
           </motion.div>
@@ -278,12 +287,6 @@ const GuestCaseDetailsPage = () => {
               </CardHeader>
               <CardContent className="pt-4">
                 <LocationView location={caseDetails.location} height={300} />
-                {caseDetails.address && (
-                  <p className="text-sm text-muted-foreground mt-3 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    {caseDetails.address || 'Location not specified'}
-                  </p>
-                )}
               </CardContent>
             </Card>
           </motion.div>

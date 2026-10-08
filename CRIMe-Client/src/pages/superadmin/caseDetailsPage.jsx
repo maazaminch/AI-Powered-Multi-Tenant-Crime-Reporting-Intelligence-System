@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, MapPin, User, FileText, AlertCircle, CheckCircle, Clock, Eye, Download, MessageSquare, FileText as FileIcon, Shield } from 'lucide-react'
+import { ArrowLeft, MapPin, MapPinHouse, User, FileText, AlertCircle, CheckCircle, Clock, Eye, Download, MessageSquare, FileText as FileIcon, Shield } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
@@ -193,6 +193,14 @@ const CaseDetailsPage = () => {
                 <span className="font-medium">Location:</span>
                 <span>{caseDetails.locationLabel || caseDetails.address || 'Location not specified'}</span>
               </div>
+
+              {caseDetails.address && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                    <MapPinHouse className="w-4 h-4" />
+                    <span className="font-medium">Exact Address:</span>
+                    <span>{caseDetails.address || 'Address not specified'}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -206,12 +214,6 @@ const CaseDetailsPage = () => {
             </CardHeader>
             <CardContent className="pt-4">
               <LocationView location={caseDetails.location} height={300} />
-              {caseDetails.address && (
-                <p className="text-sm text-muted-foreground mt-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {caseDetails.address || 'Location not specified'}
-                </p>
-              )}
             </CardContent>
           </Card>
 
