@@ -5,8 +5,6 @@ import { Trash2, Eye } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
-import NoData from '../../components/ui/feedback/NoData'
-import Loader from '../../components/ui/feedback/Loader'
 import { useCaseDetails } from '../../hooks/stationHead/useCaseDetails'
 import { useEvidence } from '../../hooks/evidence/useEvidence'
 import { usePDF } from '../../hooks/pdf/usePDF'
@@ -18,6 +16,11 @@ import { CloseCaseModal } from '../../components/features/stationHead/modals/Clo
 import UploadEvidenceModal from '../../components/features/evidence/modals/UploadEvidenceModal'
 import LocationView from '../../components/features/location/LocationView'
 import { useStationPolice } from '../../hooks/stationHead/useStationPolice'
+
+
+import NoData from '../../components/ui/feedback/NoData'
+import Loader from '../../components/ui/feedback/Loader'
+import ErrorState from '../../components/ui/feedback/ErrorState'
 
 const CaseDetailsPage = () => {
   const { caseId } = useParams()
