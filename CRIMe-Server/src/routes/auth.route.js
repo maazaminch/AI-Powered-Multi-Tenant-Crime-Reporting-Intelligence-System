@@ -6,7 +6,7 @@ import auditLog from "../middlewares/auditLog.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
 import multer from "multer";
 import authController from "../controllers/auth and session/auth.controller.js";
-import { Roles , UserFlags} from "../constants/roles.js";
+import { Roles } from "../constants/roles.js";
 import {
     createInviteLinkSchema
 } from "../validations/invite.schema.js";
@@ -29,8 +29,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 authRouter.post(
     "/create-invite-link",
     verifyJWT,
-    roleGuard({ roles: [Roles.ADMIN],
-        flags: [UserFlags.IS_SUPER_ADMIN] }),
+    tenantGuard,
+    roleGuard({ roles: [Roles.ADMIN] }),
     validate(createInviteLinkSchema),
     authController.createInviteLinkController
 );

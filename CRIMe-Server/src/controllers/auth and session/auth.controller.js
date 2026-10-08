@@ -57,7 +57,7 @@ class authController {
             );
         }
 
-        if (!currentUser.tenantId && !currentUser.isSuperAdmin) {
+        if (!currentUser.tenantId) {
             throw new apiError(
                 400,
                 "Admin tenant missing"

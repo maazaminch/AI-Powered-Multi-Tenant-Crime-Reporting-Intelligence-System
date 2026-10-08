@@ -159,6 +159,13 @@ const PoliceManagementPage = () => {
         <CardHeader>
           <CardTitle>Police Management</CardTitle>
           <CardDescription>Manage police officers for your tenant.</CardDescription>
+          <Button
+            className="ml-auto justify-end"
+            variant="success"
+            onClick={() => setIsInviteModalOpen(true)}
+          >
+            Invite Police
+          </Button>
         </CardHeader>
       </Card>
 

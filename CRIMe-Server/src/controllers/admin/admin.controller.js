@@ -77,7 +77,7 @@ class AdminController {
             filter.status = status;
         }
         if(policeStationId === 'UNASSIGNED') {
-            filter.tenantId = null
+            filter.policeStationId = null
         } else if (policeStationId) {
             filter.policeStationId = policeStationId;
         }
@@ -418,10 +418,13 @@ class AdminController {
         if (!station) {
             throw new apiError(404, "Station not found");
         }
+        if (!station.tenantId.equals(police.tenantId)) {
+            throw new apiError(403, "Police officers can only be assigned to stations in their tenant");
+        }
 
 
-        const updatedPolice = await User.findByIdAndUpdate(
-            policeId,
+        const updatedPolice = await User.findOneAndUpdate(
+            filter,
             { policeStationId: stationId },
             { new: true }
         );
@@ -491,6 +494,9 @@ class AdminController {
         
         if (!targetStation) {
             throw new apiError(404, "Station not found");
+        }
+        if (!targetStation.tenantId.equals(police.tenantId)) {
+            throw new apiError(403, "Police officers can only be transferred to stations in their tenant");
         }
 
 
