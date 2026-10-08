@@ -29,9 +29,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 authRouter.post(
     "/create-invite-link",
     verifyJWT,
-    tenantGuard,
     roleGuard({ roles: [Roles.ADMIN] }),
     validate(createInviteLinkSchema),
+    tenantGuard,
     authController.createInviteLinkController
 );
 

@@ -46,7 +46,10 @@ class UserController {
         throw new apiError(400, "Invalid status");
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findOne({
+        _id: userId,
+        ...req.tenantFilter
+    });
     if (!user) throw new apiError(404, "User not found");
 
     // 🔒 Role hierarchy enforcement
