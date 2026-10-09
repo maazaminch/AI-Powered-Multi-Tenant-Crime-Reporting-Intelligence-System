@@ -318,7 +318,7 @@ const GuestReportPage = () => {
                 <div>
                   <CardTitle className="flex items-center gap-2 text-2xl">
                     <AlertTriangle className="w-6 h-6" />
-                    Public Crime Report
+                    Guest Crime Report
                   </CardTitle>
                   <CardDescription>
                     Report a crime without login

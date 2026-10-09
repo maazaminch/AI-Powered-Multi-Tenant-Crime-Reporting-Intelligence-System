@@ -67,7 +67,7 @@ const StationHeadDashboard = () => {
             value={stats?.pendingCases ?? '...'}
             color="text-white"
             bg="bg-amber-900 hover:bg-amber-700"
-            path="/station-head/pending-cases"
+            path="/station-head/station-cases"
           />
 
           <StatCard
@@ -75,7 +75,7 @@ const StationHeadDashboard = () => {
             value={stats?.underInvestigationCases ?? '...'}
             color="text-white"
             bg="bg-rose-900 hover:bg-rose-700"
-            path="/station-head/under-investigation-cases"
+            path="/station-head/station-cases"
           />
 
         </div>
