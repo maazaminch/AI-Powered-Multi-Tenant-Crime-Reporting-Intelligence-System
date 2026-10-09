@@ -261,13 +261,21 @@ class PDFController {
         }
 
         const caseDoc = await Case.findById(caseId)
+            .populate({
+                path: "policeStationId",
+                select: "name contactNumber locationLabel stationHead",
+                populate: {
+                path: "stationHead",
+                select: "fullName"
+                }
+            })
             .populate("assignedTo", "fullName email phone badgeNumber")
             .populate("closedBy", "fullName");
         if (!caseDoc) throw new apiError(404, "Case not found");
 
-        if (caseDoc.policeStationId.toString() !== user.policeStationId?.toString()) {
-            throw new apiError(403, "This case belongs to another station");
-        }
+        // if (caseDoc.policeStationId.toString() !== user.policeStationId?.toString()) {
+        //     throw new apiError(403, "This case belongs to another station");
+        // }
 
         if (caseDoc.status !== "CLOSED") {
             throw new apiError(400, "Final report is available only for closed cases");
