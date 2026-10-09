@@ -6,7 +6,7 @@ const OTP_TTL = 600; // 10 minutes in seconds for OTP verification
 const SESSION_TTL = 1800; // 30 minutes in seconds for verified session (case submission)
 
 export const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 };
 
 export const hashOTP = (otp) => {

@@ -70,7 +70,9 @@ class GuestController {
 
   // ───── Step 1: Request OTP (sent to guest's email) ─────
   static sendOTP = wrapAsync(async (req, res) => {
-    const { email } = req.body;
+    const email = typeof req.body.email === "string"
+      ? req.body.email.trim().toLowerCase()
+      : "";
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new apiError(400, "A valid email is required");
@@ -88,10 +90,6 @@ class GuestController {
 
     await storeOTP(sessionId, email, hashedOTP);
 
-    return res.status(200).json(
-      new apiResponse(200, { sessionId }, "OTP sent to your email")
-    );
-
     try {
       await sendEmail({
         to: email,
@@ -100,16 +98,35 @@ class GuestController {
         html: `<p>Your verification code is <b>${otp}</b>. It expires in 10 minutes.</p>`
       });
     } catch (err) {
-      console.error("OTP email failed:", err.message);
+      console.error("OTP email failed:", err instanceof Error ? err.message : err);
+      try {
+        await invalidateOTP(sessionId);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to remove OTP session after email delivery failure:",
+          cleanupError instanceof Error ? cleanupError.message : cleanupError
+        );
+      }
       throw new apiError(502, "Failed to send verification email. Please try again.");
     }
 
-    
+    return res.status(200).json(
+      new apiResponse(200, { sessionId }, "OTP sent to your email")
+    );
   });
 
   static verifyOTP = wrapAsync(async (req, res) => {
 
     const { sessionId, otp } = req.body;
+
+    if (
+        typeof sessionId !== "string" ||
+        !sessionId.trim() ||
+        typeof otp !== "string" ||
+        !/^\d{6}$/.test(otp)
+    ) {
+        throw new apiError(400, "A valid session ID and 6-digit OTP are required");
+    }
 
     const storedOTP = await getStoredOTP(sessionId);
 

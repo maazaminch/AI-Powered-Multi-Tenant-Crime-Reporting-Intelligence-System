@@ -107,11 +107,13 @@ const GuestReportPage = () => {
 
   // Location handling
   const handleLocationSelect = (location) => {
+    setNearestStations([])
     setCaseData(prev => ({
       ...prev,
       coordinates: location.coordinates,
       locationLabel: location.display_name || location.label || '',
-      address: ''
+      address: '',
+      policeStationId: ''
     }))
 
     if (location.coordinates) {
@@ -142,6 +144,12 @@ const GuestReportPage = () => {
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files)
     if (files.length === 0) return
+
+    if (caseData.evidenceFileIds.length + files.length > 10) {
+      toast.error('You can upload a maximum of 10 evidence files')
+      e.target.value = ''
+      return
+    }
 
     setIsUploading(true)
     const fileIds = []
@@ -220,6 +228,14 @@ const GuestReportPage = () => {
     }
     if (!caseData.coordinates) {
       toast.error('Please select a location on the map')
+      return
+    }
+    if (suggestStations.isPending) {
+      toast.error('Please wait while we find the nearest police station')
+      return
+    }
+    if (!caseData.policeStationId) {
+      toast.error('No active police station is available for this location')
       return
     }
 
@@ -403,7 +419,7 @@ const GuestReportPage = () => {
                     onVerify={handleVerifyOTP}
                     onResendOTP={handleResendOTP}
                     isSendingOTP={sendOTP.isPending}
-                    isVerifying={false}
+                    isVerifying={verifyOTP.isPending}
                   />
                 </motion.div>
               )}
@@ -604,10 +620,14 @@ const GuestReportPage = () => {
                     </Button>
                     <Button
                       onClick={handleSubmitCase}
-                      disabled={reportCase.isPending || isUploading}
+                      disabled={reportCase.isPending || isUploading || suggestStations.isPending}
                       className="flex-1"
                     >
-                      {reportCase.isPending ? 'Submitting...' : 'Submit Report'}
+                      {suggestStations.isPending
+                        ? 'Finding nearest station...'
+                        : reportCase.isPending
+                          ? 'Submitting...'
+                          : 'Submit Report'}
                     </Button>
                   </div>
                 </motion.div>
