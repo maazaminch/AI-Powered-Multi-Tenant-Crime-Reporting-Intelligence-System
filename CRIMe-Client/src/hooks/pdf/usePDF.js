@@ -28,7 +28,7 @@ export const usePDF = () => {
   });
 
   const downloadFinalReport = useMutation({
-    mutationFn: ({ caseId, version }) => pdfService.downloadFinalReport(caseId, version),
+    mutationFn: (caseId) => pdfService.downloadFinalReport(caseId),
     onSuccess: () => {
       toast.success('Final report downloaded successfully');
     },

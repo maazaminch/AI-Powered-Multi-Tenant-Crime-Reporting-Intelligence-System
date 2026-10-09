@@ -25,10 +25,10 @@ export const DownloadReceiptButton = ({ caseId, onDownload, isDownloading, disab
   )
 }
 
-export const DownloadFinalReportButton = ({ caseId, version = "citizen", onDownload, isDownloading, disabled = false, variant = "default", size = "default", className = "" }) => {
+export const DownloadFinalReportButton = ({ caseId, onDownload, isDownloading, disabled = false, variant = "default", size = "default", className = "" }) => {
   return (
     <Button
-      onClick={() => onDownload({ caseId, version })}
+      onClick={() => onDownload(caseId )}
       disabled={isDownloading || disabled}
       variant={variant}
       size={size}

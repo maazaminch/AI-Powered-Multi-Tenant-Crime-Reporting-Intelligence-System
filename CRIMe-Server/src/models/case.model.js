@@ -134,9 +134,8 @@ const CaseSchema = new mongoose.Schema({
   policeStationId: { type: mongoose.Schema.Types.ObjectId, ref: "PoliceStation", index: true },
 
   // PDF references
-  receiptPdf: String,   // generated on submission
-  citizenPdf: String,   // citizen version of final report (redacted)
-  fullPdf: String,      // full version of final report (internal)
+  receiptPdf: String,
+  fullPdf: String,  
 
 
   // ───── Hotspot & Cold Storage ─────

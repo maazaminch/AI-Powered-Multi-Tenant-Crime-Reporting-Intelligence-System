@@ -188,7 +188,7 @@ const CaseDetailsPage = () => {
 
 
   const handleDownloadPdf = () => {
-    downloadFinalReport({ caseId: caseDetails._id, version: 'full' })
+    downloadFinalReport({caseId: caseDetails._id})
   }
 
 

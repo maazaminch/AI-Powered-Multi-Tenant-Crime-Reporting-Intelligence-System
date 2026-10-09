@@ -1,7 +1,10 @@
 import PDFDocument from "pdfkit";
 import crypto from "crypto";
 import apiError from "../utils/apiError.js";
-import { uploadBufferToCloudinary } from "./cloudinary.storage.service.js";
+import {
+  getAuthenticatedCloudinaryURL,
+  uploadBufferToCloudinary
+} from "./cloudinary.storage.service.js";
 
 // for local pdf storage 
 // import fs from "fs";
@@ -268,7 +271,6 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
         .text('This is an acknowledgment of filing, not a legal certified copy.', { align: 'center' });
       doc.moveDown(1.5);
 
-      const severityColor = SEVERITY_COLORS[caseData.severity] || COLORS.muted;
       const tenantName = tenant?.name || 'N/A';
       const stationName = station?.name || 'N/A';
 
@@ -281,7 +283,6 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
           { label: 'Jurisdiction/Tenant:', value: tenantName },
           { label: 'Assigned Police Station:', value: stationName },
           { label: 'Case Type:', value: caseData.crimeType },
-          { label: 'Severity:', value: caseData.severity, valueColor: severityColor },
           { label: 'Current Status:', value: 'PENDING REVIEW', valueColor: COLORS.warning }
         ]
       });
@@ -352,13 +353,14 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
 
       const pdfBuffer = await this.generatePDFBuffer(doc);
 
-    const uploaded = await uploadBufferToCloudinary(pdfBuffer, {
-      folder: `crime_saas/pdfs/receipts/${caseData._id}`,
-      resourceType: "raw",
-      filename: `${caseData.caseId}-receipt.pdf`
-    });
+      const uploaded = await uploadBufferToCloudinary(pdfBuffer, {
+        folder: `crime_saas/pdfs/receipts/${caseData._id}`,
+        resourceType: "raw",
+        filename: `${caseData.caseId}-receipt.pdf`,
+        deliveryType: "authenticated"
+      });
 
-    return uploaded.secure_url;
+      return getAuthenticatedCloudinaryURL(uploaded.public_id, uploaded.version);
       // return await this.finalizeDocument(doc, stream, filePath);
 
     } catch (err) {
@@ -373,12 +375,11 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
    * Text-only — the Evidence section reports only a file count, never file
    * contents, thumbnails, or links.
    */
-  static async generateFullCase(caseData, updates, evidenceCount, isFullVersion = false) {
+  static async generateFullCase(caseData, updates, evidenceCount) {
     if (caseData.status && caseData.status !== "CLOSED") {
       throw new apiError(400, "Full PDF can only be generated for closed cases");
     }
 
-    const type = isFullVersion ? 'full' : 'citizen';
     // const filePath = this.generateFilePath(caseData.caseId, type);
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     // const stream = fs.createWriteStream(filePath);
@@ -391,10 +392,8 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
         .text('CASE FINAL REPORT', { align: 'center' });
       doc.fontSize(10).font('Helvetica').fillColor(COLORS.success)
         .text('CASE CLOSED', { align: 'center' });
-      if (isFullVersion) {
-        doc.fontSize(10).font('Helvetica').fillColor(COLORS.danger)
-          .text('AUTHORIZED PERSONNEL ONLY', { align: 'center' });
-      }
+      doc.fontSize(10).font('Helvetica').fillColor(COLORS.danger)
+        .text('AUTHORIZED PERSONNEL ONLY', { align: 'center' });
       doc.moveDown(1.5);
 
       const severityColor = SEVERITY_COLORS[caseData.severity] || COLORS.muted;
@@ -407,7 +406,7 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
         { label: 'Severity:', value: caseData.severity, valueColor: severityColor },
         { label: 'Final Status:', value: 'CLOSED', valueColor: COLORS.success }
       ];
-      if (isFullVersion && caseData.assignedTo) {
+      if (caseData.assignedTo) {
         caseDetailRows.push({ label: 'Assigned Officer:', value: caseData.assignedTo.fullName || 'N/A' });
       }
       this.drawInfoBox(doc, { title: 'CASE DETAILS', rows: caseDetailRows });
@@ -431,16 +430,14 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
         rows: [{ label: 'Total Evidence Files:', value: evidenceCount || 0 }]
       });
 
-      if (isFullVersion) {
-        this.ensureSpace(doc, 80);
-        const notesTop = doc.y;
-        doc.roundedRect(PAGE_LEFT, notesTop, PAGE_WIDTH, 70, 5).fillAndStroke(COLORS.dangerBg, COLORS.danger);
-        doc.fillColor(COLORS.dangerText).fontSize(12).font('Helvetica-Bold')
-          .text('OFFICER NOTES (INTERNAL)', PAGE_LEFT + 15, notesTop + 15);
-        doc.fontSize(9).font('Helvetica').fillColor(COLORS.dangerTextDark)
-          .text('Internal investigation notes are available in the system.', PAGE_LEFT + 15, notesTop + 35);
-        doc.y = notesTop + 80;
-      }
+      this.ensureSpace(doc, 80);
+      const notesTop = doc.y;
+      doc.roundedRect(PAGE_LEFT, notesTop, PAGE_WIDTH, 70, 5).fillAndStroke(COLORS.dangerBg, COLORS.danger);
+      doc.fillColor(COLORS.dangerText).fontSize(12).font('Helvetica-Bold')
+        .text('OFFICER NOTES (INTERNAL)', PAGE_LEFT + 15, notesTop + 15);
+      doc.fontSize(9).font('Helvetica').fillColor(COLORS.dangerTextDark)
+        .text('Internal investigation notes are available in the system.', PAGE_LEFT + 15, notesTop + 35);
+      doc.y = notesTop + 80;
 
       this.ensureSpace(doc, 80);
       const closureTop = doc.y;
@@ -457,11 +454,7 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
       this.drawFooter(doc, {
         docId,
         contentHash,
-        notes: [
-          isFullVersion
-            ? 'Classification: INTERNAL - AUTHORIZED PERSONNEL ONLY'
-            : 'This is a redacted version for the reporter. Full version available to authorized personnel.'
-        ]
+        notes: ['Classification: INTERNAL - AUTHORIZED PERSONNEL ONLY']
       });
 
       // return await this.finalizeDocument(doc, stream, filePath);
@@ -471,10 +464,11 @@ static drawInfoBox(doc, { title, rows, bg = COLORS.boxBg, border = COLORS.boxBor
       const uploaded = await uploadBufferToCloudinary(pdfBuffer, {
         folder: `crime_saas/pdfs/final-reports/${caseData._id}`,
         resourceType: "raw",
-        filename: `${caseData.caseId}-${type}.pdf`
+        filename: `${caseData.caseId}-full.pdf`,
+        deliveryType: "authenticated"
       });
 
-      return uploaded.secure_url;
+      return getAuthenticatedCloudinaryURL(uploaded.public_id, uploaded.version);
     } catch (err) {
       console.error("Full case PDF generation failed:", err);
       // fs.unlink(filePath, () => {});

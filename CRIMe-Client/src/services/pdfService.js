@@ -1,76 +1,72 @@
 import api from './api.js'
 
+// With responseType 'blob', error bodies also arrive as a Blob.
+// Convert them back to JSON so error.response.data.message works.
+const parseBlobError = async (error) => {
+  const data = error?.response?.data
+  if (data instanceof Blob) {
+    try {
+      error.response.data = JSON.parse(await data.text())
+    } catch {
+      // leave as is
+    }
+  }
+  return error
+}
+
+const saveBlob = (blob, filename) => {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export const pdfService = {
-  // Guest download receipt (no auth, one-time only)
+  // Guest receipt (tracking token required)
   guestDownloadReceipt: async (caseId, trackingToken) => {
     try {
-      const response = await api.get(
-        `/api/pdf/guest-receipt/${caseId}?trackingToken=${trackingToken}`,
-        { responseType: 'blob' }
-      )
-
-      // const url = window.URL.createObjectURL(new Blob([response.data]))
-      const url = window.URL.createObjectURL(response)
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `receipt-${caseId}.pdf`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-
+      const response = await api.get(`/api/pdf/guest-receipt/${caseId}`, {
+        params: { trackingToken },
+        responseType: 'blob'
+      })
+      saveBlob(response, `receipt-${caseId}.pdf`)
       return { success: true }
     } catch (error) {
+      await parseBlobError(error)
       console.error('Error downloading receipt:', error)
       throw error
     }
   },
 
-  // Download acknowledgment receipt (immutable, generated at case creation)
+  // Citizen / staff receipt
   downloadReceipt: async (caseId) => {
     try {
       const response = await api.get(`/api/pdf/receipt/${caseId}`, {
         responseType: 'blob'
       })
-
-      // const url = window.URL.createObjectURL(new Blob([response.data]))
-      const url = window.URL.createObjectURL(response)
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `receipt-${caseId}.pdf`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-
+      saveBlob(response, `receipt-${caseId}.pdf`)
       return { success: true }
     } catch (error) {
+      await parseBlobError(error)
       console.error('Error downloading receipt:', error)
       throw error
     }
   },
 
-  // Download final report (immutable, generated at case closure)
-  downloadFinalReport: async (caseId, version = 'citizen') => {
+  // Final report (station head only)
+  downloadFinalReport: async (caseId) => {
     try {
-      const response = await api.get(
-        `/api/pdf/final-report/${caseId}?version=${version}`,
-        {
-          responseType: 'blob',
-        }
-      )
-
-      const url = window.URL.createObjectURL(response)
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `final-report-${version}-${caseId}.pdf`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-
+      const response = await api.get(`/api/pdf/final-report/${caseId}`, {
+        responseType: 'blob'
+      })
+      saveBlob(response, `final-report-${caseId}.pdf`)
       return { success: true }
     } catch (error) {
+      await parseBlobError(error)
       console.error('Error downloading final report:', error)
       throw error
     }

@@ -9,8 +9,6 @@ import wrapAsync from "../../utils/wrapAsync.js";
 import apiResponse from "../../utils/apiResponse.js";
 // import fs from "fs";
 
-class PDFController {
-
     // these controllers save pdfs locally
 //     static guestDownloadReceipt = wrapAsync(async (req, res) => {
 //     const { caseId } = req.params;
@@ -161,6 +159,57 @@ class PDFController {
 
 
     // these controllers save pdfs in cloudinary
+// Fetch the PDF from Cloudinary and send the bytes to the browser.
+const sendPdfFromUrl = async (res, url, filename) => {
+    const upstream = await fetch(url); // Node 18+
+    if (!upstream.ok) {
+        throw new apiError(502, "Could not fetch PDF from storage");
+    }
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+    res.send(buffer);
+};
+
+// Receipt: generate once, then reuse the saved Cloudinary URL.
+const ensureReceipt = async (caseDoc) => {
+    if (caseDoc.receiptPdf) return caseDoc.receiptPdf;
+
+    const [station, tenant] = await Promise.all([
+        PoliceStation.findById(caseDoc.policeStationId)
+            .populate("stationHead", "fullName email phone badgeNumber"),
+        Tenant.findById(caseDoc.tenantId)
+    ]);
+
+    const url = await PDFService.generateReceipt(caseDoc, station, tenant);
+    await Case.findByIdAndUpdate(caseDoc._id, { receiptPdf: url });
+    return url;
+};
+
+// Final report: generate once, then reuse the saved Cloudinary URL.
+const ensureFinalReport = async (caseDoc) => {
+    if (caseDoc.fullPdf) return caseDoc.fullPdf;
+
+    const [updates, evidenceCount] = await Promise.all([
+        CaseUpdate.find({ caseId: caseDoc._id }).sort({ createdAt: 1 }).lean(),
+        Evidence.countDocuments({ caseId: caseDoc._id })
+    ]);
+
+    const url = await PDFService.generateFullCase(caseDoc, updates, evidenceCount, true);
+    await Case.findByIdAndUpdate(caseDoc._id, { fullPdf: url });
+    return url;
+};
+
+const sameTenant = (user, caseDoc) =>
+    user.tenantId && caseDoc.tenantId.toString() === user.tenantId.toString();
+
+// ───────── controller ─────────
+
+class PDFController {
+
+    // Guest: no login, tracking token required
     static guestDownloadReceipt = wrapAsync(async (req, res) => {
         const { caseId } = req.params;
         const { trackingToken } = req.query;
@@ -174,199 +223,59 @@ class PDFController {
             trackingToken,
             "reporter.type": "GUEST"
         });
-
         if (!caseDoc) {
             throw new apiError(404, "Case not found or invalid tracking token");
         }
 
-        let receiptUrl = caseDoc.receiptPdf;
-
-        // Generate PDF if it doesn't exist yet
-        if (!receiptUrl) {
-            const station = await PoliceStation.findById(caseDoc.policeStationId)
-                .populate("stationHead", "fullName email phone badgeNumber");
-
-            const tenant = await Tenant.findById(caseDoc.tenantId);
-
-            receiptUrl = await PDFService.generateReceipt(
-                caseDoc,
-                station,
-                tenant
-            );
-
-            await Case.findByIdAndUpdate(caseDoc._id, {
-                receiptPdf: receiptUrl,
-                guestDownloadAllowed: false
-            });
-        } else {
-            await Case.findByIdAndUpdate(caseDoc._id, {
-                guestDownloadAllowed: false
-            });
-        }
-
-        // Redirect to Cloudinary
-        return res.redirect(receiptUrl);
+        const url = await ensureReceipt(caseDoc);
+        return sendPdfFromUrl(res, url, `receipt-${caseDoc.caseId}.pdf`);
     });
 
-
-
+    // Logged-in users: citizen owner or same-tenant staff
     static downloadReceipt = wrapAsync(async (req, res) => {
         const { caseId } = req.params;
-        const currentUser = req.user;
+        const user = req.user;
 
-        const caseDoc = await Case.findOne({ _id: caseId });
+        const caseDoc = await Case.findById(caseId);
+        if (!caseDoc) throw new apiError(404, "Case not found");
 
-        if (!caseDoc) {
-            throw new apiError(404, "Case not found");
-        }
-
-        // Citizen can only download their own receipt
-        if (
+        const isOwner =
             caseDoc.reporter.type === "CITIZEN" &&
-            caseDoc.reporter.citizenId.toString() !== currentUser._id.toString()
-        ) {
-            throw new apiError(
-                403,
-                "You can only download your own case receipt"
-            );
+            caseDoc.reporter.citizenId?.toString() === user._id.toString();
+
+        if (!isOwner && !sameTenant(user, caseDoc) && !user.isSuperAdmin) {
+            throw new apiError(403, "You are not allowed to download this receipt");
         }
 
-        let receiptUrl = caseDoc.receiptPdf;
-
-        // Generate only if it doesn't exist
-        if (!receiptUrl) {
-            const station = await PoliceStation.findById(caseDoc.policeStationId)
-                .populate("stationHead", "fullName email phone badgeNumber");
-
-            const tenant = await Tenant.findById(caseDoc.tenantId);
-
-            receiptUrl = await PDFService.generateReceipt(
-                caseDoc,
-                station,
-                tenant
-            );
-
-            await Case.findByIdAndUpdate(caseDoc._id, {
-                receiptPdf: receiptUrl
-            });
-        }
-
-        return res.redirect(receiptUrl);
+        const url = await ensureReceipt(caseDoc);
+        return sendPdfFromUrl(res, url, `receipt-${caseDoc.caseId}.pdf`);
     });
 
-
-
+    // Station head only
     static downloadFinalReport = wrapAsync(async (req, res) => {
         const { caseId } = req.params;
-        const currentUser = req.user;
-        const { version = "citizen" } = req.query;
+        const user = req.user;
 
-        const caseDoc = await Case.findOne({ _id: caseId })
-            .populate("assignedTo", "fullName email phone badgeNumber");
+        if (!user.isStationHead) {
+            throw new apiError(403, "Only station heads can download the final report");
+        }
 
-        if (!caseDoc) {
-            throw new apiError(404, "Case not found");
+        const caseDoc = await Case.findById(caseId)
+            .populate("assignedTo", "fullName email phone badgeNumber")
+            .populate("closedBy", "fullName");
+        if (!caseDoc) throw new apiError(404, "Case not found");
+
+        if (caseDoc.policeStationId.toString() !== user.policeStationId?.toString()) {
+            throw new apiError(403, "This case belongs to another station");
         }
 
         if (caseDoc.status !== "CLOSED") {
-            throw new apiError(
-                400,
-                "Final report can only be downloaded for closed cases"
-            );
+            throw new apiError(400, "Final report is available only for closed cases");
         }
 
-        const isFullVersion = version === "full";
-
-        const isReporter =
-            caseDoc.reporter.type === "CITIZEN" &&
-            caseDoc.reporter.citizenId.toString() === currentUser._id.toString();
-
-        const isAssigned =
-            caseDoc.assignedTo &&
-            caseDoc.assignedTo.toString() === currentUser._id.toString();
-
-        const isStationHead = currentUser.isStationHead;
-        const isAdmin = currentUser.role === "ADMIN";
-        const isSuperAdmin = currentUser.isSuperAdmin;
-
-        // Citizen can only download their own report
-        if (
-            caseDoc.reporter.type === "CITIZEN" &&
-            !isReporter &&
-            !isStationHead &&
-            !isAdmin &&
-            !isSuperAdmin
-        ) {
-            throw new apiError(
-                403,
-                "You can only download your own case report"
-            );
-        }
-
-        // Police can only download assigned reports
-        if (
-            currentUser.role === "POLICE" &&
-            !isAssigned &&
-            !isStationHead &&
-            !isAdmin &&
-            !isSuperAdmin
-        ) {
-            throw new apiError(
-                403,
-                "You can only download assigned case reports"
-            );
-        }
-
-        // Full version only for authorized personnel
-        if (
-            isFullVersion &&
-            !isStationHead &&
-            !isAdmin &&
-            !isSuperAdmin
-        ) {
-            throw new apiError(
-                403,
-                "Full version only available to authorized personnel"
-            );
-        }
-
-        let pdfUrl = isFullVersion
-            ? caseDoc.fullPdf
-            : caseDoc.citizenPdf;
-
-        // Generate only if PDF doesn't exist
-        if (!pdfUrl) {
-            const updates = await CaseUpdate.find({
-                caseId: caseDoc._id
-            })
-                .sort({ createdAt: 1 })
-                .lean();
-
-            const evidenceCount = await Evidence.countDocuments({
-                caseId: caseDoc._id
-            });
-
-            pdfUrl = await PDFService.generateFullCase(
-                caseDoc,
-                updates,
-                evidenceCount,
-                isFullVersion
-            );
-
-            if (isFullVersion) {
-                await Case.findByIdAndUpdate(caseDoc._id, {
-                    fullPdf: pdfUrl
-                });
-            } else {
-                await Case.findByIdAndUpdate(caseDoc._id, {
-                    citizenPdf: pdfUrl
-                });
-            }
-        }
-
-        return res.redirect(pdfUrl);
+        const url = await ensureFinalReport(caseDoc);
+        return sendPdfFromUrl(res, url, `final-report-${caseDoc.caseId}.pdf`);
     });
-
 }
 
 export default PDFController;

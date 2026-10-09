@@ -419,45 +419,17 @@ class StationHeadController {
                 closedBy: currentUser._id,
                 closedAt: new Date()
             },
-            { new: true }
-        ).populate('assignedTo', 'fullName email phone badgeNumber').lean();
+            { new: true })
+            .populate('assignedTo', 'fullName email phone badgeNumber')
+            .populate("closedBy", "fullName")
+            .lean();
+
         if (!updatedCase) {
             throw new apiError(409, "Case was modified by another request. Please retry.");
         }
 
         // Generate final report PDF (background task - doesn't block response)
         const afterResponse = async () => {
-            try {
-                const station = await PoliceStation.findById(updatedCase.policeStationId);
-                const stationName = station ? station.name : "Police Station";
-                const tenantName = "Police Department";
-
-                // Get case updates for timeline
-                const updates = await CaseUpdate.find({ caseId: caseDoc._id })
-                    .sort({ createdAt: 1 })
-                    .lean();
-
-                // Get evidence count
-                const evidenceCount = await Evidence.countDocuments({ caseId: caseDoc._id });
-
-                // Generate both citizen and full versions of the final report PDF
-                const citizenPdfPath = await PDFService.generateFullCase(updatedCase, updates, evidenceCount, false);
-                const fullPdfPath = await PDFService.generateFullCase(updatedCase, updates, evidenceCount, true);
-
-                // Save PDF paths to case
-                await Case.findByIdAndUpdate(caseDoc._id, {
-                    citizenPdf: citizenPdfPath,
-                    fullPdf: fullPdfPath
-                });
-            } catch (pdfError) {
-                console.error('Final report PDF generation failed:', pdfError);
-                // Case closure still succeeds even if PDF fails
-            }
-        };
-
-        // Start PDF generation in background
-        afterResponse().catch(err => console.error("Background PDF generation failed", err));
-
         // Create case update
         await CaseUpdate.create({
             tenantId: caseDoc.tenantId,
@@ -524,7 +496,8 @@ class StationHeadController {
         res.status(200).json(
             new apiResponse(200, updatedCase, "Case status updated successfully")
         );
-    });
+    }
+});
 
     static addCaseUpdate = wrapAsync(async (req, res) => {
         const { caseId } = req.params;

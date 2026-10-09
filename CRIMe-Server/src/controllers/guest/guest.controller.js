@@ -411,34 +411,7 @@ class GuestController {
       })();
 
 
-      // ───── 13. Background: receipt PDF ─────
-
-      (async () => {
-          try {
-
-              const receiptUrl =
-                  await PDFService.generateReceipt(newCase);
-
-              await Case.findByIdAndUpdate(
-                  newCase._id,
-                  {
-                      receiptPdf: receiptUrl,
-                      guestDownloadAllowed: false
-                  }
-              );
-
-          } catch (err) {
-
-              console.error(
-                  `Receipt PDF generation failed for case ${newCase._id}:`,
-                  err.message
-              );
-
-          }
-      })();
-
-
-      // ───── 14. Background: station-head notification ─────
+      // ───── 13. Background: station-head notification ─────
 
       if (station.stationHead) {
 

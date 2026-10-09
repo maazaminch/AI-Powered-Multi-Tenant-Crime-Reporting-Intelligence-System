@@ -15,14 +15,22 @@ import { Readable } from 'stream';
 
 export function uploadBufferToCloudinary(
   buffer,
-  { folder, resourceType, filename }
+  {
+    folder,
+    resourceType,
+    filename,
+    deliveryType = 'upload',
+    uniqueFilename = true,
+    overwrite = false
+  }
 ) {
   return new Promise((resolve, reject) => {
     const uploadOptions = {
       folder,
       resource_type: resourceType,
-      unique_filename: true,
-      overwrite: false,
+      type: deliveryType,
+      unique_filename: uniqueFilename,
+      overwrite,
     };
 
     if (filename) {
@@ -39,11 +47,22 @@ export function uploadBufferToCloudinary(
       uploadOptions,
       (error, result) => {
         if (error) return reject(error);
+        if (!result) return reject(new Error('Cloudinary returned no upload result'));
         resolve(result);
       }
     );
 
     Readable.from(buffer).pipe(uploadStream);
+  });
+}
+
+export function getAuthenticatedCloudinaryURL(publicId, version) {
+  return cloudinary.url(publicId, {
+    resource_type: 'raw',
+    type: 'authenticated',
+    sign_url: true,
+    secure: true,
+    version
   });
 }
 
